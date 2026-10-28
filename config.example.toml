@@ -1,0 +1,23 @@
+[gzip]
+input = "/path/to/input.bin"
+output = "/path/to/output.gz"
+# csv = "/path/to/result.csv"
+
+[device]
+user = "/dev/xdma0_user"
+h2c = "/dev/xdma0_h2c_0"
+c2h = "/dev/xdma0_c2h_0"
+
+[pipeline]
+ring_slots = 8
+h2c_slot_bytes = "4MiB"
+c2h_request_bytes = "256KiB"
+poll_interval = "50us"
+drain_idle = "200us"
+reset_timeout = "2s"
+start_timeout = "1s"
+progress_interval = "100ms"
+progress = true
+
+[runtime]
+max_procs = 1
