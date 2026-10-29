@@ -312,7 +312,8 @@ func RunReader(ctx context.Context, input io.Reader, inputSize uint64, output io
 		}()
 	}
 
-	worker(func() error { return storeOutput(runCtx, output, rx, c2hPool, stats, storeDone) })
+	validatedOutput := &gzipHeaderWriter{dst: output}
+	worker(func() error { return storeOutput(runCtx, validatedOutput, rx, c2hPool, stats, storeDone) })
 	worker(func() error { return receiveC2H(runCtx, hw, opts, rx, c2hPool, stats) })
 	worker(func() error { return sendH2C(runCtx, hw, inputSize, tx, h2cPool, stats) })
 	worker(func() error {
@@ -331,6 +332,11 @@ func RunReader(ctx context.Context, input io.Reader, inputSize uint64, output io
 	case runErr = <-errCh:
 	default:
 		if err := ctx.Err(); err != nil {
+			runErr = err
+		}
+	}
+	if runErr == nil {
+		if err := validatedOutput.Validate(); err != nil {
 			runErr = err
 		}
 	}
@@ -632,6 +638,90 @@ func storeOutput(ctx context.Context, output io.Writer, rx <-chan chunk, pool *b
 			}
 		}
 	}
+}
+
+// gzipHeaderWriter rejects a successful FPGA transaction that did not produce
+// a gzip stream. XDMA and the shell expose status and byte counters separately
+// from payload correctness; checking the small fixed gzip header keeps a bad
+// bitstream from being accepted and stored as a valid chunk. The full stream
+// remains streamed directly to the caller without buffering it in memory.
+type gzipHeaderWriter struct {
+	dst     io.Writer
+	header  [10]byte
+	seen    int
+	checked bool
+	err     error
+}
+
+func (w *gzipHeaderWriter) Write(p []byte) (int, error) {
+	if w.err != nil {
+		return 0, w.err
+	}
+	if !w.checked {
+		need := len(w.header) - w.seen
+		take := len(p)
+		if take > need {
+			take = need
+		}
+		copy(w.header[w.seen:], p[:take])
+		w.seen += take
+		if w.seen < len(w.header) {
+			// Keep the prefix private until the complete fixed header has been
+			// checked. This prevents an invalid FPGA stream from being exposed
+			// through a generic writer before RunReader can report the error.
+			return len(p), nil
+		}
+		if err := validateGzipHeader(w.header[:]); err != nil {
+			w.err = err
+			return 0, err
+		}
+		w.checked = true
+		if _, err := w.write(w.header[:]); err != nil {
+			return take, err
+		}
+		if take == len(p) {
+			return len(p), nil
+		}
+		written, err := w.write(p[take:])
+		if err != nil {
+			return take + written, err
+		}
+		return len(p), nil
+	}
+	return w.write(p)
+}
+
+func (w *gzipHeaderWriter) write(p []byte) (int, error) {
+	n, err := w.dst.Write(p)
+	if err != nil {
+		w.err = err
+		return n, err
+	}
+	if n != len(p) {
+		w.err = io.ErrShortWrite
+		return n, w.err
+	}
+	return n, nil
+}
+
+func (w *gzipHeaderWriter) Validate() error {
+	if w.err != nil {
+		return w.err
+	}
+	if !w.checked || w.seen < len(w.header) {
+		return errors.New("FPGA output is shorter than a gzip header")
+	}
+	return nil
+}
+
+func validateGzipHeader(header []byte) error {
+	if len(header) < 10 || header[0] != 0x1f || header[1] != 0x8b || header[2] != 8 {
+		return errors.New("FPGA output is not a gzip stream")
+	}
+	if header[3]&0xe0 != 0 {
+		return fmt.Errorf("FPGA gzip header has reserved flags: 0x%02x", header[3])
+	}
+	return nil
 }
 
 func writeFileAll(output io.Writer, data []byte) error {

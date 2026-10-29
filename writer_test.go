@@ -42,6 +42,18 @@ func TestCompressReaderAndWriter(t *testing.T) {
 	assertGzipData(t, buffered.Bytes(), input)
 }
 
+func TestCompressReaderRejectsInvalidFPGAOutput(t *testing.T) {
+	input := bytes.Repeat([]byte("input"), 1024)
+	var output bytes.Buffer
+	_, err := CompressReader(context.Background(), bytes.NewReader(input), uint64(len(input)), &output, newInvalidFakeHardware(), DefaultOptions(), nil)
+	if err == nil {
+		t.Fatal("CompressReader accepted invalid FPGA output")
+	}
+	if output.Len() != 0 {
+		t.Fatalf("invalid FPGA output leaked to destination: %d bytes", output.Len())
+	}
+}
+
 func assertGzipData(t *testing.T, compressed, want []byte) {
 	t.Helper()
 	reader, err := gzip.NewReader(bytes.NewReader(compressed))
@@ -63,6 +75,7 @@ func assertGzipData(t *testing.T, compressed, want []byte) {
 type fakeHardware struct {
 	mu       sync.Mutex
 	expected uint64
+	invalid  bool
 	input    []byte
 	output   []byte
 	read     int
@@ -72,6 +85,8 @@ type fakeHardware struct {
 
 func newFakeHardware() *fakeHardware { return &fakeHardware{} }
 
+func newInvalidFakeHardware() *fakeHardware { return &fakeHardware{invalid: true} }
+
 func (f *fakeHardware) WriteH2C(p []byte) (int, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -80,15 +95,19 @@ func (f *fakeHardware) WriteH2C(p []byte) (int, error) {
 	}
 	f.input = append(f.input, p...)
 	if uint64(len(f.input)) == f.expected {
-		var compressed bytes.Buffer
-		writer := gzip.NewWriter(&compressed)
-		if _, err := writer.Write(f.input); err != nil {
-			return 0, err
+		if f.invalid {
+			f.output = bytes.Repeat([]byte("0"), 32)
+		} else {
+			var compressed bytes.Buffer
+			writer := gzip.NewWriter(&compressed)
+			if _, err := writer.Write(f.input); err != nil {
+				return 0, err
+			}
+			if err := writer.Close(); err != nil {
+				return 0, err
+			}
+			f.output = compressed.Bytes()
 		}
-		if err := writer.Close(); err != nil {
-			return 0, err
-		}
-		f.output = compressed.Bytes()
 		f.status = 1 << 1
 	}
 	return len(p), nil
