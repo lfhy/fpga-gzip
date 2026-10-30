@@ -49,7 +49,7 @@ type Config struct {
 func Parse(args []string) (Config, error) {
 	var cfg Config
 	var h2cSlotText = "4MiB"
-	var c2hRequestText = "256KiB"
+	var c2hRequestText = "32KiB"
 
 	fs := lfyflag.NewFlagSet("fpga-gzip", lfyflag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
@@ -65,7 +65,7 @@ func Parse(args []string) (Config, error) {
 
 	fs.UintFullVar(&cfg.RingSlots, "ring-slots", "pipeline", "ring_slots", "FPGA_GZIP_RING_SLOTS", 8, "输入/输出环形队列槽位数")
 	fs.StringFullVar(&h2cSlotText, "h2c-slot-bytes", "pipeline", "h2c_slot_bytes", "FPGA_GZIP_H2C_SLOT_BYTES", h2cSlotText, "H2C 分块大小，例如 4MiB")
-	fs.StringFullVar(&c2hRequestText, "c2h-request-bytes", "pipeline", "c2h_request_bytes", "FPGA_GZIP_C2H_REQUEST_BYTES", c2hRequestText, "C2H 请求缓冲大小，例如 256KiB")
+	fs.StringFullVar(&c2hRequestText, "c2h-request-bytes", "pipeline", "c2h_request_bytes", "FPGA_GZIP_C2H_REQUEST_BYTES", c2hRequestText, "C2H 请求缓冲大小，例如 32KiB")
 
 	fs.DurationFullVar(&cfg.PollInterval, "poll-interval", "pipeline", "poll_interval", "FPGA_GZIP_POLL_INTERVAL", 50*time.Microsecond, "FPGA 状态轮询间隔")
 	fs.DurationFullVar(&cfg.DrainIdle, "drain-idle", "pipeline", "drain_idle", "FPGA_GZIP_DRAIN_IDLE", 200*time.Microsecond, "输出暂缓时提前排空 FIFO 的等待时间")
@@ -73,7 +73,7 @@ func Parse(args []string) (Config, error) {
 	fs.DurationFullVar(&cfg.StartTimeout, "start-timeout", "pipeline", "start_timeout", "FPGA_GZIP_START_TIMEOUT", time.Second, "FPGA 启动超时")
 	fs.DurationFullVar(&cfg.ProgressInterval, "progress-interval", "pipeline", "progress_interval", "FPGA_GZIP_PROGRESS_INTERVAL", 100*time.Millisecond, "进度输出间隔")
 	fs.BoolFullVar(&cfg.Progress, "progress", "pipeline", "progress", "FPGA_GZIP_PROGRESS", true, "显示进度")
-	fs.UintFullVar(&cfg.MaxProcs, "max-procs", "runtime", "max_procs", "FPGA_GZIP_MAX_PROCS", 1, "Go 运行时使用的最大 P 数；XDMA 长流默认使用 1")
+	fs.UintFullVar(&cfg.MaxProcs, "max-procs", "runtime", "max_procs", "FPGA_GZIP_MAX_PROCS", 4, "Go 运行时使用的最大 P 数；XDMA 长流需要并行调度 I/O 阶段")
 
 	if err := fs.Parse(args); err != nil {
 		return Config{}, err

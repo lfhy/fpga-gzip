@@ -11,7 +11,7 @@ c2h = "/dev/xdma0_c2h_0"
 [pipeline]
 ring_slots = 8
 h2c_slot_bytes = "4MiB"
-c2h_request_bytes = "256KiB"
+c2h_request_bytes = "32KiB"
 poll_interval = "50us"
 drain_idle = "200us"
 reset_timeout = "2s"
@@ -20,4 +20,4 @@ progress_interval = "100ms"
 progress = true
 
 [runtime]
-max_procs = 1
+max_procs = 4

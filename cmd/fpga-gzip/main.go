@@ -7,6 +7,7 @@ import (
 	"math"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 
 	"github.com/lfhy/fpga-gzip/config"
@@ -27,6 +28,10 @@ func run() int {
 		fmt.Fprintf(os.Stderr, "配置错误: %v\n", err)
 		return 2
 	}
+	// The standalone CLI owns its process, so it may honor max-procs. The
+	// public pipeline library deliberately does not change GOMAXPROCS globally;
+	// callers such as FUSE daemons must keep their own scheduler width.
+	runtime.GOMAXPROCS(int(cfg.MaxProcs))
 	hw, err := device.Open(device.Paths{
 		User: cfg.UserDevice,
 		H2C:  cfg.H2CDevice,
