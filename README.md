@@ -132,6 +132,8 @@ gzip -t output.gz
 gzip -dc output.gz | cmp - input.bin
 ```
 
+`gzip -t` 只检查 gzip 容器和压缩流的结构，不能证明解压出的字节就是输入。SDK 在流水线结束时会流式校验输出 trailer 中的 CRC32 和 ISIZE，并与输入数据核对；独立基准仍应同时执行上面的 `gzip -dc | cmp`。如果只看到 `gzip -t` 通过而内容比较失败，说明 bitstream 或 DMA 数据路径有问题，不能记录为成功吞吐。
+
 输入文件必须是非空普通文件。`Ctrl-C` 会停止新的 H2C 提交、关闭阻塞的 XDMA stream，并尝试复位 FPGA datapath。
 
 ## 配置文件、环境变量和参数

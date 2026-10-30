@@ -54,6 +54,31 @@ func TestCompressReaderRejectsInvalidFPGAOutput(t *testing.T) {
 	}
 }
 
+func TestCompressReaderRejectsGzipWithWrongPayload(t *testing.T) {
+	input := bytes.Repeat([]byte("input"), 1024)
+	var output bytes.Buffer
+	_, err := CompressReader(context.Background(), bytes.NewReader(input), uint64(len(input)), &output, newMismatchedFakeHardware(), DefaultOptions(), nil)
+	if err == nil {
+		t.Fatal("CompressReader accepted a gzip stream for different input")
+	}
+	if output.Len() != 0 {
+		t.Fatalf("mismatched FPGA output leaked to destination: %d bytes", output.Len())
+	}
+}
+
+func TestCompressReaderAcceptsCompletedH2CTimeout(t *testing.T) {
+	input := bytes.Repeat([]byte("timeout-completion"), 1024)
+	var output bytes.Buffer
+	result, err := CompressReader(context.Background(), bytes.NewReader(input), uint64(len(input)), &output, newTimeoutFakeHardware(), DefaultOptions(), nil)
+	if err != nil {
+		t.Fatalf("completed H2C timeout was rejected: %v", err)
+	}
+	if result.InputBytes != uint64(len(input)) {
+		t.Fatalf("unexpected result: %+v", result)
+	}
+	assertGzipData(t, output.Bytes(), input)
+}
+
 func assertGzipData(t *testing.T, compressed, want []byte) {
 	t.Helper()
 	reader, err := gzip.NewReader(bytes.NewReader(compressed))
@@ -73,19 +98,30 @@ func assertGzipData(t *testing.T, compressed, want []byte) {
 }
 
 type fakeHardware struct {
-	mu       sync.Mutex
-	expected uint64
-	invalid  bool
-	input    []byte
-	output   []byte
-	read     int
-	request  uint32
-	status   uint32
+	mu         sync.Mutex
+	expected   uint64
+	invalid    bool
+	mismatched bool
+	timeout    bool
+	timedOut   bool
+	input      []byte
+	output     []byte
+	read       int
+	request    uint32
+	status     uint32
 }
 
 func newFakeHardware() *fakeHardware { return &fakeHardware{} }
 
 func newInvalidFakeHardware() *fakeHardware { return &fakeHardware{invalid: true} }
+
+func newMismatchedFakeHardware() *fakeHardware {
+	return &fakeHardware{mismatched: true}
+}
+
+func newTimeoutFakeHardware() *fakeHardware {
+	return &fakeHardware{timeout: true}
+}
 
 func (f *fakeHardware) WriteH2C(p []byte) (int, error) {
 	f.mu.Lock()
@@ -98,9 +134,13 @@ func (f *fakeHardware) WriteH2C(p []byte) (int, error) {
 		if f.invalid {
 			f.output = bytes.Repeat([]byte("0"), 32)
 		} else {
+			payload := f.input
+			if f.mismatched {
+				payload = []byte("payload from a different input")
+			}
 			var compressed bytes.Buffer
 			writer := gzip.NewWriter(&compressed)
-			if _, err := writer.Write(f.input); err != nil {
+			if _, err := writer.Write(payload); err != nil {
 				return 0, err
 			}
 			if err := writer.Close(); err != nil {
@@ -109,6 +149,10 @@ func (f *fakeHardware) WriteH2C(p []byte) (int, error) {
 			f.output = compressed.Bytes()
 		}
 		f.status = 1 << 1
+	}
+	if f.timeout && !f.timedOut {
+		f.timedOut = true
+		return len(p), fmt.Errorf("simulated XDMA completion timeout")
 	}
 	return len(p), nil
 }
@@ -151,6 +195,7 @@ func (f *fakeHardware) SoftReset(ctx context.Context, _ time.Duration) error {
 	f.read = 0
 	f.request = 0
 	f.status = 0
+	f.timedOut = false
 	return nil
 }
 
@@ -166,6 +211,7 @@ func (f *fakeHardware) Start(ctx context.Context, inputSize uint64, _ time.Durat
 	f.read = 0
 	f.request = 0
 	f.status = 1
+	f.timedOut = false
 	return nil
 }
 

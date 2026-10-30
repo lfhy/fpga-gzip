@@ -5,8 +5,10 @@ package pipeline
 
 import (
 	"context"
+	"encoding/binary"
 	"errors"
 	"fmt"
+	"hash/crc32"
 	"io"
 	"math"
 	"os"
@@ -24,6 +26,11 @@ const (
 	// rounded to a host page even though the packetizer filled the requested
 	// buffer and framed it with TLAST.
 	xdmaResultPageBytes = uint64(4096)
+	// XDMA can report a completed streaming H2C SG transfer as a write
+	// timeout even though the FPGA has already accepted the bytes. The C
+	// reference client gives the IN_BYTES counter a short grace period before
+	// treating that condition as a failed transaction.
+	xdmaCompletionGrace = 50 * time.Millisecond
 )
 
 // Options controls buffering, polling and timeout behavior.
@@ -39,7 +46,7 @@ type Options struct {
 	// MaxProcs is a validation/configuration field for standalone callers. The
 	// library does not call runtime.GOMAXPROCS because doing so would change the
 	// scheduler width of a hosting FUSE or HTTP process.
-	MaxProcs         int
+	MaxProcs int
 }
 
 // DefaultOptions uses the ring and H2C defaults validated for the bundled
@@ -145,6 +152,7 @@ func (p *bytePool) release(buf []byte) {
 
 type runStats struct {
 	fileLoaded   atomic.Uint64
+	inputCRC     atomic.Uint32
 	h2cSent      atomic.Uint64
 	fpgaInBytes  atomic.Uint64
 	fpgaOutBytes atomic.Uint64
@@ -343,7 +351,7 @@ func RunReader(ctx context.Context, input io.Reader, inputSize uint64, output io
 		}
 	}
 	if runErr == nil {
-		if err := validatedOutput.Validate(); err != nil {
+		if err := validatedOutput.Validate(stats.inputCRC.Load(), inputSize); err != nil {
 			runErr = err
 		}
 	}
@@ -359,9 +367,7 @@ func RunReader(ctx context.Context, input io.Reader, inputSize uint64, output io
 	<-interruptFinished
 
 	if runErr != nil {
-		if truncater, ok := output.(interface{ Truncate(int64) error }); ok {
-			_ = truncater.Truncate(0)
-		}
+		truncateOutput(output)
 		resetCtx, resetCancel := context.WithTimeout(context.Background(), opts.ResetTimeout)
 		resetErr := hw.SoftReset(resetCtx, opts.ResetTimeout)
 		resetCancel()
@@ -409,6 +415,17 @@ func RunReader(ctx context.Context, input io.Reader, inputSize uint64, output io
 	}, nil
 }
 
+func truncateOutput(output io.Writer) {
+	switch truncater := output.(type) {
+	case interface{ Truncate(int64) error }:
+		_ = truncater.Truncate(0)
+	case interface{ Truncate(int) error }:
+		_ = truncater.Truncate(0)
+	case interface{ Truncate(int) }:
+		truncater.Truncate(0)
+	}
+}
+
 func validateOptions(opts Options) error {
 	if opts.RingSlots <= 0 {
 		return errors.New("ring slots must be greater than zero")
@@ -434,6 +451,7 @@ func validateOptions(opts Options) error {
 func loadInput(ctx context.Context, input io.Reader, inputSize, slotSize uint64, tx chan<- chunk, pool *bytePool, stats *runStats) error {
 	defer close(tx)
 	var loaded uint64
+	crc := crc32.NewIEEE()
 	for loaded < inputSize {
 		wanted := slotSize
 		if remaining := inputSize - loaded; remaining < wanted {
@@ -448,6 +466,7 @@ func loadInput(ctx context.Context, input io.Reader, inputSize, slotSize uint64,
 			pool.release(buf)
 			return fmt.Errorf("read input at %d: %w", loaded, err)
 		}
+		_, _ = crc.Write(buf[:n])
 		loaded += uint64(n)
 		stats.fileLoaded.Store(loaded)
 		select {
@@ -457,6 +476,7 @@ func loadInput(ctx context.Context, input io.Reader, inputSize, slotSize uint64,
 			return ctx.Err()
 		}
 	}
+	stats.inputCRC.Store(crc.Sum32())
 	return nil
 }
 
@@ -481,11 +501,45 @@ func sendH2C(ctx context.Context, hw Hardware, inputSize uint64, tx <-chan chunk
 			err := writeAll(hw, item.data)
 			pool.release(item.data)
 			if err != nil {
+				if waitForH2CCompletion(ctx, hw, inputSize) {
+					sent = inputSize
+					stats.h2cSent.Store(sent)
+					stats.mark("last-h2c")
+					return drainPendingH2C(ctx, tx, pool)
+				}
 				return fmt.Errorf("XDMA H2C write: %w", err)
 			}
 			sent += uint64(len(item.data))
 			stats.h2cSent.Store(sent)
 			stats.mark("last-h2c")
+		}
+	}
+}
+
+func waitForH2CCompletion(ctx context.Context, hw Hardware, inputSize uint64) bool {
+	deadline := time.Now().Add(xdmaCompletionGrace)
+	for time.Now().Before(deadline) {
+		snapshot, err := hw.Snapshot(ctx)
+		if err == nil && snapshot.InBytes >= inputSize {
+			return true
+		}
+		if err := sleepContext(ctx, 100*time.Microsecond); err != nil {
+			return false
+		}
+	}
+	return false
+}
+
+func drainPendingH2C(ctx context.Context, tx <-chan chunk, pool *bytePool) error {
+	for {
+		select {
+		case item, ok := <-tx:
+			if !ok {
+				return nil
+			}
+			pool.release(item.data)
+		case <-ctx.Done():
+			return ctx.Err()
 		}
 	}
 }
@@ -662,17 +716,23 @@ func storeOutput(ctx context.Context, output io.Writer, rx <-chan chunk, pool *b
 	}
 }
 
-// gzipHeaderWriter rejects a successful FPGA transaction that did not produce
-// a gzip stream. XDMA and the shell expose status and byte counters separately
-// from payload correctness; checking the small fixed gzip header keeps a bad
-// bitstream from being accepted and stored as a valid chunk. The full stream
-// remains streamed directly to the caller without buffering it in memory.
+// gzipHeaderWriter validates a successful FPGA transaction as a complete gzip
+// stream. XDMA and the shell expose status and byte counters separately from
+// payload correctness, so checking the fixed header and the final gzip
+// trailer prevents a bad bitstream from being accepted and stored as a valid
+// chunk. The full stream remains streamed directly to the caller without
+// buffering it in memory. The caller supplies the CRC32 and size of the input
+// after the streaming pipeline has completed; this catches a valid gzip
+// container whose deflate payload contains the wrong bytes.
 type gzipHeaderWriter struct {
 	dst     io.Writer
 	header  [10]byte
 	seen    int
 	checked bool
 	err     error
+	tail    [8]byte
+	tailLen int
+	written uint64
 }
 
 func (w *gzipHeaderWriter) Write(p []byte) (int, error) {
@@ -715,6 +775,9 @@ func (w *gzipHeaderWriter) Write(p []byte) (int, error) {
 
 func (w *gzipHeaderWriter) write(p []byte) (int, error) {
 	n, err := w.dst.Write(p)
+	if n > 0 && n <= len(p) {
+		w.remember(p[:n])
+	}
 	if err != nil {
 		w.err = err
 		return n, err
@@ -726,12 +789,43 @@ func (w *gzipHeaderWriter) write(p []byte) (int, error) {
 	return n, nil
 }
 
-func (w *gzipHeaderWriter) Validate() error {
+func (w *gzipHeaderWriter) remember(p []byte) {
+	if len(p) == 0 {
+		return
+	}
+	w.written += uint64(len(p))
+	if len(p) >= len(w.tail) {
+		copy(w.tail[:], p[len(p)-len(w.tail):])
+		w.tailLen = len(w.tail)
+		return
+	}
+	if w.tailLen+len(p) > len(w.tail) {
+		shift := w.tailLen + len(p) - len(w.tail)
+		copy(w.tail[:w.tailLen-shift], w.tail[shift:w.tailLen])
+		w.tailLen -= shift
+	}
+	copy(w.tail[w.tailLen:], p)
+	w.tailLen += len(p)
+}
+
+func (w *gzipHeaderWriter) Validate(inputCRC uint32, inputSize uint64) error {
 	if w.err != nil {
 		return w.err
 	}
 	if !w.checked || w.seen < len(w.header) {
 		return errors.New("FPGA output is shorter than a gzip header")
+	}
+	if w.written < uint64(len(w.header)+len(w.tail)) || w.tailLen < len(w.tail) {
+		return errors.New("FPGA output is shorter than a gzip trailer")
+	}
+	gotCRC := binary.LittleEndian.Uint32(w.tail[:4])
+	gotSize := binary.LittleEndian.Uint32(w.tail[4:])
+	if gotCRC != inputCRC {
+		return fmt.Errorf("FPGA gzip CRC32 mismatch: got=0x%08x want=0x%08x", gotCRC, inputCRC)
+	}
+	wantSize := uint32(inputSize)
+	if gotSize != wantSize {
+		return fmt.Errorf("FPGA gzip ISIZE mismatch: got=%d want=%d", gotSize, wantSize)
 	}
 	return nil
 }
