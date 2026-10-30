@@ -21,11 +21,6 @@ import (
 
 const (
 	beatBytes = uint64(8)
-	// xdmaResultPageBytes is the maximum result-count discrepancy accepted by
-	// the reference XDMA client. The driver can report the final SG result
-	// rounded to a host page even though the packetizer filled the requested
-	// buffer and framed it with TLAST.
-	xdmaResultPageBytes = uint64(4096)
 	// XDMA can report a completed streaming H2C SG transfer as a write
 	// timeout even though the FPGA has already accepted the bytes. The C
 	// reference client gives the IN_BYTES counter a short grace period before
@@ -639,23 +634,13 @@ func receiveC2H(ctx context.Context, hw Hardware, opts Options, rx chan<- chunk,
 				return fmt.Errorf("XDMA C2H read (%d bytes): %w", request, err)
 			}
 			if n != int(request) {
-				reported := uint64(n)
-				requested := request
-				var discrepancy uint64
-				if reported > requested {
-					discrepancy = reported - requested
-				} else {
-					discrepancy = requested - reported
-				}
-				// XDMA's streaming result count can differ from the requested
-				// packet by less than one host page. The reference C client
-				// treats this as accounting noise: the packetizer's TLAST still
-				// framed the requested buffer. Larger discrepancies indicate a
-				// real protocol error and must not be followed by another read.
-				if n < 0 || discrepancy >= xdmaResultPageBytes {
-					pool.release(buf)
-					return fmt.Errorf("C2H packet length mismatch: requested=%d received=%d", request, n)
-				}
+				// A short read leaves part of the DMA buffer unconfirmed. Do not
+				// pass that tail to the gzip writer: historical C runs accepted a
+				// sub-page discrepancy and produced a syntactically valid stream
+				// with corrupted payload bytes. A packetizer/driver count mismatch
+				// is a hardware failure and must trigger the caller's fallback.
+				pool.release(buf)
+				return fmt.Errorf("C2H packet length mismatch: requested=%d received=%d", request, n)
 			}
 			received += request
 			stats.c2hReceived.Store(received)

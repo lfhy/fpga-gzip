@@ -79,6 +79,18 @@ func TestCompressReaderAcceptsCompletedH2CTimeout(t *testing.T) {
 	assertGzipData(t, output.Bytes(), input)
 }
 
+func TestCompressReaderRejectsC2HShortRead(t *testing.T) {
+	input := bytes.Repeat([]byte("short-read"), 1024)
+	var output bytes.Buffer
+	_, err := CompressReader(context.Background(), bytes.NewReader(input), uint64(len(input)), &output, newShortReadFakeHardware(), DefaultOptions(), nil)
+	if err == nil {
+		t.Fatal("CompressReader accepted a short C2H packet")
+	}
+	if output.Len() != 0 {
+		t.Fatalf("short C2H packet leaked to destination: %d bytes", output.Len())
+	}
+}
+
 func assertGzipData(t *testing.T, compressed, want []byte) {
 	t.Helper()
 	reader, err := gzip.NewReader(bytes.NewReader(compressed))
@@ -104,6 +116,7 @@ type fakeHardware struct {
 	mismatched bool
 	timeout    bool
 	timedOut   bool
+	shortRead  bool
 	input      []byte
 	output     []byte
 	read       int
@@ -121,6 +134,10 @@ func newMismatchedFakeHardware() *fakeHardware {
 
 func newTimeoutFakeHardware() *fakeHardware {
 	return &fakeHardware{timeout: true}
+}
+
+func newShortReadFakeHardware() *fakeHardware {
+	return &fakeHardware{shortRead: true}
 }
 
 func (f *fakeHardware) WriteH2C(p []byte) (int, error) {
@@ -169,6 +186,9 @@ func (f *fakeHardware) ReadC2H(p []byte) (int, error) {
 	copy(p, f.output[f.read:])
 	f.read += len(p)
 	f.request = 0
+	if f.shortRead {
+		return len(p) - 1, nil
+	}
 	return len(p), nil
 }
 

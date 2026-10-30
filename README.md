@@ -197,7 +197,7 @@ sudo -E ./bin/fpga-gzip --config config.toml --output result.gz
 | `0x20` | `C2H_REQ_LEN` | 下一次 C2H packet 请求长度 |
 | `0x24` | `DEBUG` | shell 调试状态 |
 
-每个 C2H 请求先写 `C2H_REQ_LEN`，再写 `CTRL.C2H_START`，然后对 `/dev/xdma0_c2h_0` 执行一次等长 `read()`。本机 `shorttail72` shell 的默认请求为 32 KiB，并按 8 字节 beat 对齐；最后一个请求可以携带 partial beat。256 KiB 在这块卡上可能触发 C2H/H2C 超时，换了 RTL 后应重新验证请求粒度。XDMA 驱动偶尔会把最后一个 SG 结果按页边界计数，SDK 对小于 4 KiB 的差异按 packetizer 的 TLAST 处理；更大的差异仍会报协议错误。
+每个 C2H 请求先写 `C2H_REQ_LEN`，再写 `CTRL.C2H_START`，然后对 `/dev/xdma0_c2h_0` 执行一次等长 `read()`。本机 `shorttail72` shell 的默认请求为 32 KiB，并按 8 字节 beat 对齐；最后一个请求可以携带 partial beat。256 KiB 在这块卡上可能触发 C2H/H2C 超时，换了 RTL 后应重新验证请求粒度。SDK 要求每次 `read()` 精确返回请求长度；短读或超读都会报协议错误，避免把未确认的 DMA buffer 尾部写入 gzip。历史 C 版本曾放宽小于 4 KiB 的差异，这会产生 `gzip -t` 通过但 payload 损坏的输出。
 
 这个协议是 bitstream 专用协议。换成其他 FPGA shell 时，必须同时调整寄存器映射、状态位和数据包语义。
 
