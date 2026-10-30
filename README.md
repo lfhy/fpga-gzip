@@ -256,6 +256,32 @@ curl http://127.0.0.1:9080/healthz
 curl http://127.0.0.1:9080/metrics
 ```
 
+认证默认关闭。需要保护压缩和指标接口时，为 daemon 设置一个 token；`/healthz` 始终保持公开，便于服务管理器探活：
+
+```bash
+sudo ./fpga-gzipd --unix /run/fpga-gzip.sock --auth-token 'change-me'
+curl --unix-socket /run/fpga-gzip.sock \
+  -H 'Authorization: Bearer change-me' \
+  --data-binary @input.bin -o output.gz \
+  http://localhost/compress
+curl --unix-socket /run/fpga-gzip.sock \
+  -H 'Authorization: Bearer change-me' \
+  http://localhost/metrics
+```
+
+也可以通过环境变量 `FPGA_GZIPD_AUTH_TOKEN` 或 daemon 配置文件中的 `auth_token` 设置。没有设置 token 时不会发送或校验认证头。Go 客户端支持同一个可选配置：
+
+```go
+c, err := client.NewUnix(
+	"/run/fpga-gzip.sock",
+	client.WithAuth("change-me"),
+)
+if err != nil {
+	log.Fatal(err)
+}
+defer c.CloseIdleConnections()
+```
+
 服务按请求创建新的 XDMA 句柄，默认单并发并带有限队列；`--workers` 只有在工厂为每个 worker 提供独立 H2C/C2H stream 时才应增加。客户端断开连接会取消流水线并关闭阻塞的 DMA I/O。`server.Config` 可直接嵌入已有 daemon，`Server.Handler()` 也可挂到自有 `http.Server`。
 
 其他 Go 程序可以使用公开的 `client` 包连接 daemon；`client.NewUnix` 和 `client.NewTCP` 会复用 HTTP 连接，`Client.Compress` 只需要一个已知长度的 `io.Reader` 和输出 `io.Writer`。

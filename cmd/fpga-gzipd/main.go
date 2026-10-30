@@ -40,6 +40,7 @@ type daemonConfig struct {
 	MaxConcurrent  uint
 	QueueDepth     uint
 	MaxInputText   string
+	AuthToken      string
 }
 
 // timeDuration is a named alias so the flag package can bind it through its
@@ -110,6 +111,10 @@ func run() int {
 	options.MaxProcs = int(cfg.MaxProcs)
 
 	paths := device.Paths{User: cfg.User, H2C: cfg.H2C, C2H: cfg.C2H}
+	serverOptions := make([]server.Option, 0, 1)
+	if cfg.AuthToken != "" {
+		serverOptions = append(serverOptions, server.WithAuth(cfg.AuthToken))
+	}
 	svc, err := server.New(server.Config{
 		HardwareFactory: func(context.Context) (pipeline.Hardware, error) {
 			return device.Open(paths)
@@ -118,7 +123,7 @@ func run() int {
 		MaxConcurrent: int(cfg.MaxConcurrent),
 		QueueDepth:    int(cfg.QueueDepth),
 		MaxInputBytes: maxInput,
-	})
+	}, serverOptions...)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "创建服务失败: %v\n", err)
 		return 1
@@ -206,6 +211,7 @@ func parseConfig(args []string) (daemonConfig, error) {
 	fs.UintFullVar(&cfg.MaxConcurrent, "workers", "daemon", "workers", "FPGA_GZIPD_WORKERS", cfg.MaxConcurrent, "independent FPGA streams")
 	fs.UintFullVar(&cfg.QueueDepth, "queue-depth", "daemon", "queue_depth", "FPGA_GZIPD_QUEUE_DEPTH", cfg.QueueDepth, "queued requests")
 	fs.StringFullVar(&cfg.MaxInputText, "max-input-bytes", "daemon", "max_input_bytes", "FPGA_GZIPD_MAX_INPUT_BYTES", cfg.MaxInputText, "maximum request size; zero means unlimited")
+	fs.StringFullVar(&cfg.AuthToken, "auth-token", "daemon", "auth_token", "FPGA_GZIPD_AUTH_TOKEN", "", "optional Bearer token; empty disables authentication")
 	if err := fs.Parse(args); err != nil {
 		return daemonConfig{}, err
 	}

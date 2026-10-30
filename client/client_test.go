@@ -48,3 +48,28 @@ func TestNewUnixRejectsEmptyPath(t *testing.T) {
 		t.Fatal("empty Unix path was accepted")
 	}
 }
+
+func TestWithAuthAddsBearerToken(t *testing.T) {
+	service := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Header.Get("Authorization"); got != "Bearer secret" {
+			t.Fatalf("authorization = %q, want Bearer secret", got)
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok"))
+	}))
+	defer service.Close()
+
+	c, err := NewHTTP(service.URL, service.Client(), WithAuth(" secret "))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := c.Health(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestWithAuthRejectsEmptyToken(t *testing.T) {
+	if _, err := NewHTTP("http://localhost", nil, WithAuth("  ")); err == nil {
+		t.Fatal("empty auth token was accepted")
+	}
+}

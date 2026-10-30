@@ -66,3 +66,54 @@ func TestNewRejectsInvalidQueue(t *testing.T) {
 		t.Fatal("negative queue depth was accepted")
 	}
 }
+
+func TestWithAuthProtectsCompressionAndMetrics(t *testing.T) {
+	svc, err := New(Config{
+		HardwareFactory: func(context.Context) (pipeline.Hardware, error) {
+			return nil, errors.New("test hardware unavailable")
+		},
+	}, WithAuth("secret"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	probe := httptest.NewRecorder()
+	svc.Handler().ServeHTTP(probe, httptest.NewRequest(http.MethodGet, "/healthz", nil))
+	if probe.Code != http.StatusOK {
+		t.Fatalf("health status = %d, want %d", probe.Code, http.StatusOK)
+	}
+
+	unauthorized := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodPost, "/compress", strings.NewReader("abc"))
+	request.ContentLength = 3
+	svc.Handler().ServeHTTP(unauthorized, request)
+	if unauthorized.Code != http.StatusUnauthorized {
+		t.Fatalf("unauthorized status = %d, want %d", unauthorized.Code, http.StatusUnauthorized)
+	}
+
+	wrong := httptest.NewRecorder()
+	request = httptest.NewRequest(http.MethodPost, "/compress", strings.NewReader("abc"))
+	request.ContentLength = 3
+	request.Header.Set("Authorization", "Bearer wrong")
+	svc.Handler().ServeHTTP(wrong, request)
+	if wrong.Code != http.StatusUnauthorized {
+		t.Fatalf("wrong token status = %d, want %d", wrong.Code, http.StatusUnauthorized)
+	}
+
+	metrics := httptest.NewRecorder()
+	metricsRequest := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+	metricsRequest.Header.Set("Authorization", "Bearer secret")
+	svc.Handler().ServeHTTP(metrics, metricsRequest)
+	if metrics.Code != http.StatusOK || !strings.Contains(metrics.Body.String(), "fpga_gzip_failures_total 2\n") {
+		t.Fatalf("authorized metrics = %d %q", metrics.Code, metrics.Body.String())
+	}
+}
+
+func TestWithAuthRejectsEmptyToken(t *testing.T) {
+	_, err := New(Config{
+		HardwareFactory: func(context.Context) (pipeline.Hardware, error) { return nil, nil },
+	}, WithAuth("  "))
+	if err == nil {
+		t.Fatal("empty auth token was accepted")
+	}
+}

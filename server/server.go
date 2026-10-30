@@ -8,12 +8,15 @@ package server
 
 import (
 	"context"
+	"crypto/sha256"
+	"crypto/subtle"
 	"errors"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"os"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -46,6 +49,24 @@ type Config struct {
 	MaxInputBytes int64
 }
 
+// Option customizes a Server without changing the transport or pipeline
+// configuration. Options are applied at construction time.
+type Option func(*Server) error
+
+// WithAuth enables Bearer-token authentication for /compress and /metrics.
+// Authentication is disabled by default. /healthz remains public for load
+// balancer and service-manager probes.
+func WithAuth(token string) Option {
+	return func(s *Server) error {
+		token = strings.TrimSpace(token)
+		if token == "" {
+			return errors.New("auth token cannot be empty")
+		}
+		s.authToken = token
+		return nil
+	}
+}
+
 // Server is an HTTP handler and listener lifecycle for the compression daemon.
 type Server struct {
 	cfg Config
@@ -53,6 +74,7 @@ type Server struct {
 	admission chan struct{}
 	workers   chan struct{}
 	handler   http.Handler
+	authToken string
 
 	requests  atomic.Uint64
 	successes atomic.Uint64
@@ -65,7 +87,7 @@ type Server struct {
 
 // New validates config and creates a service. A zero Options value selects the
 // SDK defaults; non-zero options are passed to pipeline.RunReader unchanged.
-func New(cfg Config) (*Server, error) {
+func New(cfg Config, options ...Option) (*Server, error) {
 	if cfg.HardwareFactory == nil {
 		return nil, errors.New("hardware factory is required")
 	}
@@ -90,6 +112,14 @@ func New(cfg Config) (*Server, error) {
 		cfg:       cfg,
 		admission: make(chan struct{}, capacity),
 		workers:   make(chan struct{}, cfg.MaxConcurrent),
+	}
+	for _, option := range options {
+		if option == nil {
+			continue
+		}
+		if err := option(s); err != nil {
+			return nil, err
+		}
 	}
 	s.handler = s.newHandler()
 	return s, nil
@@ -213,6 +243,9 @@ func (s *Server) handleMetrics(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
+	if !s.authorize(w, r) {
+		return
+	}
 	w.Header().Set("Content-Type", "text/plain; version=0.0.4")
 	fmt.Fprintf(w, "fpga_gzip_requests_total %d\n", s.requests.Load())
 	fmt.Fprintf(w, "fpga_gzip_success_total %d\n", s.successes.Load())
@@ -230,6 +263,10 @@ func (s *Server) handleCompress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.requests.Add(1)
+	if !s.authorize(w, r) {
+		s.failures.Add(1)
+		return
+	}
 	if r.ContentLength < 1 {
 		s.failures.Add(1)
 		writeServiceError(w, http.StatusLengthRequired, ErrContentLength)
@@ -302,6 +339,28 @@ func (s *Server) admit(ctx context.Context) bool {
 	default:
 		return false
 	}
+}
+
+func (s *Server) authorize(w http.ResponseWriter, r *http.Request) bool {
+	if s.authToken == "" {
+		return true
+	}
+	const bearer = "Bearer "
+	header := strings.TrimSpace(r.Header.Get("Authorization"))
+	if !strings.HasPrefix(header, bearer) {
+		w.Header().Set("WWW-Authenticate", `Bearer realm="fpga-gzip"`)
+		writeServiceError(w, http.StatusUnauthorized, errors.New("Bearer token required"))
+		return false
+	}
+	provided := strings.TrimSpace(strings.TrimPrefix(header, bearer))
+	wantHash := sha256.Sum256([]byte(s.authToken))
+	gotHash := sha256.Sum256([]byte(provided))
+	if subtle.ConstantTimeCompare(wantHash[:], gotHash[:]) != 1 {
+		w.Header().Set("WWW-Authenticate", `Bearer realm="fpga-gzip"`)
+		writeServiceError(w, http.StatusUnauthorized, errors.New("invalid Bearer token"))
+		return false
+	}
+	return true
 }
 
 type commitWriter struct {

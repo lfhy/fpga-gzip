@@ -16,8 +16,25 @@ import (
 
 // Client talks to one fpga-gzipd endpoint.
 type Client struct {
-	baseURL string
-	http    *http.Client
+	baseURL   string
+	http      *http.Client
+	authToken string
+}
+
+// Option customizes a Client at construction time.
+type Option func(*Client) error
+
+// WithAuth configures an optional Bearer token for daemon requests. An empty
+// token is rejected; omit this option to leave authentication disabled.
+func WithAuth(token string) Option {
+	return func(c *Client) error {
+		token = strings.TrimSpace(token)
+		if token == "" {
+			return errors.New("auth token cannot be empty")
+		}
+		c.authToken = token
+		return nil
+	}
 }
 
 // Result describes one completed service request.
@@ -27,15 +44,15 @@ type Result struct {
 }
 
 // NewTCP creates a client for a daemon listening on host:port.
-func NewTCP(addr string) (*Client, error) {
+func NewTCP(addr string, options ...Option) (*Client, error) {
 	if strings.TrimSpace(addr) == "" {
 		return nil, errors.New("TCP address is empty")
 	}
-	return NewHTTP("http://"+addr, nil)
+	return NewHTTP("http://"+addr, nil, options...)
 }
 
 // NewUnix creates a client using a Unix-domain socket.
-func NewUnix(path string) (*Client, error) {
+func NewUnix(path string, options ...Option) (*Client, error) {
 	if strings.TrimSpace(path) == "" {
 		return nil, errors.New("Unix socket path is empty")
 	}
@@ -45,16 +62,20 @@ func NewUnix(path string) (*Client, error) {
 			return (&net.Dialer{Timeout: 10 * time.Second}).DialContext(ctx, "unix", path)
 		},
 	}
-	return &Client{
+	c := &Client{
 		baseURL: "http://fpga-gzipd",
 		http:    &http.Client{Transport: transport},
-	}, nil
+	}
+	if err := applyOptions(c, options); err != nil {
+		return nil, err
+	}
+	return c, nil
 }
 
 // NewHTTP creates a client from an HTTP base URL. If hc is nil, a client with
 // a default transport is used. This is useful for tests and for callers that
 // already configure TLS, proxies or connection pooling.
-func NewHTTP(baseURL string, hc *http.Client) (*Client, error) {
+func NewHTTP(baseURL string, hc *http.Client, options ...Option) (*Client, error) {
 	baseURL = strings.TrimRight(strings.TrimSpace(baseURL), "/")
 	if baseURL == "" {
 		return nil, errors.New("HTTP base URL is empty")
@@ -62,7 +83,23 @@ func NewHTTP(baseURL string, hc *http.Client) (*Client, error) {
 	if hc == nil {
 		hc = &http.Client{}
 	}
-	return &Client{baseURL: baseURL, http: hc}, nil
+	c := &Client{baseURL: baseURL, http: hc}
+	if err := applyOptions(c, options); err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
+func applyOptions(c *Client, options []Option) error {
+	for _, option := range options {
+		if option == nil {
+			continue
+		}
+		if err := option(c); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // CloseIdleConnections releases pooled TCP or Unix transport connections.
@@ -84,6 +121,7 @@ func (c *Client) Health(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	c.authorize(req)
 	resp, err := c.http.Do(req)
 	if err != nil {
 		return err
@@ -114,6 +152,7 @@ func (c *Client) Compress(ctx context.Context, src io.Reader, inputSize int64, d
 	}
 	req.ContentLength = inputSize
 	req.Header.Set("Content-Type", "application/octet-stream")
+	c.authorize(req)
 	resp, err := c.http.Do(req)
 	if err != nil {
 		return Result{}, err
@@ -128,4 +167,10 @@ func (c *Client) Compress(ctx context.Context, src io.Reader, inputSize int64, d
 		return Result{}, err
 	}
 	return Result{InputBytes: inputSize, OutputBytes: written}, nil
+}
+
+func (c *Client) authorize(req *http.Request) {
+	if c.authToken != "" {
+		req.Header.Set("Authorization", "Bearer "+c.authToken)
+	}
 }
