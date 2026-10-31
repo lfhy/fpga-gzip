@@ -1,6 +1,8 @@
 # fpga-gzip
 
-`fpga-gzip` 是一个纯 Go 的 FPGA gzip 主机端 SDK 和命令行工具。它直接访问 Xilinx XDMA 字符设备和 FPGA user BAR，不依赖 cgo、XRT 或厂商用户态库。当前实现对应本机已经验证过的 gzip shell：一个 H2C streaming 通道、一个 C2H streaming 通道，以及 user BAR 上的 gzip 控制寄存器。
+`fpga-gzip` 是一个纯 Go 的 FPGA gzip 主机端 SDK 和命令行工具。它直接访问 Xilinx XDMA 字符设备和 FPGA user BAR，不依赖 cgo、XRT 或厂商用户态库。当前实现对应本机已验证的 gzip shell：每核一对 H2C/C2H streaming 通道，以及 user BAR 上独立的 gzip 控制寄存器；支持显式选择四核并行。
+
+2026-11-01 源码增加寄存器分区、独立通道租借和四核 daemon，尚未发布为新版本。带不同核心标签的 4 MiB 数据内存压缩中位数为单核约 435、四核约 3059 MiB/s；compactfs 10 GiB 含后台排空的结果、边界与恢复验证见[四核压缩优化](docs/multicore-20261101.md)。这组数据使用约 50% 可压缩输入，不能替代随机输入或长流指标。
 
 2026-10-31 已在本机修补后的 RTL 和 XDMA 驱动上验证：10 GiB 随机数据完整压缩、解压并逐字节比较通过。
 Go 默认抢占可正常使用；安装时应应用 [`DMA 等待补丁`](docs/driver-install.md)，避免 SIGURG 导致驱动提前中止传输。
@@ -306,7 +308,7 @@ if err != nil {
 defer c.CloseIdleConnections()
 ```
 
-服务按请求创建新的 XDMA 句柄，默认单并发并带有限队列；`--workers` 只有在工厂为每个 worker 提供独立 H2C/C2H stream 时才应增加。客户端断开连接会取消流水线并关闭阻塞的 DMA I/O。`server.Config` 可直接嵌入已有 daemon，`Server.Handler()` 也可挂到自有 `http.Server`。
+服务按请求创建新的 XDMA 句柄，默认使用单核并带有限队列。已验证四核 shell 可指定 `--cores 4 --workers 4 --max-procs 8`，通道池保证同一核不会同时接收两个请求；仅提高 `--workers` 不会把一个 DMA 通道变成多个独立压缩核。客户端断开连接会取消流水线并关闭阻塞的 DMA I/O。`server.Config` 可直接嵌入已有 daemon，`Server.Handler()` 也可挂到自有 `http.Server`。
 
 其他 Go 程序可以使用公开的 `client` 包连接 daemon；`client.NewUnix` 和 `client.NewTCP` 会复用 HTTP 连接，`Client.Compress` 只需要一个已知长度的 `io.Reader` 和输出 `io.Writer`。
 

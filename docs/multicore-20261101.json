@@ -1,0 +1,964 @@
+{
+  "schema": 1,
+  "date_local": "2026-11-01",
+  "timezone": "Asia/Shanghai",
+  "suite": "/data1/fpga-compression-optimize-20261031-235541",
+  "unit": "MiB/s = 2^20 input bytes/s",
+  "hardware": {
+    "fpga": "KU5P FPGA-4IP, four independent gzip cores",
+    "pci_address": "0000:39:00.0",
+    "fpga_numa_node": 0,
+    "register_bases": [
+      0,
+      4096,
+      8192,
+      12288
+    ],
+    "data1": "/dev/nvme3n1, XFS",
+    "xdma_poll_mode": 0,
+    "bitstream": "/root/FPGA-4IP/qz01_compress_4ip/validated/20261031/qz01_gzip_4ip_8k8lane_ml2_bramfifo_rtlonly.bit",
+    "bitstream_sha256": "4212930e4411036afb950766c2b7d0cb8a411f862fd6960071f345513e8b7dbf",
+    "bitstream_changed_this_task": false,
+    "cpu": "2 x Intel Xeon Gold 6336Y, 96 logical CPUs",
+    "kernel": "6.12.0-211.69.1.el10_2.x86_64",
+    "go": "go version go1.26.0 linux/amd64",
+    "fio": "fio-3.36"
+  },
+  "source": {
+    "initial_sdk": "f0512ce",
+    "initial_compactfs": "8d7df4c",
+    "core_comparison_sdk": "59bc080",
+    "core_comparison_compactfs": "5a0a45a",
+    "final_speed_sdk": "e7a958e",
+    "final_speed_compactfs": "5e52b6c",
+    "deployed_smoke_sdk": "603404e",
+    "deployed_smoke_compactfs": "5e52b6c",
+    "published_dependency_unchanged": "github.com/lfhy/fpga-gzip v0.0.2"
+  },
+  "method": {
+    "fio_input_bytes": 10737418240,
+    "fio_block": "1MiB",
+    "fio_ioengine": "libaio",
+    "fio_direct": true,
+    "fio_iodepth": 32,
+    "fio_jobs": 1,
+    "fio_pattern": "buffer_compress_percentage=50, chunk=4096; refill+scramble; seed=20261031",
+    "verify": "CRC32C over complete 10 GiB, also fresh-cache backend-only decode",
+    "chunk_bytes": 4194304,
+    "writeback": "raw cache, local fsync; separate wait to backend drain",
+    "cache_and_backend": "new isolated directories on /data1",
+    "page_cache": "retained",
+    "prediction": "deflate, 128KiB sample, threshold0.94",
+    "single_worker_procs": 4,
+    "quad_worker_procs": 8,
+    "worker_concurrency": 4,
+    "h2c_slots": 4,
+    "h2c_slot_bytes": 1048576,
+    "c2h_request_bytes": 32768,
+    "ab_order": "single then quad, repeated three times, same binary with original reset",
+    "final_order": "three quad runs after state-based reset; separate measurement window",
+    "memory_fixture": "/data1/compactfs-output-read-20261031-154041-fmjve2n4/compactfs-sdk-v0.0.2-20261031-154048-cq5kka6s/cpu/backend/chunks/xxh3-128/2e/05/2e05bbbfa4e774eb942dd905e3f28319",
+    "memory_fixture_sha256": "4a7617f5289132c7bfc19fd56c173069ddb93d8a763b09423900ca907d84f21d",
+    "memory_fixture_decoded_bytes": 4194304,
+    "memory_window": "whole group device opens/closes and compression; outputs preallocated RAM; full gzip decode and byte comparison outside compression timer",
+    "memory_inputs": "distinct 8-byte per-core/per-round tags; 16 chunks per core per round"
+  },
+  "filesystem": {
+    "single": {
+      "runs": 3,
+      "fio_front_mib_s": {
+        "median": 1839.410813331604,
+        "min": 1695.6449737548828,
+        "max": 1852.7229957580566,
+        "rounds": [
+          1695.6449737548828,
+          1839.410813331604,
+          1852.7229957580566
+        ]
+      },
+      "write_and_backend_mib_s": {
+        "median": 425.54147682696373,
+        "min": 423.60182382731915,
+        "max": 430.9237662159736,
+        "rounds": [
+          425.54147682696373,
+          423.60182382731915,
+          430.9237662159736
+        ]
+      },
+      "fuse_cpu_seconds": {
+        "median": 7.12,
+        "min": 7.07,
+        "max": 7.46,
+        "rounds": [
+          7.46,
+          7.12,
+          7.07
+        ]
+      },
+      "worker_cpu_seconds": {
+        "median": 22.28,
+        "min": 21.16,
+        "max": 23.5,
+        "rounds": [
+          22.28,
+          23.5,
+          21.16
+        ]
+      },
+      "worker_peak_rss_mib": {
+        "median": 87.0234375,
+        "min": 82.10546875,
+        "max": 88.58984375,
+        "rounds": [
+          88.58984375,
+          82.10546875,
+          87.0234375
+        ]
+      },
+      "raw_hot_read_mib_s": {
+        "median": 6657.997398376465,
+        "min": 6585.209002494812,
+        "max": 6679.712980270386,
+        "rounds": [
+          6657.997398376465,
+          6679.712980270386,
+          6585.209002494812
+        ]
+      },
+      "backend_decode_mib_s": {
+        "median": 649.7049674987793,
+        "min": 648.634952545166,
+        "max": 650.5304613113403,
+        "rounds": [
+          649.7049674987793,
+          648.634952545166,
+          650.5304613113403
+        ]
+      },
+      "stored_fraction": {
+        "median": 0.5363559431396425,
+        "min": 0.5363559349440038,
+        "max": 0.5363559535704553,
+        "rounds": [
+          0.5363559349440038,
+          0.5363559535704553,
+          0.5363559431396425
+        ]
+      },
+      "encoded_chunks_per_run": 2560,
+      "backend_new_objects_per_run": 2560,
+      "cpu_fallbacks": 0,
+      "binary_sha256": "8f1a513795f1158c770144d4725821a5803bbba1820077bfc6ac2dc97fcb47cf"
+    },
+    "quad": {
+      "runs": 3,
+      "fio_front_mib_s": {
+        "median": 1619.9968357086182,
+        "min": 1537.5375366210938,
+        "max": 1666.6666660308838,
+        "rounds": [
+          1666.6666660308838,
+          1537.5375366210938,
+          1619.9968357086182
+        ]
+      },
+      "write_and_backend_mib_s": {
+        "median": 1363.6735560653,
+        "min": 1335.7871067626932,
+        "max": 1364.171805249057,
+        "rounds": [
+          1335.7871067626932,
+          1363.6735560653,
+          1364.171805249057
+        ]
+      },
+      "fuse_cpu_seconds": {
+        "median": 7.95,
+        "min": 7.91,
+        "max": 8.38,
+        "rounds": [
+          7.95,
+          8.38,
+          7.91
+        ]
+      },
+      "worker_cpu_seconds": {
+        "median": 22.83,
+        "min": 22.7,
+        "max": 23.84,
+        "rounds": [
+          23.84,
+          22.83,
+          22.7
+        ]
+      },
+      "worker_peak_rss_mib": {
+        "median": 140.83984375,
+        "min": 132.08203125,
+        "max": 143.7734375,
+        "rounds": [
+          140.83984375,
+          132.08203125,
+          143.7734375
+        ]
+      },
+      "raw_hot_read_mib_s": {
+        "median": 6666.666666030884,
+        "min": 6623.5446310043335,
+        "max": 6675.358539581299,
+        "rounds": [
+          6623.5446310043335,
+          6666.666666030884,
+          6675.358539581299
+        ]
+      },
+      "backend_decode_mib_s": {
+        "median": 647.8552446365356,
+        "min": 647.2410087585449,
+        "max": 650.5304613113403,
+        "rounds": [
+          650.5304613113403,
+          647.2410087585449,
+          647.8552446365356
+        ]
+      },
+      "stored_fraction": {
+        "median": 0.5363559565506876,
+        "min": 0.5363559357821941,
+        "max": 0.5363559861667454,
+        "rounds": [
+          0.5363559565506876,
+          0.5363559861667454,
+          0.5363559357821941
+        ]
+      },
+      "encoded_chunks_per_run": 2560,
+      "backend_new_objects_per_run": 2560,
+      "cpu_fallbacks": 0,
+      "binary_sha256": "8f1a513795f1158c770144d4725821a5803bbba1820077bfc6ac2dc97fcb47cf"
+    },
+    "quad-final": {
+      "runs": 3,
+      "fio_front_mib_s": {
+        "median": 1605.0156736373901,
+        "min": 1567.1870212554932,
+        "max": 1641.814974784851,
+        "rounds": [
+          1641.814974784851,
+          1605.0156736373901,
+          1567.1870212554932
+        ]
+      },
+      "write_and_backend_mib_s": {
+        "median": 1475.9768110159253,
+        "min": 1455.7700905325696,
+        "max": 1478.064739175037,
+        "rounds": [
+          1475.9768110159253,
+          1455.7700905325696,
+          1478.064739175037
+        ]
+      },
+      "fuse_cpu_seconds": {
+        "median": 8.13,
+        "min": 8.07,
+        "max": 8.16,
+        "rounds": [
+          8.07,
+          8.13,
+          8.16
+        ]
+      },
+      "worker_cpu_seconds": {
+        "median": 22.99,
+        "min": 22.84,
+        "max": 23.54,
+        "rounds": [
+          22.99,
+          23.54,
+          22.84
+        ]
+      },
+      "worker_peak_rss_mib": {
+        "median": 139.5,
+        "min": 139.234375,
+        "max": 139.89453125,
+        "rounds": [
+          139.234375,
+          139.5,
+          139.89453125
+        ]
+      },
+      "raw_hot_read_mib_s": {
+        "median": 6623.5446310043335,
+        "min": 6416.040100097656,
+        "max": 6623.5446310043335,
+        "rounds": [
+          6416.040100097656,
+          6623.5446310043335,
+          6623.5446310043335
+        ]
+      },
+      "backend_decode_mib_s": {
+        "median": 649.4989213943481,
+        "min": 645.0800046920776,
+        "max": 649.6637477874756,
+        "rounds": [
+          645.0800046920776,
+          649.4989213943481,
+          649.6637477874756
+        ]
+      },
+      "stored_fraction": {
+        "median": 0.5363559544086456,
+        "min": 0.536355943698436,
+        "max": 0.5363559741526842,
+        "rounds": [
+          0.536355943698436,
+          0.5363559544086456,
+          0.5363559741526842
+        ]
+      },
+      "encoded_chunks_per_run": 2560,
+      "backend_new_objects_per_run": 2560,
+      "cpu_fallbacks": 0,
+      "binary_sha256": "250ecf96bab0c4a9d2054b5f093c7290f981a152e940aaec9f9a7534af666385"
+    }
+  },
+  "memory": {
+    "cores-distinct.json": {
+      "cases": {
+        "cores1-procs4": {
+          "mib_s": {
+            "median": 427.9346026595788,
+            "min": 424.1925382358538,
+            "max": 430.93552547362236,
+            "rounds": [
+              430.93552547362236,
+              427.9346026595788,
+              424.1925382358538
+            ]
+          },
+          "bytes_per_round": 67108864,
+          "iterations_per_core": 16
+        },
+        "cores2-procs8": {
+          "mib_s": {
+            "median": 907.5390431095509,
+            "min": 890.8873285817068,
+            "max": 1016.301612847634,
+            "rounds": [
+              1016.301612847634,
+              907.5390431095509,
+              890.8873285817068
+            ]
+          },
+          "bytes_per_round": 134217728,
+          "iterations_per_core": 16
+        },
+        "cores4-procs8": {
+          "mib_s": {
+            "median": 2481.623793917507,
+            "min": 2475.6216302836838,
+            "max": 2526.053129804496,
+            "rounds": [
+              2526.053129804496,
+              2475.6216302836838,
+              2481.623793917507
+            ]
+          },
+          "bytes_per_round": 268435456,
+          "iterations_per_core": 16
+        },
+        "cores4-procs16": {
+          "mib_s": {
+            "median": 2523.6817962179,
+            "min": 2391.4834714815174,
+            "max": 2589.0473507229126,
+            "rounds": [
+              2391.4834714815174,
+              2523.6817962179,
+              2589.0473507229126
+            ]
+          },
+          "bytes_per_round": 268435456,
+          "iterations_per_core": 16
+        }
+      },
+      "raw_results": [
+        {
+          "Round": 1,
+          "Cores": 1,
+          "Procs": 4,
+          "Bytes": 67108864,
+          "Seconds": 0.148514096,
+          "MiBs": 430.93552547362236,
+          "CoreMiBs": [
+            432.35886423460795
+          ],
+          "Output": 35990000,
+          "Allocated": 69322112
+        },
+        {
+          "Round": 1,
+          "Cores": 2,
+          "Procs": 8,
+          "Bytes": 134217728,
+          "Seconds": 0.125946863,
+          "MiBs": 1016.301612847634,
+          "CoreMiBs": [
+            517.28158150955,
+            509.88073578881324
+          ],
+          "Output": 71980000,
+          "Allocated": 138666240
+        },
+        {
+          "Round": 1,
+          "Cores": 4,
+          "Procs": 8,
+          "Bytes": 268435456,
+          "Seconds": 0.10134387,
+          "MiBs": 2526.053129804496,
+          "CoreMiBs": [
+            670.8520567443567,
+            634.043773767911,
+            663.6106291178077,
+            645.4385230849812
+          ],
+          "Output": 143960000,
+          "Allocated": 277367640
+        },
+        {
+          "Round": 1,
+          "Cores": 4,
+          "Procs": 16,
+          "Bytes": 268435456,
+          "Seconds": 0.107046527,
+          "MiBs": 2391.4834714815174,
+          "CoreMiBs": [
+            624.8483461333354,
+            618.5833335942982,
+            601.863548223541,
+            613.0879642900784
+          ],
+          "Output": 143960000,
+          "Allocated": 277388888
+        },
+        {
+          "Round": 2,
+          "Cores": 1,
+          "Procs": 4,
+          "Bytes": 67108864,
+          "Seconds": 0.149555562,
+          "MiBs": 427.9346026595788,
+          "CoreMiBs": [
+            429.2268301563048
+          ],
+          "Output": 35990000,
+          "Allocated": 69300968
+        },
+        {
+          "Round": 2,
+          "Cores": 2,
+          "Procs": 8,
+          "Bytes": 134217728,
+          "Seconds": 0.141040764,
+          "MiBs": 907.5390431095509,
+          "CoreMiBs": [
+            455.19992081797375,
+            461.37524671770984
+          ],
+          "Output": 71980000,
+          "Allocated": 138625152
+        },
+        {
+          "Round": 2,
+          "Cores": 4,
+          "Procs": 8,
+          "Bytes": 268435456,
+          "Seconds": 0.103408371,
+          "MiBs": 2475.6216302836838,
+          "CoreMiBs": [
+            631.9530074214093,
+            621.6393955730222,
+            652.2995316642246,
+            669.3792143696975
+          ],
+          "Output": 143960000,
+          "Allocated": 277345640
+        },
+        {
+          "Round": 2,
+          "Cores": 4,
+          "Procs": 16,
+          "Bytes": 268435456,
+          "Seconds": 0.101439096,
+          "MiBs": 2523.6817962179,
+          "CoreMiBs": [
+            657.1033353107352,
+            655.9990761893009,
+            672.5234633453591,
+            633.7089682849653
+          ],
+          "Output": 143960000,
+          "Allocated": 277401152
+        },
+        {
+          "Round": 3,
+          "Cores": 1,
+          "Procs": 4,
+          "Bytes": 67108864,
+          "Seconds": 0.150874884,
+          "MiBs": 424.1925382358538,
+          "CoreMiBs": [
+            425.25559771750704
+          ],
+          "Output": 35990016,
+          "Allocated": 69299384
+        },
+        {
+          "Round": 3,
+          "Cores": 2,
+          "Procs": 8,
+          "Bytes": 134217728,
+          "Seconds": 0.143676979,
+          "MiBs": 890.8873285817068,
+          "CoreMiBs": [
+            446.7698941537898,
+            446.8557650412279
+          ],
+          "Output": 71980032,
+          "Allocated": 138620720
+        },
+        {
+          "Round": 3,
+          "Cores": 4,
+          "Procs": 8,
+          "Bytes": 268435456,
+          "Seconds": 0.103158263,
+          "MiBs": 2481.623793917507,
+          "CoreMiBs": [
+            648.9157717568961,
+            623.0149429744688,
+            653.1008970371435,
+            650.0655433662737
+          ],
+          "Output": 143960064,
+          "Allocated": 277342896
+        },
+        {
+          "Round": 3,
+          "Cores": 4,
+          "Procs": 16,
+          "Bytes": 268435456,
+          "Seconds": 0.098878068,
+          "MiBs": 2589.0473507229126,
+          "CoreMiBs": [
+            650.1440414440821,
+            680.4811716388717,
+            655.7179863494883,
+            661.8446047606731
+          ],
+          "Output": 143960064,
+          "Allocated": 277386984
+        }
+      ]
+    },
+    "cores-reset.json": {
+      "cases": {
+        "cores1-procs4": {
+          "mib_s": {
+            "median": 435.3512655834751,
+            "min": 429.4743696742242,
+            "max": 442.6590223142338,
+            "rounds": [
+              429.4743696742242,
+              442.6590223142338,
+              435.3512655834751
+            ]
+          },
+          "bytes_per_round": 67108864,
+          "iterations_per_core": 16
+        },
+        "cores2-procs8": {
+          "mib_s": {
+            "median": 1122.4293200776535,
+            "min": 916.2831132995166,
+            "max": 1198.661638093804,
+            "rounds": [
+              1122.4293200776535,
+              1198.661638093804,
+              916.2831132995166
+            ]
+          },
+          "bytes_per_round": 134217728,
+          "iterations_per_core": 16
+        },
+        "cores4-procs8": {
+          "mib_s": {
+            "median": 3059.073895490899,
+            "min": 2978.4714917113674,
+            "max": 3157.429444433146,
+            "rounds": [
+              3157.429444433146,
+              3059.073895490899,
+              2978.4714917113674
+            ]
+          },
+          "bytes_per_round": 268435456,
+          "iterations_per_core": 16
+        },
+        "cores4-procs16": {
+          "mib_s": {
+            "median": 2839.1639465128574,
+            "min": 2686.329930173051,
+            "max": 3213.9937690453453,
+            "rounds": [
+              2839.1639465128574,
+              3213.9937690453453,
+              2686.329930173051
+            ]
+          },
+          "bytes_per_round": 268435456,
+          "iterations_per_core": 16
+        }
+      },
+      "raw_results": [
+        {
+          "Round": 1,
+          "Cores": 1,
+          "Procs": 4,
+          "Bytes": 67108864,
+          "Seconds": 0.14901937,
+          "MiBs": 429.4743696742242,
+          "CoreMiBs": [
+            430.9465317029216
+          ],
+          "Output": 35990000,
+          "Allocated": 69324616
+        },
+        {
+          "Round": 1,
+          "Cores": 2,
+          "Procs": 8,
+          "Bytes": 134217728,
+          "Seconds": 0.114038361,
+          "MiBs": 1122.4293200776535,
+          "CoreMiBs": [
+            579.3853008029972,
+            563.5061429697673
+          ],
+          "Output": 71980000,
+          "Allocated": 138662192
+        },
+        {
+          "Round": 1,
+          "Cores": 4,
+          "Procs": 8,
+          "Bytes": 268435456,
+          "Seconds": 0.081078613,
+          "MiBs": 3157.429444433146,
+          "CoreMiBs": [
+            808.6715365119305,
+            825.7374199645941,
+            793.7178324920276,
+            832.7644186100104
+          ],
+          "Output": 143960000,
+          "Allocated": 277416920
+        },
+        {
+          "Round": 1,
+          "Cores": 4,
+          "Procs": 16,
+          "Bytes": 268435456,
+          "Seconds": 0.090167389,
+          "MiBs": 2839.1639465128574,
+          "CoreMiBs": [
+            713.2138636962499,
+            789.4316807321189,
+            765.7622253011979,
+            776.2149592462283
+          ],
+          "Output": 143960000,
+          "Allocated": 277432000
+        },
+        {
+          "Round": 2,
+          "Cores": 1,
+          "Procs": 4,
+          "Bytes": 67108864,
+          "Seconds": 0.14458081,
+          "MiBs": 442.6590223142338,
+          "CoreMiBs": [
+            443.8296663848903
+          ],
+          "Output": 35990000,
+          "Allocated": 69299000
+        },
+        {
+          "Round": 2,
+          "Cores": 2,
+          "Procs": 8,
+          "Bytes": 134217728,
+          "Seconds": 0.106785765,
+          "MiBs": 1198.661638093804,
+          "CoreMiBs": [
+            607.6105884499683,
+            601.929047162119
+          ],
+          "Output": 71980000,
+          "Allocated": 138650800
+        },
+        {
+          "Round": 2,
+          "Cores": 4,
+          "Procs": 8,
+          "Bytes": 268435456,
+          "Seconds": 0.083685458,
+          "MiBs": 3059.073895490899,
+          "CoreMiBs": [
+            808.1735847756664,
+            819.9613649579106,
+            768.2155244018019,
+            798.8193350375727
+          ],
+          "Output": 143960000,
+          "Allocated": 277346416
+        },
+        {
+          "Round": 2,
+          "Cores": 4,
+          "Procs": 16,
+          "Bytes": 268435456,
+          "Seconds": 0.079651679,
+          "MiBs": 3213.9937690453453,
+          "CoreMiBs": [
+            869.9144596800901,
+            857.833792477701,
+            809.9956500702356,
+            826.6887471786501
+          ],
+          "Output": 143960000,
+          "Allocated": 277415800
+        },
+        {
+          "Round": 3,
+          "Cores": 1,
+          "Procs": 4,
+          "Bytes": 67108864,
+          "Seconds": 0.147007727,
+          "MiBs": 435.3512655834751,
+          "CoreMiBs": [
+            436.3878459711822
+          ],
+          "Output": 35990016,
+          "Allocated": 69299856
+        },
+        {
+          "Round": 3,
+          "Cores": 2,
+          "Procs": 8,
+          "Bytes": 134217728,
+          "Seconds": 0.139694815,
+          "MiBs": 916.2831132995166,
+          "CoreMiBs": [
+            459.7959454331414,
+            459.5930758597653
+          ],
+          "Output": 71980032,
+          "Allocated": 138622504
+        },
+        {
+          "Round": 3,
+          "Cores": 4,
+          "Procs": 8,
+          "Bytes": 268435456,
+          "Seconds": 0.085950126,
+          "MiBs": 2978.4714917113674,
+          "CoreMiBs": [
+            781.9383481931146,
+            748.4157354455153,
+            764.2384915116747,
+            790.5825998353265
+          ],
+          "Output": 143960064,
+          "Allocated": 277340712
+        },
+        {
+          "Round": 3,
+          "Cores": 4,
+          "Procs": 16,
+          "Bytes": 268435456,
+          "Seconds": 0.095297304,
+          "MiBs": 2686.329930173051,
+          "CoreMiBs": [
+            675.5341857821818,
+            694.3753384266054,
+            704.9146373156366,
+            711.1931116768874
+          ],
+          "Output": 143960064,
+          "Allocated": 277375200
+        }
+      ]
+    }
+  },
+  "validation": {
+    "boundary_cases": 456,
+    "boundary_pass": true,
+    "boundary_patterns": [
+      "zero",
+      "text",
+      "random"
+    ],
+    "http_requests": 32,
+    "http_bytes": 134217728,
+    "http_pass": true,
+    "http_note": "short functional test, not a sustained throughput benchmark",
+    "recovery": {
+      "pass": true,
+      "sequence": "SIGSTOP worker, write+local-fsync 10GiB raw, SIGKILL mount and worker, remount with four cores, sync to backend, hot and backend-only full CRC",
+      "dirty_bytes_before_kill": 10737418240,
+      "pending_after_sync": 0,
+      "cpu_fallbacks": 0,
+      "backend_only_read_mib_s": 641.0015640258789
+    },
+    "deployed_worker_smoke": {
+      "pass": true,
+      "bytes": 268435456,
+      "new_objects": 64,
+      "cpu_fallbacks": 0,
+      "mount": {
+        "binary": "/root/compactfs/bin/compactfs",
+        "sha256": "bcab83e1fae118071dc79e801caf6f1518c4fecb5fea484f363acc644fe2cd6c"
+      },
+      "worker": {
+        "binary": "/root/compactfs/bin/compactfs-fpga-worker",
+        "sha256": "592615e848ea99a8031ddf7c8fc232d62d17906583ac30b72f6d94c420bd736f"
+      }
+    },
+    "checks": [
+      "SDK CGO_ENABLED=0 tests and vet",
+      "SDK race device,pipeline,server,client",
+      "compactfs published v0.0.2 CGO_ENABLED=0 tests and vet",
+      "compactfs published v0.0.2 race codec,cmd,codecworker",
+      "compactfs local updated SDK CGO_ENABLED=0 tests and vet",
+      "compactfs local updated SDK race codec,cmd,codecworker"
+    ],
+    "race_note": "race test builds use cgo; product binaries are static CGO_ENABLED=0"
+  },
+  "artifacts": [
+    {
+      "path": "/data1/fpga-compression-optimize-20261031-235541/manifest.json",
+      "sha256": "41f13366c03b5828d2a86b1d2e3b1b80417ea0aee67731bbc084d92a6cbbdaeb",
+      "bytes": 157
+    },
+    {
+      "path": "/data1/fpga-compression-optimize-20261031-235541/cores-results.json",
+      "sha256": "2bd43f5977a4a7fa2c160047b6efde2878c4a35d0b5556e04a4f3caf5f2fba20",
+      "bytes": 3427
+    },
+    {
+      "path": "/data1/fpga-compression-optimize-20261031-235541/cores-distinct.json",
+      "sha256": "2a9d2ba2cc4d626fc013ac35696ab8eab80451be6e9f9e579cdf5ad4813063ab",
+      "bytes": 3413
+    },
+    {
+      "path": "/data1/fpga-compression-optimize-20261031-235541/cores-reset.json",
+      "sha256": "74a8b3c0fc71b7ac03afe428e9c8c44d5fa6a9d0b6900aa04ab7712e8eab8a4f",
+      "bytes": 3411
+    },
+    {
+      "path": "/data1/fpga-compression-optimize-20261031-235541/endtoend-results.json",
+      "sha256": "84d53a48ebdfdac12388071318600af5a8ebfd25d46cc36e0dec3a03e426c603",
+      "bytes": 112037
+    },
+    {
+      "path": "/data1/fpga-compression-optimize-20261031-235541/final-endtoend-results.json",
+      "sha256": "342918f1f162256d00dceeb623dce23d5cecaf41dd81d615c2aeabaa3d847d89",
+      "bytes": 56068
+    },
+    {
+      "path": "/data1/fpga-compression-optimize-20261031-235541/final-recovery-results.json",
+      "sha256": "134c1ed6847d046049f6208f0286ddf8665fd318834027f0a1a2d356b1afc80a",
+      "bytes": 16703
+    },
+    {
+      "path": "/data1/fpga-compression-optimize-20261031-235541/boundaries.json",
+      "sha256": "e19c605fda965466078dbf1ece63381b875a03c81b3033a8fdd42daf4c3cad9d",
+      "bytes": 41814
+    },
+    {
+      "path": "/data1/fpga-compression-optimize-20261031-235541/daemon-results.json",
+      "sha256": "6231b24d6724e0e5863df008719a09e78a0ca00821921166e5f2c70fdc2b934e",
+      "bytes": 424
+    },
+    {
+      "path": "/data1/fpga-compression-optimize-20261031-235541/last-core-registers.json",
+      "sha256": "28d4a7fab58bd3e23b3b52e74603223afdf4e728b6e48e90358237e02d6cbdb6",
+      "bytes": 644
+    },
+    {
+      "path": "/data1/fpga-compression-optimize-20261031-235541/compactfs-fpga-1x3gn4oa/results.json",
+      "sha256": "4303da4518af930ae5b80e5bf99e1a314618fbc0047be2afecc6ef166cd293cd",
+      "bytes": 18953
+    },
+    {
+      "path": "/data1/fpga-compression-optimize-20261031-235541/run-endtoend.py",
+      "sha256": "da1937008c7c9457934043fafe367a1977fef551eda22c87b68229d9e19d6e2e",
+      "bytes": 2273
+    },
+    {
+      "path": "/data1/fpga-compression-optimize-20261031-235541/run-final-endtoend.py",
+      "sha256": "32d47903d710b91f28f971bce97b75cddf468bbb979b5fffec229272badbb808",
+      "bytes": 2285
+    },
+    {
+      "path": "/data1/fpga-compression-optimize-20261031-235541/run-reset-compare.py",
+      "sha256": "fe8965c4b3ddc6b346310659af45a93102542da2b64942cd950a226b216ada60",
+      "bytes": 692
+    },
+    {
+      "path": "/data1/fpga-compression-optimize-20261031-235541/run-final.py",
+      "sha256": "5060fee5cc642c9e7335721b296eb11ff0ea409c1c1f641db7dc1413275d558e",
+      "bytes": 1435
+    },
+    {
+      "path": "/data1/fpga-compression-optimize-20261031-235541/run-daemon-check.py",
+      "sha256": "fc7151f7a46eae960453f43ea65706e8a17a41b0be32c2a61fb45a87e1d7a43a",
+      "bytes": 2210
+    }
+  ],
+  "builds": [
+    {
+      "path": "/data1/fpga-compression-optimize-20261031-235541/compactfs-multicore",
+      "sha256": "8f1a513795f1158c770144d4725821a5803bbba1820077bfc6ac2dc97fcb47cf",
+      "build_info": "/data1/fpga-compression-optimize-20261031-235541/compactfs-multicore: go1.26.0\n\tpath\tgithub.com/lfhy/compactfs\n\tmod\tgithub.com/lfhy/compactfs\tv0.0.0-20261031155928-5a0a45a4562a\t\n\tdep\tgithub.com/fatih/color\tv1.13.0\th1:8LOYc1KYPPmyKMuN8QV2DNRWNbLo6LZ0iLs8+mlH53w=\n\tdep\tgithub.com/fsnotify/fsnotify\tv1.6.0\th1:n+5WquG0fcWoWp6xPWfHdbskMCQaFnG6PfBrh1Ky4HY=\n\tdep\tgithub.com/hanwen/go-fuse/v2\tv2.12.1\th1:b6NXOPCraS9NvN4vtHZXDN1nsNKdoDlyafWxWnuO30Q=\n\tdep\tgithub.com/hashicorp/hcl\tv1.0.0\th1:0Anlzjpi4vEasTeNFn2mLJgTSwt0+6sfsiTG8qcWGx4=\n\tdep\tgithub.com/klauspost/compress\tv1.17.11\th1:In6xLpyWOi1+C7tXUUWv2ot1QvBjxevKAaI6IXrJmUc=\n\tdep\tgithub.com/klauspost/cpuid/v2\tv2.2.10\th1:tBs3QSyvjDyFTq3uoc/9xFpCuOsJQFNPiAhYdw2skhE=\n\tdep\tgithub.com/lfhy/flag\tv1.1.2\th1:e4ol4Cj85yacPrhzbQXr/MUZBxqKdgsTGJb5F5Wo3o4=\n\tdep\tgithub.com/lfhy/fpga-gzip\tv0.0.2\n\t=>\t/root/fpga-gzip\t(devel)\t\n\t\n\tdep\tgithub.com/magiconair/properties\tv1.8.7\th1:IeQXZAiQcpL9mgcAe1Nu6cX9LLw6ExEHKjN0VQdvPDY=\n\tdep\tgithub.com/mattn/go-colorable\tv0.1.12\th1:jF+Du6AlPIjs2BiUiQlKOX0rt3SujHxPnksPKZbaA40=\n\tdep\tgithub.com/mattn/go-isatty\tv0.0.14\th1:yVuAays6BHfxijgZPzw+3Zlu5yQgKGP2/hcQbHb7S9Y=\n\tdep\tgithub.com/mattn/go-runewidth\tv0.0.13\th1:lTGmDsbAYt5DmK6OnoV7EuIF1wEIFAcxld6ypU4OSgU=\n\tdep\tgithub.com/mitchellh/mapstructure\tv1.5.0\th1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyuac5Z2hdY=\n\tdep\tgithub.com/pelletier/go-toml/v2\tv2.0.8\th1:0ctb6s9mE31h0/lhu+J6OPmVeDxJn+kYnJc2jZR9tGQ=\n\tdep\tgithub.com/rivo/uniseg\tv0.2.0\th1:S1pD9weZBuJdFmowNwbpi7BJ8TNftyUImj/0WQi72jY=\n\tdep\tgithub.com/spf13/afero\tv1.9.5\th1:stMpOSZFs//0Lv29HduCmli3GUfpFoF3Y1Q/aXj/wVM=\n\tdep\tgithub.com/spf13/cast\tv1.5.1\th1:R+kOtfhWQE6TVQzY+4D7wJLBgkdVasCEFxSUBYBYIlA=\n\tdep\tgithub.com/spf13/jwalterweatherman\tv1.1.0\th1:ue6voC5bR5F8YxI5S67j9i582FU4Qvo2bmqnqMYADFk=\n\tdep\tgithub.com/spf13/pflag\tv1.0.5\th1:iy+VFUOCP1a+8yFto/drg2CJ5u0yRoB7fZw3DKv/JXA=\n\tdep\tgithub.com/spf13/viper\tv1.16.0\th1:rGGH0XDZhdUOryiDWjmIvUSWpbNqisK8Wk0Vyefw8hc=\n\tdep\tgithub.com/subosito/gotenv\tv1.4.2\th1:X1TuBLAMDFbaTAChgCBLu3DU3UPyELpnF2jjJ2cz/S8=\n\tdep\tgithub.com/zeebo/xxh3\tv1.1.0\th1:s7DLGDK45Dyfg7++yxI0khrfwq9661w9EN78eP/UZVs=\n\tdep\tgolang.org/x/sys\tv0.30.0\th1:QjkSwP/36a20jFYWkSue1YwXzLmsV5Gfq7Eiy72C1uc=\n\tdep\tgolang.org/x/text\tv0.9.0\th1:2sjJmO8cDvYveuX97RDLsxlyUxLl+GHoLxBiRdHllBE=\n\tdep\tgopkg.in/ini.v1\tv1.67.0\th1:Dgnx+6+nfE+IfzjUEISNeydPJh9AXNNsWbGP9KzCsOA=\n\tdep\tgopkg.in/yaml.v3\tv3.0.1\th1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=\n\tbuild\t-buildmode=exe\n\tbuild\t-compiler=gc\n\tbuild\t-trimpath=true\n\tbuild\tDefaultGODEBUG=asynctimerchan=1,containermaxprocs=0,cryptocustomrand=1,decoratemappings=0,gotestjsonbuildtext=1,gotypesalias=0,httpcookiemaxnum=0,httpservecontentkeepheaders=1,multipathtcp=0,randseednop=0,rsa1024min=0,tls3des=1,tlsmlkem=0,tlssecpmlkem=0,tlssha1=1,updatemaxprocs=0,urlmaxqueryparams=0,urlstrictcolons=0,winreadlinkvolume=0,winsymlink=0,x509keypairleaf=0,x509negativeserial=1,x509rsacrt=0,x509sha256skid=0,x509usepolicies=0\n\tbuild\tCGO_ENABLED=0\n\tbuild\tGOARCH=amd64\n\tbuild\tGOOS=linux\n\tbuild\tGOAMD64=v1\n\tbuild\tvcs=git\n\tbuild\tvcs.revision=5a0a45a4562ac0d89a45b43bafc36ed361dae8b0\n\tbuild\tvcs.time=2026-10-31T15:59:28Z\n\tbuild\tvcs.modified=false\n"
+    },
+    {
+      "path": "/data1/fpga-compression-optimize-20261031-235541/compactfs-final",
+      "sha256": "250ecf96bab0c4a9d2054b5f093c7290f981a152e940aaec9f9a7534af666385",
+      "build_info": "/data1/fpga-compression-optimize-20261031-235541/compactfs-final: go1.26.0\n\tpath\tgithub.com/lfhy/compactfs\n\tmod\tgithub.com/lfhy/compactfs\tv0.0.0-20261031160635-5e52b6c22a50\t\n\tdep\tgithub.com/fatih/color\tv1.13.0\th1:8LOYc1KYPPmyKMuN8QV2DNRWNbLo6LZ0iLs8+mlH53w=\n\tdep\tgithub.com/fsnotify/fsnotify\tv1.6.0\th1:n+5WquG0fcWoWp6xPWfHdbskMCQaFnG6PfBrh1Ky4HY=\n\tdep\tgithub.com/hanwen/go-fuse/v2\tv2.12.1\th1:b6NXOPCraS9NvN4vtHZXDN1nsNKdoDlyafWxWnuO30Q=\n\tdep\tgithub.com/hashicorp/hcl\tv1.0.0\th1:0Anlzjpi4vEasTeNFn2mLJgTSwt0+6sfsiTG8qcWGx4=\n\tdep\tgithub.com/klauspost/compress\tv1.17.11\th1:In6xLpyWOi1+C7tXUUWv2ot1QvBjxevKAaI6IXrJmUc=\n\tdep\tgithub.com/klauspost/cpuid/v2\tv2.2.10\th1:tBs3QSyvjDyFTq3uoc/9xFpCuOsJQFNPiAhYdw2skhE=\n\tdep\tgithub.com/lfhy/flag\tv1.1.2\th1:e4ol4Cj85yacPrhzbQXr/MUZBxqKdgsTGJb5F5Wo3o4=\n\tdep\tgithub.com/lfhy/fpga-gzip\tv0.0.2\n\t=>\t/root/fpga-gzip\t(devel)\t\n\t\n\tdep\tgithub.com/magiconair/properties\tv1.8.7\th1:IeQXZAiQcpL9mgcAe1Nu6cX9LLw6ExEHKjN0VQdvPDY=\n\tdep\tgithub.com/mattn/go-colorable\tv0.1.12\th1:jF+Du6AlPIjs2BiUiQlKOX0rt3SujHxPnksPKZbaA40=\n\tdep\tgithub.com/mattn/go-isatty\tv0.0.14\th1:yVuAays6BHfxijgZPzw+3Zlu5yQgKGP2/hcQbHb7S9Y=\n\tdep\tgithub.com/mattn/go-runewidth\tv0.0.13\th1:lTGmDsbAYt5DmK6OnoV7EuIF1wEIFAcxld6ypU4OSgU=\n\tdep\tgithub.com/mitchellh/mapstructure\tv1.5.0\th1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyuac5Z2hdY=\n\tdep\tgithub.com/pelletier/go-toml/v2\tv2.0.8\th1:0ctb6s9mE31h0/lhu+J6OPmVeDxJn+kYnJc2jZR9tGQ=\n\tdep\tgithub.com/rivo/uniseg\tv0.2.0\th1:S1pD9weZBuJdFmowNwbpi7BJ8TNftyUImj/0WQi72jY=\n\tdep\tgithub.com/spf13/afero\tv1.9.5\th1:stMpOSZFs//0Lv29HduCmli3GUfpFoF3Y1Q/aXj/wVM=\n\tdep\tgithub.com/spf13/cast\tv1.5.1\th1:R+kOtfhWQE6TVQzY+4D7wJLBgkdVasCEFxSUBYBYIlA=\n\tdep\tgithub.com/spf13/jwalterweatherman\tv1.1.0\th1:ue6voC5bR5F8YxI5S67j9i582FU4Qvo2bmqnqMYADFk=\n\tdep\tgithub.com/spf13/pflag\tv1.0.5\th1:iy+VFUOCP1a+8yFto/drg2CJ5u0yRoB7fZw3DKv/JXA=\n\tdep\tgithub.com/spf13/viper\tv1.16.0\th1:rGGH0XDZhdUOryiDWjmIvUSWpbNqisK8Wk0Vyefw8hc=\n\tdep\tgithub.com/subosito/gotenv\tv1.4.2\th1:X1TuBLAMDFbaTAChgCBLu3DU3UPyELpnF2jjJ2cz/S8=\n\tdep\tgithub.com/zeebo/xxh3\tv1.1.0\th1:s7DLGDK45Dyfg7++yxI0khrfwq9661w9EN78eP/UZVs=\n\tdep\tgolang.org/x/sys\tv0.30.0\th1:QjkSwP/36a20jFYWkSue1YwXzLmsV5Gfq7Eiy72C1uc=\n\tdep\tgolang.org/x/text\tv0.9.0\th1:2sjJmO8cDvYveuX97RDLsxlyUxLl+GHoLxBiRdHllBE=\n\tdep\tgopkg.in/ini.v1\tv1.67.0\th1:Dgnx+6+nfE+IfzjUEISNeydPJh9AXNNsWbGP9KzCsOA=\n\tdep\tgopkg.in/yaml.v3\tv3.0.1\th1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=\n\tbuild\t-buildmode=exe\n\tbuild\t-compiler=gc\n\tbuild\t-trimpath=true\n\tbuild\tDefaultGODEBUG=asynctimerchan=1,containermaxprocs=0,cryptocustomrand=1,decoratemappings=0,gotestjsonbuildtext=1,gotypesalias=0,httpcookiemaxnum=0,httpservecontentkeepheaders=1,multipathtcp=0,randseednop=0,rsa1024min=0,tls3des=1,tlsmlkem=0,tlssecpmlkem=0,tlssha1=1,updatemaxprocs=0,urlmaxqueryparams=0,urlstrictcolons=0,winreadlinkvolume=0,winsymlink=0,x509keypairleaf=0,x509negativeserial=1,x509rsacrt=0,x509sha256skid=0,x509usepolicies=0\n\tbuild\tCGO_ENABLED=0\n\tbuild\tGOARCH=amd64\n\tbuild\tGOOS=linux\n\tbuild\tGOAMD64=v1\n\tbuild\tvcs=git\n\tbuild\tvcs.revision=5e52b6c22a508a8bd40cf751c0791e1452483662\n\tbuild\tvcs.time=2026-10-31T16:06:35Z\n\tbuild\tvcs.modified=false\n"
+    },
+    {
+      "path": "/data1/fpga-compression-optimize-20261031-235541/probe-distinct",
+      "sha256": "1cd0709b65adba36ee7e4db64549d4eb94ed726b0cd77246d8c6280d5fa511b6",
+      "build_info": "/data1/fpga-compression-optimize-20261031-235541/probe-distinct: go1.26.0\n\tpath\tgithub.com/lfhy/fpga-gzip/examples/benchmark-cores\n\tmod\tgithub.com/lfhy/fpga-gzip\tv0.1.1-0.20261031155906-59bc080ebce4+dirty\t\n\tbuild\t-buildmode=exe\n\tbuild\t-compiler=gc\n\tbuild\tDefaultGODEBUG=asynctimerchan=1,containermaxprocs=0,cryptocustomrand=1,decoratemappings=0,gotestjsonbuildtext=1,gotypesalias=0,httpcookiemaxnum=0,httplaxcontentlength=1,httpmuxgo121=1,httpservecontentkeepheaders=1,multipathtcp=0,randseednop=0,rsa1024min=0,tls10server=1,tls3des=1,tlsmlkem=0,tlsrsakex=1,tlssecpmlkem=0,tlssha1=1,tlsunsafeekm=1,updatemaxprocs=0,urlmaxqueryparams=0,urlstrictcolons=0,winreadlinkvolume=0,winsymlink=0,x509keypairleaf=0,x509negativeserial=1,x509rsacrt=0,x509sha256skid=0,x509usepolicies=0\n\tbuild\tCGO_ENABLED=0\n\tbuild\tGOARCH=amd64\n\tbuild\tGOOS=linux\n\tbuild\tGOAMD64=v1\n\tbuild\tvcs=git\n\tbuild\tvcs.revision=59bc080ebce433a4d1e2c63337b1192e5aa898b0\n\tbuild\tvcs.time=2026-10-31T15:59:06Z\n\tbuild\tvcs.modified=true\n"
+    },
+    {
+      "path": "/data1/fpga-compression-optimize-20261031-235541/probe-reset",
+      "sha256": "284d4972ecb5ea0b79bfedb4d7b8274fc8a47e726fd10c0825fc3e500d189000",
+      "build_info": "/data1/fpga-compression-optimize-20261031-235541/probe-reset: go1.26.0\n\tpath\tgithub.com/lfhy/fpga-gzip/examples/benchmark-cores\n\tmod\tgithub.com/lfhy/fpga-gzip\tv0.1.1-0.20261031155906-59bc080ebce4+dirty\t\n\tbuild\t-buildmode=exe\n\tbuild\t-compiler=gc\n\tbuild\tDefaultGODEBUG=asynctimerchan=1,containermaxprocs=0,cryptocustomrand=1,decoratemappings=0,gotestjsonbuildtext=1,gotypesalias=0,httpcookiemaxnum=0,httplaxcontentlength=1,httpmuxgo121=1,httpservecontentkeepheaders=1,multipathtcp=0,randseednop=0,rsa1024min=0,tls10server=1,tls3des=1,tlsmlkem=0,tlsrsakex=1,tlssecpmlkem=0,tlssha1=1,tlsunsafeekm=1,updatemaxprocs=0,urlmaxqueryparams=0,urlstrictcolons=0,winreadlinkvolume=0,winsymlink=0,x509keypairleaf=0,x509negativeserial=1,x509rsacrt=0,x509sha256skid=0,x509usepolicies=0\n\tbuild\tCGO_ENABLED=0\n\tbuild\tGOARCH=amd64\n\tbuild\tGOOS=linux\n\tbuild\tGOAMD64=v1\n\tbuild\tvcs=git\n\tbuild\tvcs.revision=59bc080ebce433a4d1e2c63337b1192e5aa898b0\n\tbuild\tvcs.time=2026-10-31T15:59:06Z\n\tbuild\tvcs.modified=true\n"
+    },
+    {
+      "path": "/data1/fpga-compression-optimize-20261031-235541/fpga-gzipd",
+      "sha256": "5c1b1dc9ed52072aa2cd287f740e90e36a85212d1ee1d41564b2425f8f01cdd8",
+      "build_info": "/data1/fpga-compression-optimize-20261031-235541/fpga-gzipd: go1.26.0\n\tpath\tgithub.com/lfhy/fpga-gzip/cmd/fpga-gzipd\n\tmod\tgithub.com/lfhy/fpga-gzip\tv0.1.1-0.20261031155906-59bc080ebce4+dirty\t\n\tdep\tgithub.com/fatih/color\tv1.13.0\th1:8LOYc1KYPPmyKMuN8QV2DNRWNbLo6LZ0iLs8+mlH53w=\n\tdep\tgithub.com/fsnotify/fsnotify\tv1.6.0\th1:n+5WquG0fcWoWp6xPWfHdbskMCQaFnG6PfBrh1Ky4HY=\n\tdep\tgithub.com/hashicorp/hcl\tv1.0.0\th1:0Anlzjpi4vEasTeNFn2mLJgTSwt0+6sfsiTG8qcWGx4=\n\tdep\tgithub.com/lfhy/flag\tv1.1.2\th1:e4ol4Cj85yacPrhzbQXr/MUZBxqKdgsTGJb5F5Wo3o4=\n\tdep\tgithub.com/magiconair/properties\tv1.8.7\th1:IeQXZAiQcpL9mgcAe1Nu6cX9LLw6ExEHKjN0VQdvPDY=\n\tdep\tgithub.com/mattn/go-colorable\tv0.1.12\th1:jF+Du6AlPIjs2BiUiQlKOX0rt3SujHxPnksPKZbaA40=\n\tdep\tgithub.com/mattn/go-isatty\tv0.0.14\th1:yVuAays6BHfxijgZPzw+3Zlu5yQgKGP2/hcQbHb7S9Y=\n\tdep\tgithub.com/mattn/go-runewidth\tv0.0.13\th1:lTGmDsbAYt5DmK6OnoV7EuIF1wEIFAcxld6ypU4OSgU=\n\tdep\tgithub.com/mitchellh/mapstructure\tv1.5.0\th1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyuac5Z2hdY=\n\tdep\tgithub.com/pelletier/go-toml/v2\tv2.0.8\th1:0ctb6s9mE31h0/lhu+J6OPmVeDxJn+kYnJc2jZR9tGQ=\n\tdep\tgithub.com/rivo/uniseg\tv0.2.0\th1:S1pD9weZBuJdFmowNwbpi7BJ8TNftyUImj/0WQi72jY=\n\tdep\tgithub.com/spf13/afero\tv1.9.5\th1:stMpOSZFs//0Lv29HduCmli3GUfpFoF3Y1Q/aXj/wVM=\n\tdep\tgithub.com/spf13/cast\tv1.5.1\th1:R+kOtfhWQE6TVQzY+4D7wJLBgkdVasCEFxSUBYBYIlA=\n\tdep\tgithub.com/spf13/jwalterweatherman\tv1.1.0\th1:ue6voC5bR5F8YxI5S67j9i582FU4Qvo2bmqnqMYADFk=\n\tdep\tgithub.com/spf13/pflag\tv1.0.5\th1:iy+VFUOCP1a+8yFto/drg2CJ5u0yRoB7fZw3DKv/JXA=\n\tdep\tgithub.com/spf13/viper\tv1.16.0\th1:rGGH0XDZhdUOryiDWjmIvUSWpbNqisK8Wk0Vyefw8hc=\n\tdep\tgithub.com/subosito/gotenv\tv1.4.2\th1:X1TuBLAMDFbaTAChgCBLu3DU3UPyELpnF2jjJ2cz/S8=\n\tdep\tgolang.org/x/sys\tv0.8.0\th1:EBmGv8NaZBZTWvrbjNoL6HVt+IVy3QDQpJs7VRIw3tU=\n\tdep\tgolang.org/x/text\tv0.9.0\th1:2sjJmO8cDvYveuX97RDLsxlyUxLl+GHoLxBiRdHllBE=\n\tdep\tgopkg.in/ini.v1\tv1.67.0\th1:Dgnx+6+nfE+IfzjUEISNeydPJh9AXNNsWbGP9KzCsOA=\n\tdep\tgopkg.in/yaml.v3\tv3.0.1\th1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=\n\tbuild\t-buildmode=exe\n\tbuild\t-compiler=gc\n\tbuild\tDefaultGODEBUG=asynctimerchan=1,containermaxprocs=0,cryptocustomrand=1,decoratemappings=0,gotestjsonbuildtext=1,gotypesalias=0,httpcookiemaxnum=0,httplaxcontentlength=1,httpmuxgo121=1,httpservecontentkeepheaders=1,multipathtcp=0,randseednop=0,rsa1024min=0,tls10server=1,tls3des=1,tlsmlkem=0,tlsrsakex=1,tlssecpmlkem=0,tlssha1=1,tlsunsafeekm=1,updatemaxprocs=0,urlmaxqueryparams=0,urlstrictcolons=0,winreadlinkvolume=0,winsymlink=0,x509keypairleaf=0,x509negativeserial=1,x509rsacrt=0,x509sha256skid=0,x509usepolicies=0\n\tbuild\tCGO_ENABLED=0\n\tbuild\tGOARCH=amd64\n\tbuild\tGOOS=linux\n\tbuild\tGOAMD64=v1\n\tbuild\tvcs=git\n\tbuild\tvcs.revision=59bc080ebce433a4d1e2c63337b1192e5aa898b0\n\tbuild\tvcs.time=2026-10-31T15:59:06Z\n\tbuild\tvcs.modified=true\n"
+    }
+  ],
+  "cleanup": "only this suite cache/backend directories removed after verified reads and unmount; raw JSON, logs, metadata and recovery data retained",
+  "pass": true
+}
