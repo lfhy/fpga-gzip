@@ -25,9 +25,10 @@ type daemonConfig struct {
 	Unix string
 	TCP  string
 
-	User string
-	H2C  string
-	C2H  string
+	User  string
+	H2C   string
+	C2H   string
+	Cores uint
 
 	RingSlots      uint
 	H2CSlotText    string
@@ -92,7 +93,7 @@ func run() int {
 		return 2
 	}
 	if cfg.MaxConcurrent == 0 {
-		cfg.MaxConcurrent = 1
+		cfg.MaxConcurrent = cfg.Cores
 	}
 	if cfg.MaxConcurrent > uint(^uint(0)>>1) || cfg.QueueDepth > uint(^uint(0)>>1) {
 		fmt.Fprintln(os.Stderr, "workers or queue-depth is too large")
@@ -111,13 +112,23 @@ func run() int {
 	options.MaxProcs = int(cfg.MaxProcs)
 
 	paths := device.Paths{User: cfg.User, H2C: cfg.H2C, C2H: cfg.C2H}
+	corePaths, err := device.FourCorePaths(paths, int(cfg.Cores))
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 2
+	}
+	pool, err := device.NewPool(corePaths)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 2
+	}
 	serverOptions := make([]server.Option, 0, 1)
 	if cfg.AuthToken != "" {
 		serverOptions = append(serverOptions, server.WithAuth(cfg.AuthToken))
 	}
 	svc, err := server.New(server.Config{
-		HardwareFactory: func(context.Context) (pipeline.Hardware, error) {
-			return device.Open(paths)
+		HardwareFactory: func(ctx context.Context) (pipeline.Hardware, error) {
+			return pool.Acquire(ctx)
 		},
 		Options:       options,
 		MaxConcurrent: int(cfg.MaxConcurrent),
@@ -188,7 +199,8 @@ func parseConfig(args []string) (daemonConfig, error) {
 		ResetTimeout:   durationValue{value: defaults.ResetTimeout},
 		StartTimeout:   durationValue{value: defaults.StartTimeout},
 		MaxProcs:       uint(defaults.MaxProcs),
-		MaxConcurrent:  1,
+		Cores:          1,
+		MaxConcurrent:  0,
 		QueueDepth:     2,
 		MaxInputText:   "0",
 	}
@@ -200,6 +212,7 @@ func parseConfig(args []string) (daemonConfig, error) {
 	fs.StringFullVar(&cfg.User, "user-device", "device", "user", "FPGA_GZIP_USER_DEVICE", cfg.User, "XDMA user BAR")
 	fs.StringFullVar(&cfg.H2C, "h2c-device", "device", "h2c", "FPGA_GZIP_H2C_DEVICE", cfg.H2C, "XDMA H2C stream")
 	fs.StringFullVar(&cfg.C2H, "c2h-device", "device", "c2h", "FPGA_GZIP_C2H_DEVICE", cfg.C2H, "XDMA C2H stream")
+	fs.UintFullVar(&cfg.Cores, "cores", "device", "cores", "FPGA_GZIP_CORES", cfg.Cores, "validated independent gzip cores, 1 to 4")
 	fs.UintFullVar(&cfg.RingSlots, "ring-slots", "pipeline", "ring_slots", "FPGA_GZIP_RING_SLOTS", cfg.RingSlots, "DMA ring slots")
 	fs.StringFullVar(&cfg.H2CSlotText, "h2c-slot-bytes", "pipeline", "h2c_slot_bytes", "FPGA_GZIP_H2C_SLOT_BYTES", cfg.H2CSlotText, "H2C slot size")
 	fs.StringFullVar(&cfg.C2HRequestText, "c2h-request-bytes", "pipeline", "c2h_request_bytes", "FPGA_GZIP_C2H_REQUEST_BYTES", cfg.C2HRequestText, "C2H packet size")
@@ -208,7 +221,7 @@ func parseConfig(args []string) (daemonConfig, error) {
 	fs.DurationFullVar(&cfg.ResetTimeout.value, "reset-timeout", "pipeline", "reset_timeout", "FPGA_GZIP_RESET_TIMEOUT", cfg.ResetTimeout.value, "FPGA reset timeout")
 	fs.DurationFullVar(&cfg.StartTimeout.value, "start-timeout", "pipeline", "start_timeout", "FPGA_GZIP_START_TIMEOUT", cfg.StartTimeout.value, "FPGA start timeout")
 	fs.UintFullVar(&cfg.MaxProcs, "max-procs", "runtime", "max_procs", "FPGA_GZIP_MAX_PROCS", cfg.MaxProcs, "daemon GOMAXPROCS")
-	fs.UintFullVar(&cfg.MaxConcurrent, "workers", "daemon", "workers", "FPGA_GZIPD_WORKERS", cfg.MaxConcurrent, "independent FPGA streams")
+	fs.UintFullVar(&cfg.MaxConcurrent, "workers", "daemon", "workers", "FPGA_GZIPD_WORKERS", cfg.MaxConcurrent, "request workers; 0 uses core count; device pool serializes each core")
 	fs.UintFullVar(&cfg.QueueDepth, "queue-depth", "daemon", "queue_depth", "FPGA_GZIPD_QUEUE_DEPTH", cfg.QueueDepth, "queued requests")
 	fs.StringFullVar(&cfg.MaxInputText, "max-input-bytes", "daemon", "max_input_bytes", "FPGA_GZIPD_MAX_INPUT_BYTES", cfg.MaxInputText, "maximum request size; zero means unlimited")
 	fs.StringFullVar(&cfg.AuthToken, "auth-token", "daemon", "auth_token", "FPGA_GZIPD_AUTH_TOKEN", "", "optional Bearer token; empty disables authentication")
@@ -217,6 +230,9 @@ func parseConfig(args []string) (daemonConfig, error) {
 	}
 	if cfg.RingSlots == 0 || cfg.MaxProcs == 0 {
 		return daemonConfig{}, errors.New("ring-slots and max-procs must be greater than zero")
+	}
+	if cfg.Cores < 1 || cfg.Cores > 4 {
+		return daemonConfig{}, errors.New("cores must be between 1 and 4")
 	}
 	return cfg, nil
 }

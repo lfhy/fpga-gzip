@@ -23,6 +23,16 @@ type Device = device.Device
 // DevicePaths identifies the XDMA character devices.
 type DevicePaths = device.Paths
 
+// DevicePool leases independent core/channel pairs until the lease is closed.
+type DevicePool = device.Pool
+
+func NewDevicePool(paths []DevicePaths) (*DevicePool, error) { return device.NewPool(paths) }
+
+// FourCorePaths selects the validated quad shell's channel/core mapping.
+func FourCorePaths(first DevicePaths, count int) ([]DevicePaths, error) {
+	return device.FourCorePaths(first, count)
+}
+
 // Snapshot is the FPGA shell's register snapshot used by Hardware.
 type Snapshot = device.Snapshot
 

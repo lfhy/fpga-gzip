@@ -19,13 +19,17 @@ type Paths struct {
 	User string
 	H2C  string
 	C2H  string
+	// RegisterBase selects an independent control bank. The validated four-core
+	// shell uses core*0x1000; DMA channel indices must match that core.
+	RegisterBase uint32
 }
 
 // Device is a handle to the user BAR and one H2C/C2H streaming pair.
 type Device struct {
-	user *os.File
-	h2c  *os.File
-	c2h  *os.File
+	user         *os.File
+	h2c          *os.File
+	c2h          *os.File
+	registerBase uint32
 
 	closeStreamsOnce sync.Once
 	closeOnce        sync.Once
@@ -36,6 +40,9 @@ type Device struct {
 func Open(paths Paths) (*Device, error) {
 	if paths.User == "" || paths.H2C == "" || paths.C2H == "" {
 		return nil, errors.New("all XDMA device paths are required")
+	}
+	if paths.RegisterBase%4 != 0 || paths.RegisterBase > ^uint32(0)-RegDebug {
+		return nil, errors.New("invalid register base alignment or range")
 	}
 
 	user, err := os.OpenFile(paths.User, os.O_RDWR|os.O_SYNC, 0)
@@ -54,7 +61,18 @@ func Open(paths Paths) (*Device, error) {
 		return nil, fmt.Errorf("open C2H device %q: %w", paths.C2H, err)
 	}
 
-	return &Device{user: user, h2c: h2c, c2h: c2h}, nil
+	return &Device{user: user, h2c: h2c, c2h: c2h, registerBase: paths.RegisterBase}, nil
+}
+
+// SetRegisterBase selects a bank before the first transaction. Do not call it
+// concurrently with register access or DMA. It also allows callers built with
+// an older SDK to discover multi-bank support through an optional interface.
+func (d *Device) SetRegisterBase(base uint32) error {
+	if base%4 != 0 || base > ^uint32(0)-RegDebug {
+		return errors.New("invalid register base alignment or range")
+	}
+	d.registerBase = base
+	return nil
 }
 
 // CloseStreams closes the DMA handles. It is safe to call more than once and
@@ -104,7 +122,7 @@ func (d *Device) ReadC2H(p []byte) (int, error) {
 // ReadReg32 reads a little-endian 32-bit user-BAR register.
 func (d *Device) ReadReg32(_ context.Context, offset uint32) (uint32, error) {
 	var buf [4]byte
-	n, err := d.user.ReadAt(buf[:], int64(offset))
+	n, err := d.user.ReadAt(buf[:], int64(d.registerBase)+int64(offset))
 	if err != nil {
 		return 0, fmt.Errorf("read register 0x%08x: %w", offset, err)
 	}
@@ -118,7 +136,7 @@ func (d *Device) ReadReg32(_ context.Context, offset uint32) (uint32, error) {
 func (d *Device) WriteReg32(_ context.Context, offset uint32, value uint32) error {
 	var buf [4]byte
 	binary.LittleEndian.PutUint32(buf[:], value)
-	n, err := d.user.WriteAt(buf[:], int64(offset))
+	n, err := d.user.WriteAt(buf[:], int64(d.registerBase)+int64(offset))
 	if err != nil {
 		return fmt.Errorf("write register 0x%08x: %w", offset, err)
 	}
