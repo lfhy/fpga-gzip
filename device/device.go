@@ -228,16 +228,16 @@ func (d *Device) SoftReset(ctx context.Context, timeout time.Duration) error {
 	if err := d.WriteReg32(ctx, RegCtrl, CtrlSoftReset); err != nil {
 		return err
 	}
-	if err := sleepContext(ctx, time.Millisecond); err != nil {
-		return err
-	}
 	deadline := time.Now().Add(timeout)
 	for time.Now().Before(deadline) {
 		status, err := d.ReadReg32(ctx, RegStatus)
 		if err != nil {
 			return err
 		}
-		if status&StatusResetBusy == 0 {
+		// The status read also completes the preceding posted reset write.
+		// Wait for the old task's BUSY/DONE/ERROR state to clear, rather than
+		// adding a millisecond to every bounded chunk before looking at it.
+		if status&(StatusResetBusy|StatusBusy|StatusDone|StatusError) == 0 {
 			return nil
 		}
 		if err := sleepContext(ctx, 50*time.Microsecond); err != nil {

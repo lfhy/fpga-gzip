@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestRegisterBanksRemainIndependent(t *testing.T) {
@@ -38,6 +39,56 @@ func TestRegisterBanksRemainIndependent(t *testing.T) {
 		if got := binary.LittleEndian.Uint32(data[core*0x1000+8:]); got != uint32(100+core) {
 			t.Fatalf("bank %d overwritten: %d", core, got)
 		}
+	}
+}
+
+func TestSoftResetWaitsForOldCompletionToClear(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "bar")
+	data := make([]byte, 4096)
+	binary.LittleEndian.PutUint32(data[RegStatus:], StatusDone)
+	if err := os.WriteFile(path, data, 0600); err != nil {
+		t.Fatal(err)
+	}
+	d, err := Open(Paths{User: path, H2C: "/dev/null", C2H: "/dev/null"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer d.Close()
+	done := make(chan error, 1)
+	go func() { done <- d.SoftReset(context.Background(), time.Second) }()
+	select {
+	case err := <-done:
+		t.Fatalf("accepted stale DONE: %v", err)
+	case <-time.After(5 * time.Millisecond):
+	}
+	if err := d.WriteReg32(context.Background(), RegStatus, 0); err != nil {
+		t.Fatal(err)
+	}
+	if err := <-done; err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestSoftResetHasNoFixedDelayAndHonorsCancellation(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "bar")
+	if err := os.WriteFile(path, make([]byte, 4096), 0600); err != nil {
+		t.Fatal(err)
+	}
+	d, err := Open(Paths{User: path, H2C: "/dev/null", C2H: "/dev/null"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer d.Close()
+	if err = d.SoftReset(context.Background(), time.Second); err != nil {
+		t.Fatal(err)
+	}
+	if err = d.WriteReg32(context.Background(), RegStatus, StatusResetBusy); err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if err = d.SoftReset(ctx, time.Second); err != context.Canceled {
+		t.Fatal(err)
 	}
 }
 
@@ -91,6 +142,18 @@ func TestPoolKeepsCoreUntilLeaseClose(t *testing.T) {
 	}
 	if len(p.available) != 0 {
 		t.Fatal("CloseStreams released the active control bank")
+	}
+	waitCtx, stop := context.WithCancel(context.Background())
+	waited := make(chan error, 1)
+	go func() { _, err := p.Acquire(waitCtx); waited <- err }()
+	select {
+	case err := <-waited:
+		t.Fatalf("admitted overlapping stream: %v", err)
+	case <-time.After(time.Millisecond):
+	}
+	stop()
+	if err := <-waited; err != context.Canceled {
+		t.Fatal(err)
 	}
 	if err = l.Close(); err != nil {
 		t.Fatal(err)
