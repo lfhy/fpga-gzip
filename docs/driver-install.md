@@ -21,28 +21,50 @@ sudo dnf install gcc make git kernel-devel-$(uname -r) kernel-headers-$(uname -r
 
 ## 2. 下载并编译官方驱动
 
+本机已确认官方 XDMA 2025.2 的同步等待会被 Go 的 SIGURG 提前唤醒，随后把未完成请求当成超时中止。
+使用本项目的 [DMA 等待补丁](patches/xdma-2025.2-killable-dma-wait.patch)，避免长流随机失败或丢失流数据。
+补丁基于官方提交 `a918c5196a09f95756af244a607d543d9dce5bfb`，实测内核为 Linux 6.12。
+下面固定到该源码版本；其他版本需要重新核对补丁及实机测试。
+
 ```bash
+fpga_gzip_dir=/root/fpga-gzip  # 改成保存本 SDK 的路径
 cd /usr/local/src
 git clone --depth 1 https://github.com/Xilinx/dma_ip_drivers.git
-cd dma_ip_drivers/XDMA/linux-kernel/xdma
+cd dma_ip_drivers
+git fetch --depth 1 origin a918c5196a09f95756af244a607d543d9dce5bfb
+git checkout --detach FETCH_HEAD
+git apply --check "$fpga_gzip_dir/docs/patches/xdma-2025.2-killable-dma-wait.patch"
+git apply "$fpga_gzip_dir/docs/patches/xdma-2025.2-killable-dma-wait.patch"
+cd XDMA/linux-kernel/xdma
 make
 ```
+
+已经应用补丁的源码不需要重复应用。补丁将 transfer 完成等待改为 killable wait，普通信号不会中止 DMA，
+真正的驱动超时和 SIGKILL 仍然有效。正常操作无需禁用 Go 抢占，也无需使用 polling 模式。
+普通信号不再打断内核 DMA 等待，取消可能等待当前传输结束或驱动超时（本机默认 10 秒）。
 
 只要 bitstream 实现了 XDMA IP，官方驱动的 PCI ID 表包含 `10ee:903f`，模块会尝试 probe 该设备。驱动匹配并不意味着 FPGA 内部一定有 gzip 算法。
 
 ## 3. 安装并加载
 
+先停止所有使用 `/dev/xdma*` 的程序；如果已加载旧模块，执行 `sudo modprobe -r xdma`。
+
 ```bash
-sudo make install
+sudo install -D -m 0644 xdma.ko "/lib/modules/$(uname -r)/updates/xdma.ko"
 sudo depmod -a
 sudo modprobe xdma
+modinfo -n xdma
+cat /sys/module/xdma/srcversion
 ```
 
-`make install` 将模块放到：
+以上命令将模块放到：
 
 ```text
-/lib/modules/$(uname -r)/xdma/xdma.ko
+/lib/modules/$(uname -r)/updates/xdma.ko
 ```
+
+`modinfo -n xdma` 应指向该文件；本机修补版的 `srcversion` 为 `4053DCC3523124C6CC000FA`。
+内核升级后需要为新内核重新编译安装。此驱动补丁不会加载或持久化 FPGA bitstream。
 
 需要开机自动加载时创建 `/etc/modules-load.d/xdma.conf`：
 
@@ -85,11 +107,14 @@ dmesg | tail -100
 
 ```bash
 sudo modprobe -r xdma
-cd /usr/local/src/dma_ip_drivers/XDMA/linux-kernel/xdma
-sudo make uninstall
+sudo rm "/lib/modules/$(uname -r)/updates/xdma.ko"
+sudo depmod -a
 ```
 
-如果只想临时验证，可以跳过 `make install`，直接使用编译目录中的 `xdma.ko`：
+本机原始模块保留在 `/root/xdma.ko`，回滚后可用 `sudo insmod /root/xdma.ko` 临时加载。
+其他机器应使用自己提前保存的同内核模块；不要混用内核版本不同的 `.ko`。
+
+如果只想临时验证，可以跳过安装步骤，直接使用编译目录中的 `xdma.ko`：
 
 ```bash
 sudo insmod ./xdma.ko

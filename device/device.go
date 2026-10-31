@@ -57,8 +57,9 @@ func Open(paths Paths) (*Device, error) {
 	return &Device{user: user, h2c: h2c, c2h: c2h}, nil
 }
 
-// CloseStreams interrupts blocking DMA reads/writes.  It is safe to call more
-// than once and is used by cancellation handling in the pipeline.
+// CloseStreams closes the DMA handles. It is safe to call more than once and
+// is used by cancellation handling. An in-flight character-device syscall may
+// remain blocked until the driver completes or times out the transfer.
 func (d *Device) CloseStreams() error {
 	var first error
 	d.closeStreamsOnce.Do(func() {
@@ -72,7 +73,7 @@ func (d *Device) CloseStreams() error {
 	return first
 }
 
-// Close closes all device files.  It also interrupts any pending stream I/O.
+// Close closes all device files; see CloseStreams for in-flight I/O behavior.
 func (d *Device) Close() error {
 	if d == nil {
 		return nil

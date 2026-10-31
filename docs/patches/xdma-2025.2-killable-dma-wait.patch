@@ -1,0 +1,164 @@
+--- a/XDMA/linux-kernel/xdma/libxdma.h
++++ b/XDMA/linux-kernel/xdma/libxdma.h
+@@ -450,11 +450,11 @@
+ 	int desc_cmpl;			/* completed descriptors */
+ 	int desc_cmpl_th;		/* completed descriptor threshold */
+ 	enum dma_data_direction dir;
+-#if	HAS_SWAKE_UP
+-	struct swait_queue_head wq;
+-#else
+-	wait_queue_head_t wq;		/* wait queue for transfer completion */
+-#endif
++	/*
++	 * DMA cannot be restarted after a non-fatal userspace signal without
++	 * losing stream bytes. Use a normal queue for TASK_KILLABLE waits.
++	 */
++	wait_queue_head_t wq;
+ 
+ 	enum transfer_state state;	/* state of the transfer */
+ 	unsigned int flags;
+--- a/XDMA/linux-kernel/xdma/libxdma.c
++++ b/XDMA/linux-kernel/xdma/libxdma.c
+@@ -816,7 +816,7 @@
+ 
+ 	/* synchronous I/O? */
+ 	/* awake task on transfer's wait queue */
+-	xlx_wake_up(&transfer->wq);
++	wake_up(&transfer->wq);
+ 
+ 	/* Send completion notification for Last transfer */
+ 	if (transfer->cb && transfer->last_in_request)
+@@ -2977,11 +2977,7 @@
+ 	/* lock the engine state */
+ 	spin_lock_irqsave(&engine->lock, flags);
+ 	/* initialize wait queue */
+-#if HAS_SWAKE_UP
+-	init_swait_queue_head(&xfer->wq);
+-#else
+ 	init_waitqueue_head(&xfer->wq);
+-#endif
+ 
+ 	/* remember direction of transfer */
+ 	xfer->dir = engine->dir;
+@@ -3237,6 +3233,7 @@
+ 
+ 	while (req->offset < req->total_len) {
+ 		unsigned long flags;
++		long wait_rv;
+ 		struct xdma_transfer *xfer = &req->tfer[0];
+ 		unsigned int sg_offset = req->sg_offset;
+ 		unsigned int desc_idx, desc_max, desc_cnt = 0;
+@@ -3245,11 +3242,7 @@
+ 
+ 		/* initialize transfer */
+ 		memset(xfer, 0, sizeof(struct xdma_transfer));
+-#if HAS_SWAKE_UP
+-		init_swait_queue_head(&xfer->wq);
+-#else
+ 		init_waitqueue_head(&xfer->wq);
+-#endif
+ 		xfer->dir = engine->dir;
+ 		if (!dma_mapped)
+ 			xfer->flags = XFER_FLAG_NEED_UNMAP;
+@@ -3373,13 +3366,14 @@
+ 		if (engine->cmplthp)
+ 			xdma_kthread_wakeup(engine->cmplthp);
+ 
++		/* Non-fatal signals (including Go's SIGURG) must not abort DMA. */
+ 		if (timeout_ms > 0)
+-			xlx_wait_event_interruptible_timeout(xfer->wq,
+-				(xfer->state != TRANSFER_STATE_SUBMITTED),
++			wait_rv = wait_event_killable_timeout(xfer->wq,
++				(READ_ONCE(xfer->state) != TRANSFER_STATE_SUBMITTED),
+ 				msecs_to_jiffies(timeout_ms));
+ 		else
+-			xlx_wait_event_interruptible(xfer->wq,
+-				(xfer->state != TRANSFER_STATE_SUBMITTED));
++			wait_rv = wait_event_killable(xfer->wq,
++				(READ_ONCE(xfer->state) != TRANSFER_STATE_SUBMITTED));
+ 
+ 		spin_lock_irqsave(&engine->lock, flags);
+ 
+@@ -3407,9 +3401,9 @@
+ 			rv = -EIO;
+ 			break;
+ 		default:
+-			/* transfer can still be in-flight */
+-			pr_info("xfer 0x%p,%u, s 0x%x timed out, ep 0x%llx.\n",
+-				xfer, xfer->len, xfer->state, req->ep_addr);
++			/* A real deadline or fatal signal can leave DMA in flight. */
++			pr_info("xfer 0x%p,%u, s 0x%x wait ended (%ld), ep 0x%llx.\n",
++				xfer, xfer->len, xfer->state, wait_rv, req->ep_addr);
+ 			rv = engine_status_read(engine, 0, 1);
+ 			if (rv < 0) {
+ 				pr_err("Failed to read engine status\n");
+@@ -3430,7 +3424,7 @@
+ 			transfer_dump(xfer);
+ 			sgt_dump(sgt);
+ #endif
+-			rv = -ETIMEDOUT;
++			rv = wait_rv < 0 ? wait_rv : -ETIMEDOUT;
+ 			break;
+ 		}
+ 
+@@ -3554,6 +3548,7 @@
+ 
+ 	while (nents) {
+ 		unsigned long flags;
++		long wait_rv;
+ 		struct xdma_transfer *xfer;
+ 
+ 		/* build transfer */
+@@ -3591,13 +3586,14 @@
+ 		if (engine->cmplthp)
+ 			xdma_kthread_wakeup(engine->cmplthp);
+ 
++		/* Non-fatal signals (including Go's SIGURG) must not abort DMA. */
+ 		if (timeout_ms > 0)
+-			xlx_wait_event_interruptible_timeout(xfer->wq,
+-				(xfer->state != TRANSFER_STATE_SUBMITTED),
++			wait_rv = wait_event_killable_timeout(xfer->wq,
++				(READ_ONCE(xfer->state) != TRANSFER_STATE_SUBMITTED),
+ 				msecs_to_jiffies(timeout_ms));
+ 		else
+-			xlx_wait_event_interruptible(xfer->wq,
+-				(xfer->state != TRANSFER_STATE_SUBMITTED));
++			wait_rv = wait_event_killable(xfer->wq,
++				(READ_ONCE(xfer->state) != TRANSFER_STATE_SUBMITTED));
+ 
+ 		spin_lock_irqsave(&engine->lock, flags);
+ 
+@@ -3637,9 +3633,9 @@
+ 			rv = -EIO;
+ 			break;
+ 		default:
+-			/* transfer can still be in-flight */
+-			pr_info("xfer 0x%p,%u, s 0x%x timed out, ep 0x%llx.\n",
+-				xfer, xfer->len, xfer->state, req->ep_addr);
++			/* A real deadline or fatal signal can leave DMA in flight. */
++			pr_info("xfer 0x%p,%u, s 0x%x wait ended (%ld), ep 0x%llx.\n",
++				xfer, xfer->len, xfer->state, wait_rv, req->ep_addr);
+ 			rv = engine_status_read(engine, 0, 1);
+ 			if (rv < 0) {
+ 				pr_err("Failed to read engine status\n");
+@@ -3660,7 +3656,7 @@
+ 			transfer_dump(xfer);
+ 			sgt_dump(sgt);
+ #endif
+-			rv = -ETIMEDOUT;
++			rv = wait_rv < 0 ? wait_rv : -ETIMEDOUT;
+ 			break;
+ 		}
+ 
+@@ -4090,11 +4086,7 @@
+ 	transfer->cyclic = 1;
+ 
+ 	/* initialize wait queue */
+-#if HAS_SWAKE_UP
+-	init_swait_queue_head(&transfer->wq);
+-#else
+ 	init_waitqueue_head(&transfer->wq);
+-#endif
+ 
+ 	//printk("=== Descriptor print for PERF\n");
+ 	//transfer_dump(transfer);

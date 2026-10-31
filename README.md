@@ -2,7 +2,8 @@
 
 `fpga-gzip` 是一个纯 Go 的 FPGA gzip 主机端 SDK 和命令行工具。它直接访问 Xilinx XDMA 字符设备和 FPGA user BAR，不依赖 cgo、XRT 或厂商用户态库。当前实现对应本机已经验证过的 gzip shell：一个 H2C streaming 通道、一个 C2H streaming 通道，以及 user BAR 上的 gzip 控制寄存器。
 
-当前目录已经在本机 FPGA 上验证：1 MiB 输入可以得到 gzip 输出，`gzip -t` 通过，解压结果与原始文件逐字节一致。
+2026-10-31 已在本机修补后的 RTL 和 XDMA 驱动上验证：10 GiB 随机数据完整压缩、解压并逐字节比较通过。
+Go 默认抢占可正常使用；安装时应应用 [`DMA 等待补丁`](docs/driver-install.md)，避免 SIGURG 导致驱动提前中止传输。
 
 ## 目录结构
 
@@ -134,7 +135,8 @@ gzip -dc output.gz | cmp - input.bin
 
 `gzip -t` 只检查 gzip 容器和压缩流的结构，不能证明解压出的字节就是输入。SDK 在流水线结束时会流式校验输出 trailer 中的 CRC32 和 ISIZE，并与输入数据核对；独立基准仍应同时执行上面的 `gzip -dc | cmp`。如果只看到 `gzip -t` 通过而内容比较失败，说明 bitstream 或 DMA 数据路径有问题，不能记录为成功吞吐。
 
-输入文件必须是非空普通文件。`Ctrl-C` 会停止新的 H2C 提交、关闭阻塞的 XDMA stream，并尝试复位 FPGA datapath。
+输入文件必须是非空普通文件。`Ctrl-C` 会取消流水线、尝试关闭 XDMA stream 并复位 FPGA datapath；
+正在内核中等待的 DMA 调用可能等待当前传输完成或驱动超时，关闭文件句柄不能保证立即打断该调用。
 
 ## 配置文件、环境变量和参数
 
@@ -196,6 +198,9 @@ sudo -E ./bin/fpga-gzip --config config.toml --output result.gz
 | `0x18/0x1c` | `IN_BYTES_LO/HI` | FPGA 已接受的输入字节数 |
 | `0x20` | `C2H_REQ_LEN` | 下一次 C2H packet 请求长度 |
 | `0x24` | `DEBUG` | shell 调试状态 |
+| `0x28/0x2c` | `C2H_VALID_CYCLES` | 验证版 RTL：C2H valid 周期数 |
+| `0x30/0x34` | `C2H_TRANSFER_BEATS` | 验证版 RTL：C2H valid/ready 握手 beat 数 |
+| `0x38/0x3c` | `C2H_STALL_CYCLES` | 验证版 RTL：C2H valid 且未 ready 的周期数 |
 
 每个 C2H 请求先写 `C2H_REQ_LEN`，再写 `CTRL.C2H_START`，然后对 `/dev/xdma0_c2h_0` 执行一次等长 `read()`。本机 `shorttail72` shell 的默认请求为 32 KiB，并按 8 字节 beat 对齐；最后一个请求可以携带 partial beat。256 KiB 在这块卡上可能触发 C2H/H2C 超时，换了 RTL 后应重新验证请求粒度。SDK 要求每次 `read()` 精确返回请求长度；短读或超读都会报协议错误，避免把未确认的 DMA buffer 尾部写入 gzip。历史 C 版本曾放宽小于 4 KiB 的差异，这会产生 `gzip -t` 通过但 payload 损坏的输出。
 
@@ -216,15 +221,29 @@ sudo -E ./bin/fpga-gzip --config config.toml --output result.gz
 
 设置 `--csv result.csv` 或 `[gzip].csv` 后，程序会追加输入大小、输出大小、缓冲配置、流水线耗时、输出 `Sync` 耗时、FPGA 耗时、C2H 耗时、吞吐和压缩比例。`Total` 在流水线和最终寄存器检查后结束，输出仍会在程序返回前完成 `Sync`。随机数据的 gzip 输出可能比输入更大，这是正常现象。
 
+2026-10-31 验证版使用 32 KiB C2H、4 MiB H2C、8 槽位、4 个 Go P，XDMA 中断模式和默认 Go 抢占，单核单通道：
+
+| 输入 | 输出/输入 | Total | 另计输出 Sync | 阶段吞吐 | 含 Sync 吞吐 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 10 GiB 随机数据 | 105.53% | 13.708 s | 2.540 s | 783 MB/s（747 MiB/s） | 661 MB/s |
+| 1 GiB 重复文本 | 3.06% | 0.584 s | 0.008 s | 1840 MB/s（1754 MiB/s） | 1816 MB/s |
+| 10 GiB 重复文本 | 3.06% | 5.649 s | 0.074 s | 1901 MB/s（1813 MiB/s） | 1876 MB/s |
+
+三份输出均已完整解压并与输入逐字节比较。文件位于 `/data1` NVMe，使用缓冲 I/O，输入可能命中 page cache。
+随机输入的 1/2/4/8 个 Go P 对照分别约 472/706/761/743 MB/s，因此当前保留默认 4。
+修补后的驱动还通过 15199 次 SIGURG 的 1 GiB 压缩回归、真实超时和 SIGKILL 中止检查；
+RTL 和实机边界回归覆盖随机、全零、重复文本共 135 个用例。
+SDK 不修改宿主进程的 `GOMAXPROCS`，FUSE 仍可独立配置并发度。
+
 本机 `/data1` NVMe 上的历史 10 GiB 随机数据记录如下；旧记录使用 8 个槽位、4 MiB H2C、256 KiB C2H 请求和 `max_procs=1`，仅用于说明当时的测试环境：
 
-| 实现 | 总耗时 | 流水线/FPGA 耗时 | 端到端吞吐 | 输出字节 |
+| 实现 | 总耗时 | 流水线/FPGA 耗时 | 阶段吞吐（不含 Sync） | 输出字节 |
 | --- | ---: | ---: | ---: | ---: |
 | `fpga-gzip`（`max_procs=1`） | 6.950 s | 6.946/6.948 s | 1473.30 MiB/s | 11325240047 |
 
 `/data1` 裸盘直读约 6.3 GB/s、直写约 3.8 GB/s，所以表中的 620–1470 MiB/s 是压缩流水线吞吐，不是硬盘上限。这次 10 GiB 输出的 `Sync` 另耗时 2.528 s，未计入表中 `Total`。该输出随后通过 `gzip -t`，并用 `gzip -dc | cmp` 与原始 10 GiB 输入逐字节校验。旧的 256 KiB C2H 配置或 `GOMAXPROCS=1` 不能代表 FPGA 核本身的性能；前者可能让 packetizer/驱动超时，后者会把 H2C、C2H、落盘和轮询 goroutine 串在一个 P 上。当前默认配置使用 32 KiB C2H 和 4 个 P。库调用不会修改宿主进程的 `GOMAXPROCS`，只有独立 CLI 根据 `--max-procs` 设置自己的进程；这避免 FUSE 进程被压成单 P。
 
-在相同的 `/data1/fpga-bench-64MiB.bin` 随机输入上，当前 `FPGA-4IP` bitstream 的单核对照如下：
+此前在相同的 `/data1/fpga-bench-64MiB.bin` 随机输入上，旧 `FPGA-4IP` bitstream 的单核对照如下：
 
 | 实现 | C2H | H2C | Go P 数 | 吞吐 | 结果 |
 | --- | ---: | ---: | ---: | ---: | --- |
@@ -232,7 +251,10 @@ sudo -E ./bin/fpga-gzip --config config.toml --output result.gz
 | 旧 Go 默认 | 256 KiB | 4 MiB | 1 | 51.50 MiB/s | 不稳定/可能超时 |
 | Go 调优后 | 32 KiB | 4 MiB | 4 | 748.28 MiB/s | 成功，gzip 校验通过 |
 
-这版 bitstream 的 post-route 时序为 `axis_clk=250 MHz`；LUT 使用率约 91%、BRAM 约 89%、URAM 100%。构建日志还显示 C2H packetizer 的 `req_busy/req_done` 没有接到 shell 控制寄存器，因此主机必须依赖 `OUT_BYTES` 和等长 `read()` 判断请求完成。它不解释 50 MiB/s 的主因，但使软件必须严格遵守这套请求协议。
+旧 bitstream 的 post-route 时序为 `axis_clk=250 MHz`；LUT 使用率约 91%、BRAM 约 89%、URAM 100%。
+2026-10-31 的 RTL 已连接 packetizer 的 `req_busy/req_done`，加入 C2H 握手与背压计数器；
+该验证版 WNS +0.006 ns、WHS +0.010 ns，完整布线、DRC 无 error。
+主机仍应使用 `OUT_BYTES` 和等长 `read()` 判断请求完成，遵守 32 KiB 默认请求及非尾请求 8 字节对齐约束。
 
 ## HTTP/Unix 压缩服务
 
