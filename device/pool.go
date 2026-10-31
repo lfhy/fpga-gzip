@@ -43,12 +43,21 @@ func NewPool(paths []Paths) (*Pool, error) {
 		return nil, errors.New("at least one device path is required")
 	}
 	seen := make(map[string]bool)
+	banks := make(map[string][]uint32)
 	for _, path := range paths {
 		if path.User == "" || path.H2C == "" || path.C2H == "" || path.RegisterBase%4 != 0 || path.RegisterBase > ^uint32(0)-RegDebug {
 			return nil, errors.New("invalid device paths or register base")
 		}
-		for _, key := range []string{"h:" + canonicalPath(path.H2C), "c:" + canonicalPath(path.C2H),
-			fmt.Sprintf("b:%s:%x", canonicalPath(path.User), path.RegisterBase)} {
+		user := canonicalPath(path.User)
+		for _, base := range banks[user] {
+			// Include the final 32-bit register, without uint32 overflow.
+			if uint64(path.RegisterBase) < uint64(base)+uint64(RegDebug)+4 &&
+				uint64(base) < uint64(path.RegisterBase)+uint64(RegDebug)+4 {
+				return nil, fmt.Errorf("overlapping control banks on %s: %#x and %#x", user, base, path.RegisterBase)
+			}
+		}
+		banks[user] = append(banks[user], path.RegisterBase)
+		for _, key := range []string{"h:" + canonicalPath(path.H2C), "c:" + canonicalPath(path.C2H)} {
 			if seen[key] {
 				return nil, fmt.Errorf("overlapping device stream or control bank: %s", key)
 			}

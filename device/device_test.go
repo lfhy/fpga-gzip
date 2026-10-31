@@ -119,6 +119,23 @@ func TestFourCorePathValidation(t *testing.T) {
 	}
 }
 
+func TestPoolRejectsPartialRegisterOverlap(t *testing.T) {
+	paths, err := FourCorePaths(Paths{User: "/dev/xdma0_user", H2C: "/dev/xdma0_h2c_0", C2H: "/dev/xdma0_c2h_0"}, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, base := range []uint32{4, RegDebug} {
+		paths[1].RegisterBase = base
+		if _, err := NewPool(paths); err == nil {
+			t.Fatalf("accepted overlapping bank at %#x", base)
+		}
+	}
+	paths[1].RegisterBase = RegDebug + 4
+	if _, err := NewPool(paths); err != nil {
+		t.Fatalf("rejected adjacent nonoverlapping banks: %v", err)
+	}
+}
+
 func TestPoolKeepsCoreUntilLeaseClose(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "bar")
 	if err := os.WriteFile(path, make([]byte, 4096), 0600); err != nil {
