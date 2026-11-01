@@ -31,7 +31,7 @@ sudo dnf install gcc make git kernel-devel-$(uname -r) kernel-headers-$(uname -r
 官方 EOP 路径给每个 SG 段设置完成通知，并在中断中扫描已完成段；原来每页一个段，
 大包读取反而增加开销。补丁仅对 streaming C2H 的 EOP 读取使用内核
 `sg_alloc_table_from_pages_segment`，在设备 DMA 段长度上限内合并物理连续页。
-H2C 和原精确长度读取保持原 SG 布局；页固定、DMA 映射和释放仍由驱动执行。
+这个基础补丁保留 H2C 和原精确长度读取的 SG 布局；页固定、DMA 映射和释放仍由驱动执行。
 内核 helper 的实现见 [Linux v6.12 scatterlist.c](https://github.com/torvalds/linux/blob/v6.12/lib/scatterlist.c)。
 EOP 还需要 [描述符链尾修补](patches/xdma-2025.2-eop-chain-tail.patch)：一个读取请求
 可能在描述符环回绕处拆成多次传输。官方代码只在部分描述符完成时检查 EOP；
@@ -43,6 +43,11 @@ EOP 还需要 [描述符链尾修补](patches/xdma-2025.2-eop-chain-tail.patch)�
 驱动将设备声明的上限至少提高到 1 MiB，让上述 EOP SG 合并发挥作用；物理不连续
 的页不会被强行合并，其他读取路径不改变 SG 构造。卸载和 probe 失败时恢复原上限。
 硬件描述符格式见 [AMD PG195](https://docs.amd.com/r/en-US/pg195-pcie-dma)。
+配合 gzip 输入预取镜像，再应用 [H2C 连续页合并补丁](patches/xdma-2025.2-h2c-sg-merge.patch)：
+将同一内核 helper 扩展到 streaming H2C，减少描述符提交和设备取描述符的开销。
+只合并物理相邻页并遵守 DMA 段长度上限；页固定、方向、字节偏移、DMA 映射和释放保持原逻辑。
+四核 256 MiB 分块的三轮对照中，文本从约 7.74 提升至 7.84 GB/s；720 组边界输入
+及三种数据各 96 GiB 的完整解压比较通过。性能条件见[gzip 吞吐实测](gzip-throughput-20261102.md)。
 补丁基于官方提交 `a918c5196a09f95756af244a607d543d9dce5bfb`，实测内核为 Linux 6.12。
 下面固定到该源码版本；其他版本需要重新核对补丁及实机测试。
 
@@ -63,6 +68,8 @@ git apply --check "$fpga_gzip_dir/docs/patches/xdma-2025.2-eop-chain-tail.patch"
 git apply "$fpga_gzip_dir/docs/patches/xdma-2025.2-eop-chain-tail.patch"
 git apply --check "$fpga_gzip_dir/docs/patches/xdma-2025.2-max-dma-segment.patch"
 git apply "$fpga_gzip_dir/docs/patches/xdma-2025.2-max-dma-segment.patch"
+git apply --check "$fpga_gzip_dir/docs/patches/xdma-2025.2-h2c-sg-merge.patch"
+git apply "$fpga_gzip_dir/docs/patches/xdma-2025.2-h2c-sg-merge.patch"
 cd XDMA/linux-kernel/xdma
 make
 ```
@@ -91,8 +98,9 @@ cat /sys/module/xdma/srcversion
 /lib/modules/$(uname -r)/updates/xdma.ko
 ```
 
-`modinfo -n xdma` 应指向该文件；本机五个补丁的修补版 `srcversion` 为
-`EE98305A8E92F08D1564207`。前四个补丁为 `E3CDCD760B1013A292DE373`，
+`modinfo -n xdma` 应指向该文件；本机六个补丁的构建 `srcversion` 为
+`2B62117683A9D7702D0CF20`，固定上游版本依次应用六个补丁重建后与测试候选一致。
+原五个补丁的修补版为 `EE98305A8E92F08D1564207`。前四个补丁为 `E3CDCD760B1013A292DE373`，
 前三个补丁为 `94DCC95A2173C02F0AD9552`，
 仅等待与只读页补丁的版本为 `C6055D7044FEB6C79C6C438`，
 只含等待补丁的旧版为 `4053DCC3523124C6CC000FA`。安装前应另存当前已验证的模块用于回滚。
