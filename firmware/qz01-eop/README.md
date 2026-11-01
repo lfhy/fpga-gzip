@@ -41,6 +41,21 @@ firmware/qz01-eop/run-stream.sh /path/to/copied/rtl/axis_c2h_packetizer_64.v
 使用者，装载后核对四个 bank 的协议标识并重新跑真实板卡边界校验。
 仅做易失性 JTAG 装载；不写配置 Flash。
 
+`build.tcl` 是本次构建流程的参数化版本。先把已验证的原工程复制为
+`<build-root>/project`，原 RTL 复制为 `<build-root>/rtl`，在该 RTL
+副本应用补丁。保留原 IP 的 OOC 综合结果，不重综合 HLS IP、不扩大 FIFO；
+原工程不会被脚本打开或重置。参考 checkpoint 和 IP 仓库均以原文件只读使用：
+
+```bash
+/opt/Xilinx/2025.2/Vivado/bin/vivado -mode batch \
+  -source firmware/qz01-eop/build.tcl -tclargs \
+  /path/to/copied-build-root /path/to/reference/top_4core_routed.dcp \
+  /path/to/original/ip_repo_shorttail72
+```
+
+脚本验证工程及 run 目录位于副本内部，生成 timing/utilization/route/DRC
+报告，只有时序和 DRC 通过才写出 `qz01_gzip_4ip_eop.bit`。
+
 CLI/daemon 的新选项：`--packet-request-bytes=1MiB`、
 `--legacy-packets=false`、`--mmap-registers=false`。BAR mmap 仅作为
 Linux amd64 的可选实验项。库不会修改宿主的 `GOMAXPROCS`。
