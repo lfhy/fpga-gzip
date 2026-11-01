@@ -153,7 +153,7 @@ func run() int {
 	}
 	svc, err := server.New(server.Config{
 		HardwareFactory: func(ctx context.Context) (pipeline.Hardware, error) {
-			lease, err := pool.Acquire(ctx)
+			lease, err := pool.AcquireActive(ctx)
 			if err != nil {
 				return nil, err
 			}

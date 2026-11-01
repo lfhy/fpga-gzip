@@ -38,6 +38,7 @@ func FourCorePaths(first Paths, count int) ([]Paths, error) {
 type Pool struct {
 	available chan Paths
 	open      func(Paths) (*Device, error)
+	paths     []Paths
 }
 
 func NewPool(paths []Paths) (*Pool, error) {
@@ -66,7 +67,7 @@ func NewPool(paths []Paths) (*Pool, error) {
 			seen[key] = true
 		}
 	}
-	p := &Pool{available: make(chan Paths, len(paths)), open: Open}
+	p := &Pool{available: make(chan Paths, len(paths)), open: Open, paths: append([]Paths(nil), paths...)}
 	for _, path := range paths {
 		p.available <- path
 	}
@@ -93,14 +94,61 @@ type Lease struct {
 }
 
 func (p *Pool) Acquire(ctx context.Context) (*Lease, error) {
+	return p.acquire(ctx, nil)
+}
+
+// AcquireActive limits admission to the cores advertised by the current image.
+// This lets a four-channel daemon follow a two-core Zstd image without serving
+// alternate requests on inactive banks. Identity checks in the transaction
+// remain mandatory because a switch can occur after this read-only probe.
+func (p *Pool) AcquireActive(ctx context.Context) (*Lease, error) {
+	infos := make(map[string]firmware.Info)
+	allowed := make(map[Paths]bool)
+	for _, paths := range p.paths {
+		info, ok := infos[paths.User]
+		if !ok {
+			lock, err := firmware.LockTransaction(paths.User)
+			if err != nil {
+				return nil, err
+			}
+			info, err = firmware.InspectBAR(ctx, paths.User, 0)
+			lock.Close()
+			if err != nil {
+				return nil, err
+			}
+			infos[paths.User] = info
+		}
+		if info.Legacy || paths.RegisterBase/0x1000 < info.Cores {
+			allowed[paths] = true
+		}
+	}
+	if len(allowed) == 0 {
+		return nil, fmt.Errorf("%w: no configured active core", firmware.ErrIncompatible)
+	}
+	return p.acquire(ctx, allowed)
+}
+
+func (p *Pool) acquire(ctx context.Context, allowed map[Paths]bool) (*Lease, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
 	var paths Paths
-	select {
-	case paths = <-p.available:
-	case <-ctx.Done():
-		return nil, ctx.Err()
+	var skipped []Paths
+	defer func() {
+		for _, path := range skipped {
+			p.available <- path
+		}
+	}()
+	for {
+		select {
+		case paths = <-p.available:
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+		if allowed == nil || allowed[paths] {
+			break
+		}
+		skipped = append(skipped, paths)
 	}
 	if err := ctx.Err(); err != nil {
 		p.available <- paths
