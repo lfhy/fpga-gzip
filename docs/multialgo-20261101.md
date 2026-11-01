@@ -73,6 +73,7 @@ NUMA0 CPU 与 XDMA IRQ 亲和；1 MiB DMA 分段、4 个 H2C slot、EOP packet �
 [容量基准](capacity-20261101.md)。LZ4/Zstd 是功能优先的首版，不套用 gzip 吞吐：
 LZ4 的 8 MiB 直连测试约 52–88 MB/s/核，Zstd 当前使用 2 核、125 MHz。
 通用 SDK 对 LZ4/Zstd FPGA 输出的完整 CPU 解码校验计入调用时间。
+四种算法使用相同输入的三轮编码通道、SDK 与纯 Go CPU 对照见[性能报告](algorithm-performance-20261101.md)。
 
 ## 混合存储验证
 

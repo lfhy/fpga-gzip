@@ -1,0 +1,2764 @@
+{
+  "pass": true,
+  "date": "2026-11-01",
+  "source": "/data1/fpga-algorithms-20261101-snkvnq9w",
+  "benchmark": {
+    "pass": true,
+    "started_at": "2026-11-01T11:35:45.922055+00:00",
+    "completed_at": "2026-11-01T11:44:09.535467+00:00",
+    "reports": [
+      "gzip-cpu.json",
+      "gzip-fpga-sdk.json",
+      "gzip-fpga-pipeline.json",
+      "lz4-cpu.json",
+      "lz4-fpga-sdk.json",
+      "lz4-fpga-pipeline.json",
+      "zstd-cpu.json",
+      "zstd-fpga-sdk.json",
+      "zstd-fpga-pipeline.json",
+      "raw-cpu.json",
+      "raw-fpga-sdk.json",
+      "raw-fpga-pipeline.json"
+    ],
+    "rows": 396,
+    "input_bytes": 186025771008,
+    "sdk_commit": "cdb915b118bc5c6c28f39344deb593aaed02d236",
+    "benchmark_source_sha256": "229a4928e3a7d3c6b36ab1c11fbe0c121ef0c9fae4b751f8ae4ffe3100ca0a5c",
+    "final_firmware": {
+      "algorithm": "gzip",
+      "magic": 1129140312,
+      "abi": 65536,
+      "algorithm_id": 2,
+      "format": 1,
+      "cores": 4,
+      "features": 3,
+      "build": 86950339975258,
+      "legacy": false
+    },
+    "fixture": "/data1/compactfs-output-read-20261031-154041-fmjve2n4/compactfs-sdk-v0.0.2-20261031-154048-cq5kka6s/cpu/backend/chunks/xxh3-128/2e/05/2e05bbbfa4e774eb942dd905e3f28319"
+  },
+  "hardware": "KU5P, Gen3 x16 XDMA; Xeon Gold 6336Y; NUMA0 CPU/IRQ affinity",
+  "procs": 8,
+  "per_lane_mib": 128,
+  "rounds": 3,
+  "cpu_implementation": {
+    "gzip": "Go compress/gzip level 1",
+    "lz4": "pierrec/lz4 v4.1.22, 64 KiB independent blocks, checksum on",
+    "zstd": "klauspost/compress v1.17.11 SpeedFastest, concurrency 1 per encoder",
+    "raw": "bytes.Buffer.Write / memcpy"
+  },
+  "profiles": {
+    "gzip": {
+      "schema": 1,
+      "name": "ku5p-gzip-86950339975258",
+      "part": "xcku5p-ffvb676-2-e",
+      "algorithm": "gzip",
+      "abi": 65536,
+      "format": 1,
+      "cores": 4,
+      "build": 86950339975258,
+      "bitstream": "compactfs-gzip.bit",
+      "sha256": "56f523015c885728f530679c35a5e3f261cf2cb45e3380fb5bcf2cdb4ef700fb",
+      "validation": "hardware-verified",
+      "source": "."
+    },
+    "lz4": {
+      "schema": 1,
+      "name": "ku5p-lz4-200317347967794",
+      "part": "xcku5p-ffvb676-2-e",
+      "algorithm": "lz4",
+      "abi": 65536,
+      "format": 1,
+      "cores": 4,
+      "build": 200317347967794,
+      "bitstream": "compactfs-lz4.bit",
+      "sha256": "4b0b50d38a722fadb2803cf39072e4d09639ac79829d83367ef9de60d931f8da",
+      "validation": "hardware-verified",
+      "source": "."
+    },
+    "zstd": {
+      "schema": 1,
+      "name": "ku5p-zstd-167671449958172",
+      "part": "xcku5p-ffvb676-2-e",
+      "algorithm": "zstd",
+      "abi": 65536,
+      "format": 1,
+      "cores": 2,
+      "build": 167671449958172,
+      "bitstream": "compactfs-zstd.bit",
+      "sha256": "32dd90b5e64e4c8f6eb6b1d5cc4e1309e78c2ca161928fa940eeebd7a157771e",
+      "validation": "hardware-verified",
+      "source": "."
+    },
+    "raw": {
+      "schema": 1,
+      "name": "ku5p-raw-149839125801747",
+      "part": "xcku5p-ffvb676-2-e",
+      "algorithm": "raw",
+      "abi": 65536,
+      "format": 1,
+      "cores": 4,
+      "build": 149839125801747,
+      "bitstream": "compactfs-raw.bit",
+      "sha256": "12fc3ab1d6cd72494147a36a2be10d311ea33b8277c8cb9816f614f8edda4a3e",
+      "validation": "hardware-verified",
+      "source": "."
+    }
+  },
+  "report_sha256": {
+    "gzip-cpu.json": "eb4ec5513594dede32fdf3ee201c0594f818b42b6f99dfc77d2d63a69d3f7374",
+    "gzip-fpga-sdk.json": "fc4737349078391ebefbbfb67acedac385e55092191ff6511ff4f2a41bd2576a",
+    "gzip-fpga-pipeline.json": "7bff29bb2e8d5d09162777a2a45b1d7c1c904b879d83f8e0bb412bc30642f13e",
+    "lz4-cpu.json": "fcbc966d407bb2c1991267580086e0dadc12c7d5f66999190f0464e80d541cc0",
+    "lz4-fpga-sdk.json": "75ec50872fdaf38b7e98360dd465af35da1bc55d6f46fbdbb5dc50ed3ac0df28",
+    "lz4-fpga-pipeline.json": "9bfd69f78a0d9201c9138d1f8bf10863c9d482aebb1a6889863418ad4141fc59",
+    "zstd-cpu.json": "25722a8ffdd7b1f2582354cc696c3145a0df2dc5c55f81ef4fc58712a4303bea",
+    "zstd-fpga-sdk.json": "a0e86793a6b787d23054ead049726dbae53f43d8bef0c97ae8d1def1f67180c3",
+    "zstd-fpga-pipeline.json": "4b43f4e51b279c966e053f4a21c21156053e1c3d2d071a80006c7225e7533b1f",
+    "raw-cpu.json": "145910bcab15335e91eae33b7e0e51c6c9390e5c590f874530733d1920761c30",
+    "raw-fpga-sdk.json": "f7a888255612d7bb181c6be48d8512617ee5fe20770ba6c3f8959bdaa6181434",
+    "raw-fpga-pipeline.json": "ec3982168c765d238f951afc6d2332e632ad3dfbadba47769397627044f6b550"
+  },
+  "groups": [
+    {
+      "algorithm": "gzip",
+      "engine": "cpu",
+      "pattern": "fixture",
+      "chunk_bytes": 4194304,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 0.6172544561989316,
+      "gb_s_min": 0.6127181244628154,
+      "gb_s_max": 0.6190777456269895,
+      "gb_s_rounds": [
+        0.6127181244628154,
+        0.6172544561989316,
+        0.6190777456269895
+      ],
+      "output_input_ratio": 0.5006973743438721,
+      "cpu_cores_median": 0.9976856055025045,
+      "allocated_bytes_median": 424
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "cpu",
+      "pattern": "fixture",
+      "chunk_bytes": 4194304,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 2.4501668750341716,
+      "gb_s_min": 2.4407843566569682,
+      "gb_s_max": 2.4529317119354483,
+      "gb_s_rounds": [
+        2.4529317119354483,
+        2.4407843566569682,
+        2.4501668750341716
+      ],
+      "output_input_ratio": 0.5006973743438721,
+      "cpu_cores_median": 3.962959173325759,
+      "allocated_bytes_median": 1824
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "cpu",
+      "pattern": "fixture",
+      "chunk_bytes": 4194304,
+      "lanes": 8,
+      "input_bytes_per_round": 1073741824,
+      "verified": true,
+      "gb_s_median": 4.841609311515253,
+      "gb_s_min": 4.8096172759847535,
+      "gb_s_max": 4.852989321362568,
+      "gb_s_rounds": [
+        4.8096172759847535,
+        4.841609311515253,
+        4.852989321362568
+      ],
+      "output_input_ratio": 0.5006973743438721,
+      "cpu_cores_median": 7.931727386827484,
+      "allocated_bytes_median": 2560
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "cpu",
+      "pattern": "fixture",
+      "chunk_bytes": 67108864,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 0.5973307683486879,
+      "gb_s_min": 0.5955175784040427,
+      "gb_s_max": 0.5989553269358746,
+      "gb_s_rounds": [
+        0.5989553269358746,
+        0.5973307683486879,
+        0.5955175784040427
+      ],
+      "output_input_ratio": 0.501230776309967,
+      "cpu_cores_median": 0.9976910029061623,
+      "allocated_bytes_median": 312
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "cpu",
+      "pattern": "fixture",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 2.367553827757658,
+      "gb_s_min": 2.362705902613052,
+      "gb_s_max": 2.369707656557145,
+      "gb_s_rounds": [
+        2.369707656557145,
+        2.362705902613052,
+        2.367553827757658
+      ],
+      "output_input_ratio": 0.501230776309967,
+      "cpu_cores_median": 3.9839195004665937,
+      "allocated_bytes_median": 1456
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "cpu",
+      "pattern": "fixture",
+      "chunk_bytes": 67108864,
+      "lanes": 8,
+      "input_bytes_per_round": 1073741824,
+      "verified": true,
+      "gb_s_median": 4.70151103621291,
+      "gb_s_min": 4.695380971092027,
+      "gb_s_max": 4.7059084553829935,
+      "gb_s_rounds": [
+        4.7059084553829935,
+        4.695380971092027,
+        4.70151103621291
+      ],
+      "output_input_ratio": 0.501230776309967,
+      "cpu_cores_median": 7.969864530863795,
+      "allocated_bytes_median": 4992
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "cpu",
+      "pattern": "random",
+      "chunk_bytes": 4194304,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 0.40954532604892574,
+      "gb_s_min": 0.40944847857236133,
+      "gb_s_max": 0.4096558288584879,
+      "gb_s_rounds": [
+        0.4096558288584879,
+        0.40944847857236133,
+        0.40954532604892574
+      ],
+      "output_input_ratio": 1.0000829696655273,
+      "cpu_cores_median": 0.9981943786221281,
+      "allocated_bytes_median": 312
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "cpu",
+      "pattern": "random",
+      "chunk_bytes": 4194304,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 1.6195832040912435,
+      "gb_s_min": 1.608241992705471,
+      "gb_s_max": 1.620318745041768,
+      "gb_s_rounds": [
+        1.620318745041768,
+        1.608241992705471,
+        1.6195832040912435
+      ],
+      "output_input_ratio": 1.0000829696655273,
+      "cpu_cores_median": 3.964400492363354,
+      "allocated_bytes_median": 864
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "cpu",
+      "pattern": "random",
+      "chunk_bytes": 4194304,
+      "lanes": 8,
+      "input_bytes_per_round": 1073741824,
+      "verified": true,
+      "gb_s_median": 3.2065722321290835,
+      "gb_s_min": 2.671499405044155,
+      "gb_s_max": 3.209159673459726,
+      "gb_s_rounds": [
+        2.671499405044155,
+        3.209159673459726,
+        3.2065722321290835
+      ],
+      "output_input_ratio": 1.0000829696655273,
+      "cpu_cores_median": 7.937048656029985,
+      "allocated_bytes_median": 4960
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "cpu",
+      "pattern": "random",
+      "chunk_bytes": 67108864,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 0.4083181168728694,
+      "gb_s_min": 0.4067681190359801,
+      "gb_s_max": 0.40868275490930556,
+      "gb_s_rounds": [
+        0.4083181168728694,
+        0.4067681190359801,
+        0.40868275490930556
+      ],
+      "output_input_ratio": 1.000076711177826,
+      "cpu_cores_median": 0.9978245755026955,
+      "allocated_bytes_median": 424
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "cpu",
+      "pattern": "random",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 1.6099489669205305,
+      "gb_s_min": 1.5765210577451372,
+      "gb_s_max": 1.6210132428800201,
+      "gb_s_rounds": [
+        1.6210132428800201,
+        1.5765210577451372,
+        1.6099489669205305
+      ],
+      "output_input_ratio": 1.000076711177826,
+      "cpu_cores_median": 3.972423201693362,
+      "allocated_bytes_median": 1344
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "cpu",
+      "pattern": "random",
+      "chunk_bytes": 67108864,
+      "lanes": 8,
+      "input_bytes_per_round": 1073741824,
+      "verified": true,
+      "gb_s_median": 3.207213413174912,
+      "gb_s_min": 2.823652005485871,
+      "gb_s_max": 3.212660153786747,
+      "gb_s_rounds": [
+        3.207213413174912,
+        2.823652005485871,
+        3.212660153786747
+      ],
+      "output_input_ratio": 1.000076711177826,
+      "cpu_cores_median": 7.945547265198574,
+      "allocated_bytes_median": 4480
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "cpu",
+      "pattern": "text",
+      "chunk_bytes": 4194304,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 1.3378210403719202,
+      "gb_s_min": 1.333842577913944,
+      "gb_s_max": 1.3408608094486751,
+      "gb_s_rounds": [
+        1.3408608094486751,
+        1.333842577913944,
+        1.3378210403719202
+      ],
+      "output_input_ratio": 0.007080413401126862,
+      "cpu_cores_median": 0.9989081823752971,
+      "allocated_bytes_median": 424
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "cpu",
+      "pattern": "text",
+      "chunk_bytes": 4194304,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 5.196540660618414,
+      "gb_s_min": 5.178238791066411,
+      "gb_s_max": 5.2097373704694165,
+      "gb_s_rounds": [
+        5.178238791066411,
+        5.196540660618414,
+        5.2097373704694165
+      ],
+      "output_input_ratio": 0.007080515846610069,
+      "cpu_cores_median": 3.9217566525310184,
+      "allocated_bytes_median": 1824
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "cpu",
+      "pattern": "text",
+      "chunk_bytes": 4194304,
+      "lanes": 8,
+      "input_bytes_per_round": 1073741824,
+      "verified": true,
+      "gb_s_median": 10.318312430731643,
+      "gb_s_min": 10.098602746214487,
+      "gb_s_max": 10.333436169650184,
+      "gb_s_rounds": [
+        10.098602746214487,
+        10.318312430731643,
+        10.333436169650184
+      ],
+      "output_input_ratio": 0.007080587558448315,
+      "cpu_cores_median": 7.7771022281411275,
+      "allocated_bytes_median": 5072
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "cpu",
+      "pattern": "text",
+      "chunk_bytes": 67108864,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 1.320138543911913,
+      "gb_s_min": 1.3140232800072211,
+      "gb_s_max": 1.3395697538912605,
+      "gb_s_rounds": [
+        1.320138543911913,
+        1.3140232800072211,
+        1.3395697538912605
+      ],
+      "output_input_ratio": 0.007041461765766144,
+      "cpu_cores_median": 0.9974783684566508,
+      "allocated_bytes_median": 312
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "cpu",
+      "pattern": "text",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 5.142028550426427,
+      "gb_s_min": 5.114517059543797,
+      "gb_s_max": 5.181811241242202,
+      "gb_s_rounds": [
+        5.114517059543797,
+        5.142028550426427,
+        5.181811241242202
+      ],
+      "output_input_ratio": 0.007041476666927338,
+      "cpu_cores_median": 3.979864025535136,
+      "allocated_bytes_median": 1344
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "cpu",
+      "pattern": "text",
+      "chunk_bytes": 67108864,
+      "lanes": 8,
+      "input_bytes_per_round": 1073741824,
+      "verified": true,
+      "gb_s_median": 10.058316233753283,
+      "gb_s_min": 6.136835598400637,
+      "gb_s_max": 10.111977944033095,
+      "gb_s_rounds": [
+        6.136835598400637,
+        10.111977944033095,
+        10.058316233753283
+      ],
+      "output_input_ratio": 0.007041484117507935,
+      "cpu_cores_median": 7.871391436237015,
+      "allocated_bytes_median": 4000
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "fpga-pipeline",
+      "pattern": "fixture",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 6.856055578103114,
+      "gb_s_min": 6.83732738601778,
+      "gb_s_max": 6.898741901473895,
+      "gb_s_rounds": [
+        6.83732738601778,
+        6.898741901473895,
+        6.856055578103114
+      ],
+      "output_input_ratio": 0.5362878795713186,
+      "cpu_cores_median": 1.3316971728291132,
+      "allocated_bytes_median": 52336
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "fpga-pipeline",
+      "pattern": "random",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 6.53380676080572,
+      "gb_s_min": 6.101730785098559,
+      "gb_s_max": 6.6078574303302515,
+      "gb_s_rounds": [
+        6.6078574303302515,
+        6.53380676080572,
+        6.101730785098559
+      ],
+      "output_input_ratio": 1.0553313847631216,
+      "cpu_cores_median": 1.818234592436146,
+      "allocated_bytes_median": 54784
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "fpga-pipeline",
+      "pattern": "text",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 7.00708142509231,
+      "gb_s_min": 6.9948254248958035,
+      "gb_s_max": 7.094756257602845,
+      "gb_s_rounds": [
+        7.094756257602845,
+        6.9948254248958035,
+        7.00708142509231
+      ],
+      "output_input_ratio": 0.027775054797530174,
+      "cpu_cores_median": 0.8271643552004582,
+      "allocated_bytes_median": 52848
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "fpga-sdk",
+      "pattern": "fixture",
+      "chunk_bytes": 4194304,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 1.1478805154691663,
+      "gb_s_min": 1.1463068633599245,
+      "gb_s_max": 1.1479404814857936,
+      "gb_s_rounds": [
+        1.1463068633599245,
+        1.1478805154691663,
+        1.1479404814857936
+      ],
+      "output_input_ratio": 0.5362930148839951,
+      "cpu_cores_median": 0.23735794605458702,
+      "allocated_bytes_median": 180192
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "fpga-sdk",
+      "pattern": "fixture",
+      "chunk_bytes": 4194304,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 5.63063275484965,
+      "gb_s_min": 5.524770005482157,
+      "gb_s_max": 5.644368328897216,
+      "gb_s_rounds": [
+        5.644368328897216,
+        5.63063275484965,
+        5.524770005482157
+      ],
+      "output_input_ratio": 0.5362930204719305,
+      "cpu_cores_median": 1.124960742757954,
+      "allocated_bytes_median": 753216
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "fpga-sdk",
+      "pattern": "fixture",
+      "chunk_bytes": 67108864,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 1.788886137495807,
+      "gb_s_min": 1.7846182001880622,
+      "gb_s_max": 1.7910051375842693,
+      "gb_s_rounds": [
+        1.7910051375842693,
+        1.788886137495807,
+        1.7846182001880622
+      ],
+      "output_input_ratio": 0.5362878739833832,
+      "cpu_cores_median": 0.33365916882509594,
+      "allocated_bytes_median": 12608
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "fpga-sdk",
+      "pattern": "fixture",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 6.8685700515297325,
+      "gb_s_min": 6.828622695712615,
+      "gb_s_max": 6.899758491513094,
+      "gb_s_rounds": [
+        6.8685700515297325,
+        6.899758491513094,
+        6.828622695712615
+      ],
+      "output_input_ratio": 0.5362878795713186,
+      "cpu_cores_median": 1.3402115833236892,
+      "allocated_bytes_median": 49992
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "fpga-sdk",
+      "pattern": "random",
+      "chunk_bytes": 4194304,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 1.1079866327759997,
+      "gb_s_min": 1.107546079631452,
+      "gb_s_max": 1.1084371573419154,
+      "gb_s_rounds": [
+        1.107546079631452,
+        1.1079866327759997,
+        1.1084371573419154
+      ],
+      "output_input_ratio": 1.0553462356328964,
+      "cpu_cores_median": 0.3123329513821688,
+      "allocated_bytes_median": 181200
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "fpga-sdk",
+      "pattern": "random",
+      "chunk_bytes": 4194304,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 5.042237739560593,
+      "gb_s_min": 4.926116335737247,
+      "gb_s_max": 5.054366207777716,
+      "gb_s_rounds": [
+        5.042237739560593,
+        5.054366207777716,
+        4.926116335737247
+      ],
+      "output_input_ratio": 1.0553462412208319,
+      "cpu_cores_median": 1.3805153320320058,
+      "allocated_bytes_median": 735672
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "fpga-sdk",
+      "pattern": "random",
+      "chunk_bytes": 67108864,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 1.7099251330074696,
+      "gb_s_min": 1.7047406742235214,
+      "gb_s_max": 1.7158635523535617,
+      "gb_s_rounds": [
+        1.7099251330074696,
+        1.7158635523535617,
+        1.7047406742235214
+      ],
+      "output_input_ratio": 1.0553313791751862,
+      "cpu_cores_median": 0.4497857940379471,
+      "allocated_bytes_median": 12608
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "fpga-sdk",
+      "pattern": "random",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 6.53193100461736,
+      "gb_s_min": 6.462262871965718,
+      "gb_s_max": 6.595784356561302,
+      "gb_s_rounds": [
+        6.595784356561302,
+        6.53193100461736,
+        6.462262871965718
+      ],
+      "output_input_ratio": 1.0553313847631216,
+      "cpu_cores_median": 1.8343515070040282,
+      "allocated_bytes_median": 51264
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "fpga-sdk",
+      "pattern": "text",
+      "chunk_bytes": 4194304,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 1.158974976268761,
+      "gb_s_min": 1.1572317829820693,
+      "gb_s_max": 1.1643511963000175,
+      "gb_s_rounds": [
+        1.1643511963000175,
+        1.1572317829820693,
+        1.158974976268761
+      ],
+      "output_input_ratio": 0.027781948447227478,
+      "cpu_cores_median": 0.16510360995175094,
+      "allocated_bytes_median": 179712
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "fpga-sdk",
+      "pattern": "text",
+      "chunk_bytes": 4194304,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 5.85160925302793,
+      "gb_s_min": 5.55818969653953,
+      "gb_s_max": 5.857574560850132,
+      "gb_s_rounds": [
+        5.85160925302793,
+        5.55818969653953,
+        5.857574560850132
+      ],
+      "output_input_ratio": 0.027781954035162926,
+      "cpu_cores_median": 0.7219047018434782,
+      "allocated_bytes_median": 729248
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "fpga-sdk",
+      "pattern": "text",
+      "chunk_bytes": 67108864,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 1.8069396002107405,
+      "gb_s_min": 1.8042267880217693,
+      "gb_s_max": 1.8118761732441053,
+      "gb_s_rounds": [
+        1.8069396002107405,
+        1.8118761732441053,
+        1.8042267880217693
+      ],
+      "output_input_ratio": 0.027775049209594727,
+      "cpu_cores_median": 0.207299411028974,
+      "allocated_bytes_median": 12608
+    },
+    {
+      "algorithm": "gzip",
+      "engine": "fpga-sdk",
+      "pattern": "text",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 7.02431318604757,
+      "gb_s_min": 6.936795905009097,
+      "gb_s_max": 7.127496594374881,
+      "gb_s_rounds": [
+        7.02431318604757,
+        7.127496594374881,
+        6.936795905009097
+      ],
+      "output_input_ratio": 0.027775054797530174,
+      "cpu_cores_median": 0.8225143915126166,
+      "allocated_bytes_median": 49904
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "cpu",
+      "pattern": "fixture",
+      "chunk_bytes": 4194304,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 2.4873409861782707,
+      "gb_s_min": 2.3715133000558435,
+      "gb_s_max": 2.4950279007472176,
+      "gb_s_rounds": [
+        2.4950279007472176,
+        2.4873409861782707,
+        2.3715133000558435
+      ],
+      "output_input_ratio": 0.5021932125091553,
+      "cpu_cores_median": 1.001050308722162,
+      "allocated_bytes_median": 73608
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "cpu",
+      "pattern": "fixture",
+      "chunk_bytes": 4194304,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 9.74558668824136,
+      "gb_s_min": 5.741243605128272,
+      "gb_s_max": 9.773491246362232,
+      "gb_s_rounds": [
+        9.74558668824136,
+        9.773491246362232,
+        5.741243605128272
+      ],
+      "output_input_ratio": 0.5021932125091553,
+      "cpu_cores_median": 3.964884289439166,
+      "allocated_bytes_median": 1040704
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "cpu",
+      "pattern": "fixture",
+      "chunk_bytes": 4194304,
+      "lanes": 8,
+      "input_bytes_per_round": 1073741824,
+      "verified": true,
+      "gb_s_median": 18.153325737422445,
+      "gb_s_min": 9.713815772034987,
+      "gb_s_max": 18.49837186384743,
+      "gb_s_rounds": [
+        18.153325737422445,
+        18.49837186384743,
+        9.713815772034987
+      ],
+      "output_input_ratio": 0.5021932125091553,
+      "cpu_cores_median": 7.872846663154937,
+      "allocated_bytes_median": 2147152
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "cpu",
+      "pattern": "fixture",
+      "chunk_bytes": 67108864,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 2.311007984666025,
+      "gb_s_min": 2.3060786544203604,
+      "gb_s_max": 2.311668796152348,
+      "gb_s_rounds": [
+        2.3060786544203604,
+        2.311007984666025,
+        2.311668796152348
+      ],
+      "output_input_ratio": 0.5021898597478867,
+      "cpu_cores_median": 0.9979756384435737,
+      "allocated_bytes_median": 68696
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "cpu",
+      "pattern": "fixture",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 8.954818516325515,
+      "gb_s_min": 8.941412951361592,
+      "gb_s_max": 8.995542298899279,
+      "gb_s_rounds": [
+        8.941412951361592,
+        8.995542298899279,
+        8.954818516325515
+      ],
+      "output_input_ratio": 0.5021898597478867,
+      "cpu_cores_median": 3.9895188295329516,
+      "allocated_bytes_median": 1226504
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "cpu",
+      "pattern": "fixture",
+      "chunk_bytes": 67108864,
+      "lanes": 8,
+      "input_bytes_per_round": 1073741824,
+      "verified": true,
+      "gb_s_median": 17.09573165169812,
+      "gb_s_min": 9.471266389098306,
+      "gb_s_max": 17.190670701265752,
+      "gb_s_rounds": [
+        17.09573165169812,
+        17.190670701265752,
+        9.471266389098306
+      ],
+      "output_input_ratio": 0.5021898597478867,
+      "cpu_cores_median": 7.909966687628573,
+      "allocated_bytes_median": 2173544
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "cpu",
+      "pattern": "random",
+      "chunk_bytes": 4194304,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 2.503490210184076,
+      "gb_s_min": 2.4817714297527167,
+      "gb_s_max": 2.5124570240807413,
+      "gb_s_rounds": [
+        2.5124570240807413,
+        2.503490210184076,
+        2.4817714297527167
+      ],
+      "output_input_ratio": 1.0000646114349365,
+      "cpu_cores_median": 0.9999208389785754,
+      "allocated_bytes_median": 73496
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "cpu",
+      "pattern": "random",
+      "chunk_bytes": 4194304,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 9.571244078842371,
+      "gb_s_min": 7.505295049566849,
+      "gb_s_max": 9.685010518429957,
+      "gb_s_rounds": [
+        9.571244078842371,
+        9.685010518429957,
+        7.505295049566849
+      ],
+      "output_input_ratio": 1.0000646114349365,
+      "cpu_cores_median": 3.9278991155826755,
+      "allocated_bytes_median": 1107528
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "cpu",
+      "pattern": "random",
+      "chunk_bytes": 4194304,
+      "lanes": 8,
+      "input_bytes_per_round": 1073741824,
+      "verified": true,
+      "gb_s_median": 12.818457669041676,
+      "gb_s_min": 12.490332339360918,
+      "gb_s_max": 17.213775087935606,
+      "gb_s_rounds": [
+        17.213775087935606,
+        12.818457669041676,
+        12.490332339360918
+      ],
+      "output_input_ratio": 1.0000646114349365,
+      "cpu_cores_median": 6.30795882160737,
+      "allocated_bytes_median": 2209656
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "cpu",
+      "pattern": "random",
+      "chunk_bytes": 67108864,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 2.2579678957692804,
+      "gb_s_min": 2.253966696717266,
+      "gb_s_max": 2.2580042491305563,
+      "gb_s_rounds": [
+        2.2580042491305563,
+        2.253966696717266,
+        2.2579678957692804
+      ],
+      "output_input_ratio": 1.000061258673668,
+      "cpu_cores_median": 0.9980170881090313,
+      "allocated_bytes_median": 68808
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "cpu",
+      "pattern": "random",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 5.87491943844239,
+      "gb_s_min": 5.727593789202311,
+      "gb_s_max": 8.323012001568513,
+      "gb_s_rounds": [
+        8.323012001568513,
+        5.727593789202311,
+        5.87491943844239
+      ],
+      "output_input_ratio": 1.000061258673668,
+      "cpu_cores_median": 3.5607398689409244,
+      "allocated_bytes_median": 1087176
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "cpu",
+      "pattern": "random",
+      "chunk_bytes": 67108864,
+      "lanes": 8,
+      "input_bytes_per_round": 1073741824,
+      "verified": true,
+      "gb_s_median": 11.178000702613614,
+      "gb_s_min": 9.742696082177789,
+      "gb_s_max": 15.062780872149721,
+      "gb_s_rounds": [
+        15.062780872149721,
+        11.178000702613614,
+        9.742696082177789
+      ],
+      "output_input_ratio": 1.000061258673668,
+      "cpu_cores_median": 6.330364414450593,
+      "allocated_bytes_median": 2313640
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "cpu",
+      "pattern": "text",
+      "chunk_bytes": 4194304,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 2.413774103642798,
+      "gb_s_min": 2.3864838588849024,
+      "gb_s_max": 2.413936552393139,
+      "gb_s_rounds": [
+        2.413936552393139,
+        2.3864838588849024,
+        2.413774103642798
+      ],
+      "output_input_ratio": 0.005330771207809448,
+      "cpu_cores_median": 1.0009365177634268,
+      "allocated_bytes_median": 73496
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "cpu",
+      "pattern": "text",
+      "chunk_bytes": 4194304,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 5.199691434038408,
+      "gb_s_min": 4.418041563441092,
+      "gb_s_max": 6.943733658659297,
+      "gb_s_rounds": [
+        5.199691434038408,
+        6.943733658659297,
+        4.418041563441092
+      ],
+      "output_input_ratio": 0.005330776795744896,
+      "cpu_cores_median": 3.2076541435384134,
+      "allocated_bytes_median": 1106264
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "cpu",
+      "pattern": "text",
+      "chunk_bytes": 4194304,
+      "lanes": 8,
+      "input_bytes_per_round": 1073741824,
+      "verified": true,
+      "gb_s_median": 8.795815357034673,
+      "gb_s_min": 8.780876507838244,
+      "gb_s_max": 9.491624155800343,
+      "gb_s_rounds": [
+        8.795815357034673,
+        9.491624155800343,
+        8.780876507838244
+      ],
+      "output_input_ratio": 0.0053307777270674706,
+      "cpu_cores_median": 4.724627813553937,
+      "allocated_bytes_median": 2145904
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "cpu",
+      "pattern": "text",
+      "chunk_bytes": 67108864,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 2.364547771438542,
+      "gb_s_min": 2.358531416628905,
+      "gb_s_max": 2.3654490689503946,
+      "gb_s_rounds": [
+        2.358531416628905,
+        2.364547771438542,
+        2.3654490689503946
+      ],
+      "output_input_ratio": 0.005325630307197571,
+      "cpu_cores_median": 0.9978867451328027,
+      "allocated_bytes_median": 68696
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "cpu",
+      "pattern": "text",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 5.984522266176122,
+      "gb_s_min": 5.939770539177614,
+      "gb_s_max": 9.361283699090661,
+      "gb_s_rounds": [
+        5.939770539177614,
+        5.984522266176122,
+        9.361283699090661
+      ],
+      "output_input_ratio": 0.0053256358951330185,
+      "cpu_cores_median": 3.4465202799293446,
+      "allocated_bytes_median": 1227224
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "cpu",
+      "pattern": "text",
+      "chunk_bytes": 67108864,
+      "lanes": 8,
+      "input_bytes_per_round": 1073741824,
+      "verified": true,
+      "gb_s_median": 12.428216436487977,
+      "gb_s_min": 9.232750676334769,
+      "gb_s_max": 18.614744307312137,
+      "gb_s_rounds": [
+        18.614744307312137,
+        12.428216436487977,
+        9.232750676334769
+      ],
+      "output_input_ratio": 0.005325636826455593,
+      "cpu_cores_median": 6.060964665191778,
+      "allocated_bytes_median": 2108160
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "fpga-pipeline",
+      "pattern": "fixture",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 0.27967666186321716,
+      "gb_s_min": 0.2796324813629932,
+      "gb_s_max": 0.2797772903594249,
+      "gb_s_rounds": [
+        0.2796324813629932,
+        0.2797772903594249,
+        0.27967666186321716
+      ],
+      "output_input_ratio": 0.5090333670377731,
+      "cpu_cores_median": 0.06062829818149268,
+      "allocated_bytes_median": 56000
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "fpga-pipeline",
+      "pattern": "random",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 0.2189006794423435,
+      "gb_s_min": 0.21889584014545432,
+      "gb_s_max": 0.2189600722114874,
+      "gb_s_rounds": [
+        0.2189600722114874,
+        0.2189006794423435,
+        0.21889584014545432
+      ],
+      "output_input_ratio": 1.0001222342252731,
+      "cpu_cores_median": 0.06433060219536454,
+      "allocated_bytes_median": 50104
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "fpga-pipeline",
+      "pattern": "text",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 0.38506031019545794,
+      "gb_s_min": 0.38461634106951487,
+      "gb_s_max": 0.38509020758115126,
+      "gb_s_rounds": [
+        0.38506031019545794,
+        0.38509020758115126,
+        0.38461634106951487
+      ],
+      "output_input_ratio": 0.019867202267050743,
+      "cpu_cores_median": 0.056080269914461016,
+      "allocated_bytes_median": 53744
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "fpga-sdk",
+      "pattern": "fixture",
+      "chunk_bytes": 4194304,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 0.06769955661139286,
+      "gb_s_min": 0.06769853369762123,
+      "gb_s_max": 0.06770753896835478,
+      "gb_s_rounds": [
+        0.06769853369762123,
+        0.06769955661139286,
+        0.06770753896835478
+      ],
+      "output_input_ratio": 0.5090358257293701,
+      "cpu_cores_median": 0.07136056684309286,
+      "allocated_bytes_median": 3566984
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "fpga-sdk",
+      "pattern": "fixture",
+      "chunk_bytes": 4194304,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 0.2716477226463724,
+      "gb_s_min": 0.2709459085671801,
+      "gb_s_max": 0.2718453894189855,
+      "gb_s_rounds": [
+        0.2718453894189855,
+        0.2716477226463724,
+        0.2709459085671801
+      ],
+      "output_input_ratio": 0.5090358257293701,
+      "cpu_cores_median": 0.28074709327657876,
+      "allocated_bytes_median": 13991920
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "fpga-sdk",
+      "pattern": "fixture",
+      "chunk_bytes": 67108864,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 0.06980278769572808,
+      "gb_s_min": 0.06980041958729513,
+      "gb_s_max": 0.06980619800334824,
+      "gb_s_rounds": [
+        0.06980619800334824,
+        0.06980041958729513,
+        0.06980278769572808
+      ],
+      "output_input_ratio": 0.5090333670377731,
+      "cpu_cores_median": 0.07331757097090019,
+      "allocated_bytes_median": 278360
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "fpga-sdk",
+      "pattern": "fixture",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 0.27918513206423656,
+      "gb_s_min": 0.27914581183515086,
+      "gb_s_max": 0.27924468895937377,
+      "gb_s_rounds": [
+        0.27918513206423656,
+        0.27924468895937377,
+        0.27914581183515086
+      ],
+      "output_input_ratio": 0.5090333670377731,
+      "cpu_cores_median": 0.2715134664431511,
+      "allocated_bytes_median": 1307072
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "fpga-sdk",
+      "pattern": "random",
+      "chunk_bytes": 4194304,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 0.053443550288114525,
+      "gb_s_min": 0.053431231962814844,
+      "gb_s_max": 0.05344419409319257,
+      "gb_s_rounds": [
+        0.05344419409319257,
+        0.053443550288114525,
+        0.053431231962814844
+      ],
+      "output_input_ratio": 1.0001246929168701,
+      "cpu_cores_median": 0.0335638503796289,
+      "allocated_bytes_median": 3564200
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "fpga-sdk",
+      "pattern": "random",
+      "chunk_bytes": 4194304,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 0.2145704048267856,
+      "gb_s_min": 0.21456637389299144,
+      "gb_s_max": 0.21613123790465277,
+      "gb_s_rounds": [
+        0.21613123790465277,
+        0.2145704048267856,
+        0.21456637389299144
+      ],
+      "output_input_ratio": 1.0001246929168701,
+      "cpu_cores_median": 0.12887551348437767,
+      "allocated_bytes_median": 13992536
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "fpga-sdk",
+      "pattern": "random",
+      "chunk_bytes": 67108864,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 0.05470179271613575,
+      "gb_s_min": 0.054701190153272024,
+      "gb_s_max": 0.05470300399058892,
+      "gb_s_rounds": [
+        0.05470300399058892,
+        0.05470179271613575,
+        0.054701190153272024
+      ],
+      "output_input_ratio": 1.0001222342252731,
+      "cpu_cores_median": 0.03352630265520505,
+      "allocated_bytes_median": 278360
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "fpga-sdk",
+      "pattern": "random",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 0.21884093146870767,
+      "gb_s_min": 0.218745065695094,
+      "gb_s_max": 0.21884137615452676,
+      "gb_s_rounds": [
+        0.21884093146870767,
+        0.218745065695094,
+        0.21884137615452676
+      ],
+      "output_input_ratio": 1.0001222342252731,
+      "cpu_cores_median": 0.12162068336521219,
+      "allocated_bytes_median": 1306144
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "fpga-sdk",
+      "pattern": "text",
+      "chunk_bytes": 4194304,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 0.0870515786097814,
+      "gb_s_min": 0.08696682087244811,
+      "gb_s_max": 0.08706438705219127,
+      "gb_s_rounds": [
+        0.08696682087244811,
+        0.08706438705219127,
+        0.0870515786097814
+      ],
+      "output_input_ratio": 0.019871219992637634,
+      "cpu_cores_median": 0.08782227377024318,
+      "allocated_bytes_median": 3505168
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "fpga-sdk",
+      "pattern": "text",
+      "chunk_bytes": 4194304,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 0.34787510826239293,
+      "gb_s_min": 0.34776344891203786,
+      "gb_s_max": 0.34983665014409443,
+      "gb_s_rounds": [
+        0.34983665014409443,
+        0.34787510826239293,
+        0.34776344891203786
+      ],
+      "output_input_ratio": 0.019871225580573082,
+      "cpu_cores_median": 0.35036336195406825,
+      "allocated_bytes_median": 13995000
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "fpga-sdk",
+      "pattern": "text",
+      "chunk_bytes": 67108864,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 0.09473142962755357,
+      "gb_s_min": 0.0947287910655396,
+      "gb_s_max": 0.09473282879900546,
+      "gb_s_rounds": [
+        0.09473282879900546,
+        0.0947287910655396,
+        0.09473142962755357
+      ],
+      "output_input_ratio": 0.019867196679115295,
+      "cpu_cores_median": 0.0935592511404467,
+      "allocated_bytes_median": 278360
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "fpga-sdk",
+      "pattern": "text",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 0.3785406573343012,
+      "gb_s_min": 0.3751872884562652,
+      "gb_s_max": 0.37913277726708056,
+      "gb_s_rounds": [
+        0.3785406573343012,
+        0.37913277726708056,
+        0.3751872884562652
+      ],
+      "output_input_ratio": 0.019867202267050743,
+      "cpu_cores_median": 0.351141041702987,
+      "allocated_bytes_median": 1308144
+    },
+    {
+      "algorithm": "raw",
+      "engine": "cpu",
+      "pattern": "fixture",
+      "chunk_bytes": 4194304,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 9.638615322182025,
+      "gb_s_min": 9.556253122103954,
+      "gb_s_max": 9.720493634460812,
+      "gb_s_rounds": [
+        9.638615322182025,
+        9.720493634460812,
+        9.556253122103954
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 1.0300768983583095,
+      "allocated_bytes_median": 312
+    },
+    {
+      "algorithm": "raw",
+      "engine": "cpu",
+      "pattern": "fixture",
+      "chunk_bytes": 4194304,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 29.911987579027446,
+      "gb_s_min": 29.715479869563616,
+      "gb_s_max": 30.215331895330536,
+      "gb_s_rounds": [
+        30.215331895330536,
+        29.715479869563616,
+        29.911987579027446
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 3.793885711964787,
+      "allocated_bytes_median": 1824
+    },
+    {
+      "algorithm": "raw",
+      "engine": "cpu",
+      "pattern": "fixture",
+      "chunk_bytes": 4194304,
+      "lanes": 8,
+      "input_bytes_per_round": 1073741824,
+      "verified": true,
+      "gb_s_median": 43.60746541124945,
+      "gb_s_min": 43.23732395832288,
+      "gb_s_max": 44.311845683415605,
+      "gb_s_rounds": [
+        44.311845683415605,
+        43.23732395832288,
+        43.60746541124945
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 7.757006120599373,
+      "allocated_bytes_median": 4480
+    },
+    {
+      "algorithm": "raw",
+      "engine": "cpu",
+      "pattern": "fixture",
+      "chunk_bytes": 67108864,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 7.657516211593386,
+      "gb_s_min": 7.627362429677136,
+      "gb_s_max": 7.673712037223223,
+      "gb_s_rounds": [
+        7.673712037223223,
+        7.657516211593386,
+        7.627362429677136
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 1.02512531629909,
+      "allocated_bytes_median": 328
+    },
+    {
+      "algorithm": "raw",
+      "engine": "cpu",
+      "pattern": "fixture",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 24.025261140634782,
+      "gb_s_min": 23.881106303592503,
+      "gb_s_max": 24.08082157144912,
+      "gb_s_rounds": [
+        23.881106303592503,
+        24.025261140634782,
+        24.08082157144912
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 3.944983511888698,
+      "allocated_bytes_median": 1376
+    },
+    {
+      "algorithm": "raw",
+      "engine": "cpu",
+      "pattern": "fixture",
+      "chunk_bytes": 67108864,
+      "lanes": 8,
+      "input_bytes_per_round": 1073741824,
+      "verified": true,
+      "gb_s_median": 37.60918257382288,
+      "gb_s_min": 37.347754748931436,
+      "gb_s_max": 37.800146857549095,
+      "gb_s_rounds": [
+        37.347754748931436,
+        37.800146857549095,
+        37.60918257382288
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 7.88903432888501,
+      "allocated_bytes_median": 2560
+    },
+    {
+      "algorithm": "raw",
+      "engine": "cpu",
+      "pattern": "random",
+      "chunk_bytes": 4194304,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 9.286364373853411,
+      "gb_s_min": 9.168965470834895,
+      "gb_s_max": 9.49992327454068,
+      "gb_s_rounds": [
+        9.168965470834895,
+        9.286364373853411,
+        9.49992327454068
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 1.0298481855136559,
+      "allocated_bytes_median": 312
+    },
+    {
+      "algorithm": "raw",
+      "engine": "cpu",
+      "pattern": "random",
+      "chunk_bytes": 4194304,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 29.693146379712125,
+      "gb_s_min": 29.42354309124741,
+      "gb_s_max": 30.734047240715583,
+      "gb_s_rounds": [
+        30.734047240715583,
+        29.42354309124741,
+        29.693146379712125
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 3.7314406249068273,
+      "allocated_bytes_median": 864
+    },
+    {
+      "algorithm": "raw",
+      "engine": "cpu",
+      "pattern": "random",
+      "chunk_bytes": 4194304,
+      "lanes": 8,
+      "input_bytes_per_round": 1073741824,
+      "verified": true,
+      "gb_s_median": 43.542486496657396,
+      "gb_s_min": 42.7675328802682,
+      "gb_s_max": 43.741452743024475,
+      "gb_s_rounds": [
+        43.741452743024475,
+        43.542486496657396,
+        42.7675328802682
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 7.779377309250581,
+      "allocated_bytes_median": 4000
+    },
+    {
+      "algorithm": "raw",
+      "engine": "cpu",
+      "pattern": "random",
+      "chunk_bytes": 67108864,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 7.854209546039836,
+      "gb_s_min": 7.618300669027763,
+      "gb_s_max": 7.871877309712531,
+      "gb_s_rounds": [
+        7.871877309712531,
+        7.854209546039836,
+        7.618300669027763
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 1.0341811045235523,
+      "allocated_bytes_median": 312
+    },
+    {
+      "algorithm": "raw",
+      "engine": "cpu",
+      "pattern": "random",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 24.267597187409837,
+      "gb_s_min": 24.224686234060147,
+      "gb_s_max": 24.33121614451196,
+      "gb_s_rounds": [
+        24.33121614451196,
+        24.267597187409837,
+        24.224686234060147
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 3.9576501205366976,
+      "allocated_bytes_median": 1344
+    },
+    {
+      "algorithm": "raw",
+      "engine": "cpu",
+      "pattern": "random",
+      "chunk_bytes": 67108864,
+      "lanes": 8,
+      "input_bytes_per_round": 1073741824,
+      "verified": true,
+      "gb_s_median": 37.55500469410529,
+      "gb_s_min": 37.42063363835114,
+      "gb_s_max": 37.68184454375721,
+      "gb_s_rounds": [
+        37.68184454375721,
+        37.42063363835114,
+        37.55500469410529
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 7.871414042471514,
+      "allocated_bytes_median": 3520
+    },
+    {
+      "algorithm": "raw",
+      "engine": "cpu",
+      "pattern": "text",
+      "chunk_bytes": 4194304,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 9.463671633944456,
+      "gb_s_min": 9.339061833540338,
+      "gb_s_max": 9.660691648708216,
+      "gb_s_rounds": [
+        9.463671633944456,
+        9.660691648708216,
+        9.339061833540338
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 1.0285622154179184,
+      "allocated_bytes_median": 424
+    },
+    {
+      "algorithm": "raw",
+      "engine": "cpu",
+      "pattern": "text",
+      "chunk_bytes": 4194304,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 29.752206058019226,
+      "gb_s_min": 29.69149271352086,
+      "gb_s_max": 30.43641183507095,
+      "gb_s_rounds": [
+        29.69149271352086,
+        30.43641183507095,
+        29.752206058019226
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 3.78383798240438,
+      "allocated_bytes_median": 1936
+    },
+    {
+      "algorithm": "raw",
+      "engine": "cpu",
+      "pattern": "text",
+      "chunk_bytes": 4194304,
+      "lanes": 8,
+      "input_bytes_per_round": 1073741824,
+      "verified": true,
+      "gb_s_median": 43.49927410856496,
+      "gb_s_min": 43.22671818404775,
+      "gb_s_max": 44.03901860099267,
+      "gb_s_rounds": [
+        43.49927410856496,
+        44.03901860099267,
+        43.22671818404775
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 7.7705312390875765,
+      "allocated_bytes_median": 4032
+    },
+    {
+      "algorithm": "raw",
+      "engine": "cpu",
+      "pattern": "text",
+      "chunk_bytes": 67108864,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 7.809500812470649,
+      "gb_s_min": 7.745597091364217,
+      "gb_s_max": 7.816565820855512,
+      "gb_s_rounds": [
+        7.816565820855512,
+        7.745597091364217,
+        7.809500812470649
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 1.0290072997551023,
+      "allocated_bytes_median": 312
+    },
+    {
+      "algorithm": "raw",
+      "engine": "cpu",
+      "pattern": "text",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 24.30740128708981,
+      "gb_s_min": 23.732331826829906,
+      "gb_s_max": 24.437869506814433,
+      "gb_s_rounds": [
+        24.437869506814433,
+        23.732331826829906,
+        24.30740128708981
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 3.9672697528823386,
+      "allocated_bytes_median": 1824
+    },
+    {
+      "algorithm": "raw",
+      "engine": "cpu",
+      "pattern": "text",
+      "chunk_bytes": 67108864,
+      "lanes": 8,
+      "input_bytes_per_round": 1073741824,
+      "verified": true,
+      "gb_s_median": 37.61304005249156,
+      "gb_s_min": 37.16514422539427,
+      "gb_s_max": 37.81254392935454,
+      "gb_s_rounds": [
+        37.81254392935454,
+        37.16514422539427,
+        37.61304005249156
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 7.904841209058863,
+      "allocated_bytes_median": 2560
+    },
+    {
+      "algorithm": "raw",
+      "engine": "fpga-pipeline",
+      "pattern": "fixture",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 6.957503729606777,
+      "gb_s_min": 6.857982232201148,
+      "gb_s_max": 7.033488977195902,
+      "gb_s_rounds": [
+        6.957503729606777,
+        6.857982232201148,
+        7.033488977195902
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 1.8914705130290754,
+      "allocated_bytes_median": 53864
+    },
+    {
+      "algorithm": "raw",
+      "engine": "fpga-pipeline",
+      "pattern": "random",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 6.873116081339857,
+      "gb_s_min": 6.853078265360129,
+      "gb_s_max": 6.9715977509594005,
+      "gb_s_rounds": [
+        6.873116081339857,
+        6.9715977509594005,
+        6.853078265360129
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 1.8553169979526363,
+      "allocated_bytes_median": 57256
+    },
+    {
+      "algorithm": "raw",
+      "engine": "fpga-pipeline",
+      "pattern": "text",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 6.8167623071255825,
+      "gb_s_min": 6.565650276493791,
+      "gb_s_max": 6.876519315670229,
+      "gb_s_rounds": [
+        6.8167623071255825,
+        6.565650276493791,
+        6.876519315670229
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 1.805822493217912,
+      "allocated_bytes_median": 54264
+    },
+    {
+      "algorithm": "raw",
+      "engine": "fpga-sdk",
+      "pattern": "fixture",
+      "chunk_bytes": 4194304,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 1.1093595885662615,
+      "gb_s_min": 1.1080527665607758,
+      "gb_s_max": 1.1095887759830727,
+      "gb_s_rounds": [
+        1.1095887759830727,
+        1.1080527665607758,
+        1.1093595885662615
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 0.3612381280831068,
+      "allocated_bytes_median": 179184
+    },
+    {
+      "algorithm": "raw",
+      "engine": "fpga-sdk",
+      "pattern": "fixture",
+      "chunk_bytes": 4194304,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 5.017895360100138,
+      "gb_s_min": 4.98972387412965,
+      "gb_s_max": 5.031320679465082,
+      "gb_s_rounds": [
+        4.98972387412965,
+        5.017895360100138,
+        5.031320679465082
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 1.7117819587682426,
+      "allocated_bytes_median": 729984
+    },
+    {
+      "algorithm": "raw",
+      "engine": "fpga-sdk",
+      "pattern": "fixture",
+      "chunk_bytes": 67108864,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 1.802730141463792,
+      "gb_s_min": 1.7948219299767965,
+      "gb_s_max": 1.803064466194011,
+      "gb_s_rounds": [
+        1.803064466194011,
+        1.802730141463792,
+        1.7948219299767965
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 0.5519493850567385,
+      "allocated_bytes_median": 12544
+    },
+    {
+      "algorithm": "raw",
+      "engine": "fpga-sdk",
+      "pattern": "fixture",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 6.811462583353589,
+      "gb_s_min": 6.707285007156471,
+      "gb_s_max": 6.881226341218423,
+      "gb_s_rounds": [
+        6.707285007156471,
+        6.811462583353589,
+        6.881226341218423
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 2.265057410660722,
+      "allocated_bytes_median": 48800
+    },
+    {
+      "algorithm": "raw",
+      "engine": "fpga-sdk",
+      "pattern": "random",
+      "chunk_bytes": 4194304,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 1.112279275496318,
+      "gb_s_min": 1.104374086584394,
+      "gb_s_max": 1.1146793042755276,
+      "gb_s_rounds": [
+        1.104374086584394,
+        1.1146793042755276,
+        1.112279275496318
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 0.3646668429921102,
+      "allocated_bytes_median": 178624
+    },
+    {
+      "algorithm": "raw",
+      "engine": "fpga-sdk",
+      "pattern": "random",
+      "chunk_bytes": 4194304,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 4.95817811981979,
+      "gb_s_min": 4.912946203920698,
+      "gb_s_max": 5.014683778428302,
+      "gb_s_rounds": [
+        4.912946203920698,
+        5.014683778428302,
+        4.95817811981979
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 1.6975268793252032,
+      "allocated_bytes_median": 747944
+    },
+    {
+      "algorithm": "raw",
+      "engine": "fpga-sdk",
+      "pattern": "random",
+      "chunk_bytes": 67108864,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 1.80250404307883,
+      "gb_s_min": 1.7899703736351014,
+      "gb_s_max": 1.8027674062946688,
+      "gb_s_rounds": [
+        1.80250404307883,
+        1.8027674062946688,
+        1.7899703736351014
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 0.5495433914868939,
+      "allocated_bytes_median": 12544
+    },
+    {
+      "algorithm": "raw",
+      "engine": "fpga-sdk",
+      "pattern": "random",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 6.800704925113392,
+      "gb_s_min": 6.774148479109281,
+      "gb_s_max": 6.817727172970805,
+      "gb_s_rounds": [
+        6.774148479109281,
+        6.817727172970805,
+        6.800704925113392
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 2.252296130488598,
+      "allocated_bytes_median": 50728
+    },
+    {
+      "algorithm": "raw",
+      "engine": "fpga-sdk",
+      "pattern": "text",
+      "chunk_bytes": 4194304,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 1.1105471879918145,
+      "gb_s_min": 1.1072938827923857,
+      "gb_s_max": 1.1148924878897302,
+      "gb_s_rounds": [
+        1.1148924878897302,
+        1.1105471879918145,
+        1.1072938827923857
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 0.36467619242768684,
+      "allocated_bytes_median": 178944
+    },
+    {
+      "algorithm": "raw",
+      "engine": "fpga-sdk",
+      "pattern": "text",
+      "chunk_bytes": 4194304,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 4.95516337446874,
+      "gb_s_min": 4.9384013685953985,
+      "gb_s_max": 5.027875333739912,
+      "gb_s_rounds": [
+        4.95516337446874,
+        4.9384013685953985,
+        5.027875333739912
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 1.6912799370061151,
+      "allocated_bytes_median": 729000
+    },
+    {
+      "algorithm": "raw",
+      "engine": "fpga-sdk",
+      "pattern": "text",
+      "chunk_bytes": 67108864,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 1.7930730606278031,
+      "gb_s_min": 1.7867075441175937,
+      "gb_s_max": 1.812159923133523,
+      "gb_s_rounds": [
+        1.7867075441175937,
+        1.812159923133523,
+        1.7930730606278031
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 0.5537396200944434,
+      "allocated_bytes_median": 12544
+    },
+    {
+      "algorithm": "raw",
+      "engine": "fpga-sdk",
+      "pattern": "text",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 6.831439967170665,
+      "gb_s_min": 6.806321578326585,
+      "gb_s_max": 6.838289546803055,
+      "gb_s_rounds": [
+        6.831439967170665,
+        6.838289546803055,
+        6.806321578326585
+      ],
+      "output_input_ratio": 1.0,
+      "cpu_cores_median": 2.254624578101688,
+      "allocated_bytes_median": 50008
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "cpu",
+      "pattern": "fixture",
+      "chunk_bytes": 4194304,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 3.7268674707158835,
+      "gb_s_min": 3.7214722295753027,
+      "gb_s_max": 3.7651137427519212,
+      "gb_s_rounds": [
+        3.7214722295753027,
+        3.7651137427519212,
+        3.7268674707158835
+      ],
+      "output_input_ratio": 0.5001270771026611,
+      "cpu_cores_median": 1.0139778356664826,
+      "allocated_bytes_median": 312
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "cpu",
+      "pattern": "fixture",
+      "chunk_bytes": 4194304,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 12.701294414591198,
+      "gb_s_min": 12.661966791821506,
+      "gb_s_max": 12.9196334802924,
+      "gb_s_rounds": [
+        12.661966791821506,
+        12.9196334802924,
+        12.701294414591198
+      ],
+      "output_input_ratio": 0.5001270771026611,
+      "cpu_cores_median": 3.8187721316355514,
+      "allocated_bytes_median": 2304
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "cpu",
+      "pattern": "fixture",
+      "chunk_bytes": 4194304,
+      "lanes": 8,
+      "input_bytes_per_round": 1073741824,
+      "verified": true,
+      "gb_s_median": 17.81202892008749,
+      "gb_s_min": 17.783167258954844,
+      "gb_s_max": 18.029474868718815,
+      "gb_s_rounds": [
+        17.783167258954844,
+        17.81202892008749,
+        18.029474868718815
+      ],
+      "output_input_ratio": 0.5001270771026611,
+      "cpu_cores_median": 7.648418367552271,
+      "allocated_bytes_median": 4672
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "cpu",
+      "pattern": "fixture",
+      "chunk_bytes": 67108864,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 2.71150326956627,
+      "gb_s_min": 2.710816794519396,
+      "gb_s_max": 2.7724381928643687,
+      "gb_s_rounds": [
+        2.710816794519396,
+        2.71150326956627,
+        2.7724381928643687
+      ],
+      "output_input_ratio": 0.5001241862773895,
+      "cpu_cores_median": 0.9981234011676529,
+      "allocated_bytes_median": 424
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "cpu",
+      "pattern": "fixture",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 9.136402719463424,
+      "gb_s_min": 9.121560287580033,
+      "gb_s_max": 9.242280478695156,
+      "gb_s_rounds": [
+        9.121560287580033,
+        9.242280478695156,
+        9.136402719463424
+      ],
+      "output_input_ratio": 0.5001241862773895,
+      "cpu_cores_median": 3.9636192837641513,
+      "allocated_bytes_median": 1856
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "cpu",
+      "pattern": "fixture",
+      "chunk_bytes": 67108864,
+      "lanes": 8,
+      "input_bytes_per_round": 1073741824,
+      "verified": true,
+      "gb_s_median": 13.140469673761784,
+      "gb_s_min": 13.08760661315612,
+      "gb_s_max": 13.174542141757975,
+      "gb_s_rounds": [
+        13.140469673761784,
+        13.08760661315612,
+        13.174542141757975
+      ],
+      "output_input_ratio": 0.5001241862773895,
+      "cpu_cores_median": 7.8615714212919965,
+      "allocated_bytes_median": 2080
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "cpu",
+      "pattern": "random",
+      "chunk_bytes": 4194304,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 3.0124551485148467,
+      "gb_s_min": 3.0037239466959997,
+      "gb_s_max": 3.0650953041086404,
+      "gb_s_rounds": [
+        3.0124551485148467,
+        3.0650953041086404,
+        3.0037239466959997
+      ],
+      "output_input_ratio": 1.0000488758087158,
+      "cpu_cores_median": 1.0114185515564993,
+      "allocated_bytes_median": 424
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "cpu",
+      "pattern": "random",
+      "chunk_bytes": 4194304,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 9.757034709755562,
+      "gb_s_min": 9.708358456209615,
+      "gb_s_max": 9.757424127282524,
+      "gb_s_rounds": [
+        9.757034709755562,
+        9.708358456209615,
+        9.757424127282524
+      ],
+      "output_input_ratio": 1.0000488758087158,
+      "cpu_cores_median": 3.838436133614406,
+      "allocated_bytes_median": 1344
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "cpu",
+      "pattern": "random",
+      "chunk_bytes": 4194304,
+      "lanes": 8,
+      "input_bytes_per_round": 1073741824,
+      "verified": true,
+      "gb_s_median": 14.026306798337167,
+      "gb_s_min": 13.985747545298635,
+      "gb_s_max": 14.078093889060339,
+      "gb_s_rounds": [
+        13.985747545298635,
+        14.078093889060339,
+        14.026306798337167
+      ],
+      "output_input_ratio": 1.0000488758087158,
+      "cpu_cores_median": 7.806811158517176,
+      "allocated_bytes_median": 4112
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "cpu",
+      "pattern": "random",
+      "chunk_bytes": 67108864,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 2.2684748022808714,
+      "gb_s_min": 2.2585194378739053,
+      "gb_s_max": 2.2906923066525344,
+      "gb_s_rounds": [
+        2.2906923066525344,
+        2.2585194378739053,
+        2.2684748022808714
+      ],
+      "output_input_ratio": 1.0000459849834442,
+      "cpu_cores_median": 0.9979250784492205,
+      "allocated_bytes_median": 424
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "cpu",
+      "pattern": "random",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 7.444131594030779,
+      "gb_s_min": 7.40894721974163,
+      "gb_s_max": 7.450504604401803,
+      "gb_s_rounds": [
+        7.444131594030779,
+        7.450504604401803,
+        7.40894721974163
+      ],
+      "output_input_ratio": 1.0000459849834442,
+      "cpu_cores_median": 3.9994960193983995,
+      "allocated_bytes_median": 2416
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "cpu",
+      "pattern": "random",
+      "chunk_bytes": 67108864,
+      "lanes": 8,
+      "input_bytes_per_round": 1073741824,
+      "verified": true,
+      "gb_s_median": 10.826343552407328,
+      "gb_s_min": 10.599957043069343,
+      "gb_s_max": 10.834979975240458,
+      "gb_s_rounds": [
+        10.834979975240458,
+        10.826343552407328,
+        10.599957043069343
+      ],
+      "output_input_ratio": 1.0000459849834442,
+      "cpu_cores_median": 7.826202786183106,
+      "allocated_bytes_median": 3040
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "cpu",
+      "pattern": "text",
+      "chunk_bytes": 4194304,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 4.686283843890407,
+      "gb_s_min": 4.619356069723929,
+      "gb_s_max": 4.707786379752711,
+      "gb_s_rounds": [
+        4.619356069723929,
+        4.686283843890407,
+        4.707786379752711
+      ],
+      "output_input_ratio": 0.00023264437913894653,
+      "cpu_cores_median": 1.0137027415608038,
+      "allocated_bytes_median": 1336
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "cpu",
+      "pattern": "text",
+      "chunk_bytes": 4194304,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 17.370669732059806,
+      "gb_s_min": 17.24036825674891,
+      "gb_s_max": 17.41081006877367,
+      "gb_s_rounds": [
+        17.41081006877367,
+        17.24036825674891,
+        17.370669732059806
+      ],
+      "output_input_ratio": 0.0002326611429452896,
+      "cpu_cores_median": 3.915974361103949,
+      "allocated_bytes_median": 6432
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "cpu",
+      "pattern": "text",
+      "chunk_bytes": 4194304,
+      "lanes": 8,
+      "input_bytes_per_round": 1073741824,
+      "verified": true,
+      "gb_s_median": 27.21307397245248,
+      "gb_s_min": 26.42097122827214,
+      "gb_s_max": 27.514903043405923,
+      "gb_s_rounds": [
+        27.514903043405923,
+        27.21307397245248,
+        26.42097122827214
+      ],
+      "output_input_ratio": 0.00023266393691301346,
+      "cpu_cores_median": 7.837602390683246,
+      "allocated_bytes_median": 12192
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "cpu",
+      "pattern": "text",
+      "chunk_bytes": 67108864,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 3.4763732768097553,
+      "gb_s_min": 3.4637527570552837,
+      "gb_s_max": 3.5074717573447005,
+      "gb_s_rounds": [
+        3.5074717573447005,
+        3.4637527570552837,
+        3.4763732768097553
+      ],
+      "output_input_ratio": 0.00021478533744812012,
+      "cpu_cores_median": 0.9982504133992461,
+      "allocated_bytes_median": 1336
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "cpu",
+      "pattern": "text",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "input_bytes_per_round": 536870912,
+      "verified": true,
+      "gb_s_median": 12.118460270379327,
+      "gb_s_min": 11.86390975921654,
+      "gb_s_max": 12.364605804268257,
+      "gb_s_rounds": [
+        12.364605804268257,
+        11.86390975921654,
+        12.118460270379327
+      ],
+      "output_input_ratio": 0.0002147965133190155,
+      "cpu_cores_median": 3.9570264176550336,
+      "allocated_bytes_median": 4960
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "cpu",
+      "pattern": "text",
+      "chunk_bytes": 67108864,
+      "lanes": 8,
+      "input_bytes_per_round": 1073741824,
+      "verified": true,
+      "gb_s_median": 16.34292548219151,
+      "gb_s_min": 16.155881011161977,
+      "gb_s_max": 16.51256550059821,
+      "gb_s_rounds": [
+        16.51256550059821,
+        16.155881011161977,
+        16.34292548219151
+      ],
+      "output_input_ratio": 0.00021479837596416473,
+      "cpu_cores_median": 7.778089342138187,
+      "allocated_bytes_median": 11344
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "fpga-pipeline",
+      "pattern": "fixture",
+      "chunk_bytes": 67108864,
+      "lanes": 2,
+      "input_bytes_per_round": 268435456,
+      "verified": true,
+      "gb_s_median": 0.16035516285363943,
+      "gb_s_min": 0.16031352016985218,
+      "gb_s_max": 0.1603558522665079,
+      "gb_s_rounds": [
+        0.16031352016985218,
+        0.1603558522665079,
+        0.16035516285363943
+      ],
+      "output_input_ratio": 0.50567626953125,
+      "cpu_cores_median": 0.036938307941055015,
+      "allocated_bytes_median": 29328
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "fpga-pipeline",
+      "pattern": "random",
+      "chunk_bytes": 67108864,
+      "lanes": 2,
+      "input_bytes_per_round": 268435456,
+      "verified": true,
+      "gb_s_median": 0.11983268376057946,
+      "gb_s_min": 0.1197852176315191,
+      "gb_s_max": 0.11983778983253275,
+      "gb_s_rounds": [
+        0.1197852176315191,
+        0.11983778983253275,
+        0.11983268376057946
+      ],
+      "output_input_ratio": 1.0013427734375,
+      "cpu_cores_median": 0.03688531482295591,
+      "allocated_bytes_median": 29216
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "fpga-pipeline",
+      "pattern": "text",
+      "chunk_bytes": 67108864,
+      "lanes": 2,
+      "input_bytes_per_round": 268435456,
+      "verified": true,
+      "gb_s_median": 0.22786269931026726,
+      "gb_s_min": 0.2278557374798476,
+      "gb_s_max": 0.2280581953944314,
+      "gb_s_rounds": [
+        0.22786269931026726,
+        0.2278557374798476,
+        0.2280581953944314
+      ],
+      "output_input_ratio": 0.02261185273528099,
+      "cpu_cores_median": 0.0351601852398003,
+      "allocated_bytes_median": 30992
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "fpga-sdk",
+      "pattern": "fixture",
+      "chunk_bytes": 4194304,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 0.07659683458388342,
+      "gb_s_min": 0.07657750790443085,
+      "gb_s_max": 0.0766124153584656,
+      "gb_s_rounds": [
+        0.07657750790443085,
+        0.0766124153584656,
+        0.07659683458388342
+      ],
+      "output_input_ratio": 0.50567626953125,
+      "cpu_cores_median": 0.1444866572502429,
+      "allocated_bytes_median": 2546048
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "fpga-sdk",
+      "pattern": "fixture",
+      "chunk_bytes": 4194304,
+      "lanes": 2,
+      "input_bytes_per_round": 268435456,
+      "verified": true,
+      "gb_s_median": 0.15398094403541565,
+      "gb_s_min": 0.15390752084056,
+      "gb_s_max": 0.15586411791431368,
+      "gb_s_rounds": [
+        0.15586411791431368,
+        0.15390752084056,
+        0.15398094403541565
+      ],
+      "output_input_ratio": 0.50567626953125,
+      "cpu_cores_median": 0.27838560001539864,
+      "allocated_bytes_median": 5069736
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "fpga-sdk",
+      "pattern": "fixture",
+      "chunk_bytes": 67108864,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 0.0800369530105071,
+      "gb_s_min": 0.08003619113924854,
+      "gb_s_max": 0.08008881389975193,
+      "gb_s_rounds": [
+        0.0800369530105071,
+        0.08003619113924854,
+        0.08008881389975193
+      ],
+      "output_input_ratio": 0.50567626953125,
+      "cpu_cores_median": 0.14914938848738823,
+      "allocated_bytes_median": 157936
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "fpga-sdk",
+      "pattern": "fixture",
+      "chunk_bytes": 67108864,
+      "lanes": 2,
+      "input_bytes_per_round": 268435456,
+      "verified": true,
+      "gb_s_median": 0.1601246733533943,
+      "gb_s_min": 0.16007881105954086,
+      "gb_s_max": 0.16018301234467963,
+      "gb_s_rounds": [
+        0.16007881105954086,
+        0.1601246733533943,
+        0.16018301234467963
+      ],
+      "output_input_ratio": 0.50567626953125,
+      "cpu_cores_median": 0.27968651758861307,
+      "allocated_bytes_median": 478816
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "fpga-sdk",
+      "pattern": "random",
+      "chunk_bytes": 4194304,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 0.057988441788519064,
+      "gb_s_min": 0.05796498054181303,
+      "gb_s_max": 0.05799908740853716,
+      "gb_s_rounds": [
+        0.057988441788519064,
+        0.05799908740853716,
+        0.05796498054181303
+      ],
+      "output_input_ratio": 1.0013427734375,
+      "cpu_cores_median": 0.07074346734920217,
+      "allocated_bytes_median": 2142256
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "fpga-sdk",
+      "pattern": "random",
+      "chunk_bytes": 4194304,
+      "lanes": 2,
+      "input_bytes_per_round": 268435456,
+      "verified": true,
+      "gb_s_median": 0.11680733499751153,
+      "gb_s_min": 0.11623220408241705,
+      "gb_s_max": 0.11737380934445313,
+      "gb_s_rounds": [
+        0.11623220408241705,
+        0.11680733499751153,
+        0.11737380934445313
+      ],
+      "output_input_ratio": 1.0013427734375,
+      "cpu_cores_median": 0.1416567469006775,
+      "allocated_bytes_median": 4287992
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "fpga-sdk",
+      "pattern": "random",
+      "chunk_bytes": 67108864,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 0.05988903715754343,
+      "gb_s_min": 0.05988846713522391,
+      "gb_s_max": 0.05989047667855034,
+      "gb_s_rounds": [
+        0.05989047667855034,
+        0.05988846713522391,
+        0.05988903715754343
+      ],
+      "output_input_ratio": 1.0013427734375,
+      "cpu_cores_median": 0.07283495990045173,
+      "allocated_bytes_median": 135152
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "fpga-sdk",
+      "pattern": "random",
+      "chunk_bytes": 67108864,
+      "lanes": 2,
+      "input_bytes_per_round": 268435456,
+      "verified": true,
+      "gb_s_median": 0.11982371417454801,
+      "gb_s_min": 0.11977509894625155,
+      "gb_s_max": 0.11982633877014522,
+      "gb_s_rounds": [
+        0.11977509894625155,
+        0.11982633877014522,
+        0.11982371417454801
+      ],
+      "output_input_ratio": 1.0013427734375,
+      "cpu_cores_median": 0.14005336702181162,
+      "allocated_bytes_median": 271328
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "fpga-sdk",
+      "pattern": "text",
+      "chunk_bytes": 4194304,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 0.09175713786821206,
+      "gb_s_min": 0.09155848380608987,
+      "gb_s_max": 0.09175880266898127,
+      "gb_s_rounds": [
+        0.09175880266898127,
+        0.09175713786821206,
+        0.09155848380608987
+      ],
+      "output_input_ratio": 0.022613994777202606,
+      "cpu_cores_median": 0.19754370515782343,
+      "allocated_bytes_median": 2160304
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "fpga-sdk",
+      "pattern": "text",
+      "chunk_bytes": 4194304,
+      "lanes": 2,
+      "input_bytes_per_round": 268435456,
+      "verified": true,
+      "gb_s_median": 0.18453912060745048,
+      "gb_s_min": 0.1843142073601765,
+      "gb_s_max": 0.18480841320904706,
+      "gb_s_rounds": [
+        0.18453912060745048,
+        0.1843142073601765,
+        0.18480841320904706
+      ],
+      "output_input_ratio": 0.022614087909460068,
+      "cpu_cores_median": 0.38489530203450284,
+      "allocated_bytes_median": 4489976
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "fpga-sdk",
+      "pattern": "text",
+      "chunk_bytes": 67108864,
+      "lanes": 1,
+      "input_bytes_per_round": 134217728,
+      "verified": true,
+      "gb_s_median": 0.1070805920878635,
+      "gb_s_min": 0.10699506140636772,
+      "gb_s_max": 0.10713015362270714,
+      "gb_s_rounds": [
+        0.10713015362270714,
+        0.10699506140636772,
+        0.1070805920878635
+      ],
+      "output_input_ratio": 0.022611849009990692,
+      "cpu_cores_median": 0.22827811400667117,
+      "allocated_bytes_median": 139088
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "fpga-sdk",
+      "pattern": "text",
+      "chunk_bytes": 67108864,
+      "lanes": 2,
+      "input_bytes_per_round": 268435456,
+      "verified": true,
+      "gb_s_median": 0.21477581246155,
+      "gb_s_min": 0.21476794081189785,
+      "gb_s_max": 0.2149740285410947,
+      "gb_s_rounds": [
+        0.2149740285410947,
+        0.21476794081189785,
+        0.21477581246155
+      ],
+      "output_input_ratio": 0.02261185273528099,
+      "cpu_cores_median": 0.42538197339672273,
+      "allocated_bytes_median": 458104
+    }
+  ]
+}

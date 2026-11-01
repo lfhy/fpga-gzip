@@ -4,6 +4,7 @@
 各自构建镜像。公开的 `accelerator` 包、`fpga-fw`、`fpga-compress` 和多算法
 HTTP/Unix 接口见[固件与 SDK 使用说明](firmware/README.md)。根包继续提供 gzip 接口。
 四种镜像的上板结果、切换命令与混合存储验证见[多算法固件验收](docs/multialgo-20261101.md)。
+各算法与纯 Go CPU 的吞吐、压缩比和 CPU 占用见[性能对照](docs/algorithm-performance-20261101.md)。
 
 `fpga-gzip` 是一个纯 Go 的 FPGA gzip 主机端 SDK 和命令行工具。它直接访问 Xilinx XDMA 字符设备和 FPGA user BAR，不依赖 cgo、XRT 或厂商用户态库。当前实现对应本机已验证的 gzip shell：每核一对 H2C/C2H streaming 通道，以及 user BAR 上独立的 gzip 控制寄存器；支持显式选择四核并行。
 
