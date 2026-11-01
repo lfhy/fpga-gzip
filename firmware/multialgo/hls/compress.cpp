@@ -56,29 +56,73 @@ void compress_ctl(hls::stream<Input>& inStream, hls::stream<Output>& outStream) 
 #include "lz_optional.hpp"
 #include "lz4_compress.hpp"
 
-static const unsigned BLOCK = 32768;
+static const unsigned BLOCK = 8192;
+static const unsigned LANES = 8;
 
-static void load_bytes(const uint8_t raw[BLOCK], unsigned size, hls::stream<ap_uint<8> >& output) {
-    for (unsigned i = 0; i < size; ++i) {
+struct InputMeta { unsigned size; bool last; };
+struct OutputMeta { unsigned size; unsigned encoded; bool last; };
+
+// Separate the transport into a compression stream and a retained original.
+// A whole input block must fit before its size becomes visible to the encoder.
+static void read_blocks(hls::stream<Input>& input,
+                        hls::stream<ap_uint<64> > compression[LANES],
+                        hls::stream<ap_uint<64> >& original,
+                        hls::stream<InputMeta> metadata[LANES]) {
+    bool last=false;
+    unsigned lane=0;
+    while (!last) {
+        unsigned size=0;
+        while (size<BLOCK && !last) {
 #pragma HLS PIPELINE II=1
-        output.write(raw[i]);
+            Input in=input.read();
+            compression[lane].write(in.data); original.write(in.data);
+            unsigned count=0;
+            for (unsigned i=0;i<8;++i) {
+#pragma HLS UNROLL
+                count+=in.keep[i];
+            }
+            size+=count;last=in.last;
+        }
+        InputMeta meta;meta.size=size;meta.last=last;metadata[lane].write(meta);
+        lane=(lane+1)%LANES;
+    }
+    // Every lane terminates independently, including lanes with no input block.
+    for (unsigned i=0;i<LANES;++i) {
+#pragma HLS PIPELINE II=1
+        InputMeta stop;stop.size=0;stop.last=true;metadata[i].write(stop);
+    }
+}
+
+static void load_bytes(hls::stream<ap_uint<64> >& input, unsigned size,
+                       hls::stream<ap_uint<8> >& output) {
+    ap_uint<64> word=0;
+    for (unsigned i=0;i<size;++i) {
+#pragma HLS PIPELINE II=1
+        if ((i&7)==0) word=input.read();
+        output.write(word.range(7,0)); word>>=8;
     }
 }
 
 static void collect(hls::stream<ap_uint<8> >& input, hls::stream<bool>& eos,
-                    hls::stream<uint32_t>& sizes, uint8_t encoded[BLOCK], unsigned& size) {
-    size = 0;
-    bool end = eos.read();
+                    hls::stream<uint32_t>& sizes, hls::stream<ap_uint<64> >& encoded,
+                    unsigned& size) {
+    size=0;
+    ap_uint<64> word=0;
+    unsigned count=0;
+    bool end=eos.read();
     while (!end) {
 #pragma HLS PIPELINE II=1
-        encoded[size++] = input.read();
-        end = eos.read();
+        word.range(count*8+7,count*8)=input.read();++count;++size;
+        if (count==8) { encoded.write(word);word=0;count=0; }
+        end=eos.read();
     }
-    (void)input.read(); // upstream's dummy EOS byte
+    if (count) encoded.write(word);
+    (void)input.read(); // upstream dummy EOS byte
     (void)sizes.read();
 }
 
-static void compress_block(const uint8_t raw[BLOCK], unsigned size, uint8_t encoded[BLOCK], unsigned& encoded_size) {
+static void compress_block(hls::stream<ap_uint<64> >& raw, unsigned size,
+                           hls::stream<ap_uint<64> >& encoded, unsigned& encoded_size) {
 #pragma HLS DATAFLOW
     hls::stream<ap_uint<8> > bytes("bytes"), compressed("compressed");
     hls::stream<ap_uint<32> > matches("matches"), filtered("filtered"), boosted("boosted");
@@ -91,72 +135,123 @@ static void compress_block(const uint8_t raw[BLOCK], unsigned size, uint8_t enco
 #pragma HLS STREAM variable=boosted depth=32
 #pragma HLS STREAM variable=eos depth=32
     uint32_t limits[1];
-    load_bytes(raw, size, bytes);
-    xf::compression::lzCompress<6, 4, 65536, 2>(bytes, matches, size);
-    xf::compression::lzBestMatchFilter<6, 65536>(matches, filtered, size);
-    xf::compression::lzBooster<255, 32768>(filtered, boosted, size);
-    xf::compression::lz4Compress<BLOCK, 1>(boosted, compressed, limits, size, eos, sizes, 0);
-    collect(compressed, eos, sizes, encoded, encoded_size);
+    load_bytes(raw,size,bytes);
+    xf::compression::lzCompress<6,4,65536,1>(bytes,matches,size);
+    xf::compression::lzBestMatchFilter<6,65536>(matches,filtered,size);
+    xf::compression::lzBooster<255,4096>(filtered,boosted,size);
+    xf::compression::lz4Compress<BLOCK,1>(boosted,compressed,limits,size,eos,sizes,0);
+    collect(compressed,eos,sizes,encoded,encoded_size);
 }
 
-struct ByteWriter {
+static void encode_blocks(hls::stream<ap_uint<64> >& raw,
+                          hls::stream<InputMeta>& metadata,
+                          hls::stream<ap_uint<64> >& encoded,
+                          hls::stream<OutputMeta>& output_metadata) {
+    while (true) {
+        InputMeta meta=metadata.read();
+        if (meta.size==0) break;
+        unsigned compressed_size=0;
+        if (meta.size>72) {
+            compress_block(raw,meta.size,encoded,compressed_size);
+        } else {
+            // The LZ77 implementation requires its literal tail and match window.
+            for (unsigned i=0;i<(meta.size+7)/8;++i) {
+#pragma HLS PIPELINE II=1
+                (void)raw.read();
+            }
+        }
+        OutputMeta result;result.size=meta.size;result.encoded=compressed_size;
+        result.last=meta.last;output_metadata.write(result);
+    }
+}
+
+// Keep one complete beat pending so an exact 64-bit tail carries TLAST itself.
+// Both original and compressed blocks advance eight bytes per cycle.
+struct WordWriter {
     hls::stream<Output>& output;
-    ap_uint<64> word;
+    ap_uint<128> buffer;
     unsigned count;
-    ByteWriter(hls::stream<Output>& out):output(out),word(0),count(0) {}
-    void byte(uint8_t v) {
+    WordWriter(hls::stream<Output>& out):output(out),buffer(0),count(0) {}
+    void append(ap_uint<64> data,unsigned size) {
 #pragma HLS INLINE
-        if (count == 8) flush(false);
-        word.range(count*8+7, count*8) = v;
-        ++count;
+        ap_uint<128> mask=(ap_uint<128>(1)<<(size*8))-1;
+        buffer|=(ap_uint<128>(data)&mask)<<(count*8);count+=size;
+        if (count>8) {
+            Output out;out.data=buffer.range(63,0);out.keep=255;out.strb=255;
+            out.last=false;out.user=0;output.write(out);buffer>>=64;count-=8;
+        }
     }
-    void u32(uint32_t v) {
-        for (unsigned i=0; i<4; ++i) byte(v >> (i*8));
-    }
-    void flush(bool last) {
+    void finish() {
 #pragma HLS INLINE
-        Output out;
-        out.data=word; out.keep=(1u<<count)-1; out.strb=out.keep;
-        out.last=last; out.user=0; output.write(out);
-        word=0; count=0;
+        Output out;out.data=buffer.range(63,0);out.keep=(1u<<count)-1;out.strb=out.keep;
+        out.last=true;out.user=0;output.write(out);
     }
 };
 
-void compress_ctl(hls::stream<Input>& inStream, hls::stream<Output>& outStream) {
+static void write_blocks(hls::stream<ap_uint<64> >& raw,
+                         hls::stream<ap_uint<64> > encoded[LANES],
+                         hls::stream<OutputMeta> metadata[LANES],
+                         hls::stream<Output>& output) {
+    WordWriter writer(output);
+    writer.append(0x184d2204,4);writer.append(0x824060,3);
+    bool last=false;
+    unsigned lane=0;
+    while (!last) {
+        OutputMeta meta=metadata[lane].read();
+        bool stored=meta.size<=72 || meta.encoded>=meta.size;
+        writer.append((stored?0x80000000u:0)|(stored?meta.size:meta.encoded),4);
+        unsigned words=(meta.size+7)/8;
+        unsigned encoded_words=(meta.encoded+7)/8;
+        unsigned steps=words>encoded_words?words:encoded_words;
+        // Drain both copies together. Incompressible blocks must not serialize
+        // discarding the attempted encoding and emitting the retained original.
+        for (unsigned i=0;i<steps;++i) {
+#pragma HLS PIPELINE II=1
+            ap_uint<64> original=0,compressed=0;
+            if (i<words) original=raw.read();
+            if (i<encoded_words) compressed=encoded[lane].read();
+            if (stored && i<words) {
+                unsigned remaining=meta.size-i*8;
+                writer.append(original,remaining<8?remaining:8);
+            } else if (!stored && i<encoded_words) {
+                unsigned remaining=meta.encoded-i*8;
+                writer.append(compressed,remaining<8?remaining:8);
+            }
+        }
+        last=meta.last;
+        lane=(lane+1)%LANES;
+    }
+    writer.append(0,4);writer.finish();
+}
+
+void compress_ctl(hls::stream<Input>& inStream,hls::stream<Output>& outStream) {
 #pragma HLS INTERFACE axis port=inStream
 #pragma HLS INTERFACE axis port=outStream
 #pragma HLS INTERFACE ap_ctrl_hs port=return
-    uint8_t raw[BLOCK], encoded[BLOCK];
-#pragma HLS BIND_STORAGE variable=raw type=ram_2p impl=bram
-#pragma HLS BIND_STORAGE variable=encoded type=ram_2p impl=bram
-    ByteWriter output(outStream);
-    // Standard LZ4 frame: independent blocks, maximum block size 64 KiB,
-    // no content-size/checksum fields. XXH32(0x60,0x40)>>8 = 0x82.
-    output.u32(0x184d2204); output.byte(0x60); output.byte(0x40); output.byte(0x82);
-    bool last=false;
-    while (!last) {
-        unsigned size=0;
-        while (size < BLOCK && !last) {
-            Input in=inStream.read();
-            for (unsigned i=0; i<8; ++i) {
-#pragma HLS PIPELINE II=1
-                if (in.keep[i]) raw[size++]=in.data.range(i*8+7, i*8);
-            }
-            last=in.last;
-        }
-        unsigned compressed_size=size;
-        // Upstream LZ77 requires its 64-byte literal tail plus match window.
-        if (size > 72) compress_block(raw, size, encoded, compressed_size);
-        bool stored=compressed_size>=size;
-        output.u32((stored ? 0x80000000u : 0) | (stored ? size : compressed_size));
-        for (unsigned i=0; i<(stored ? size : compressed_size); ++i) {
-#pragma HLS PIPELINE II=1
-            output.byte(stored ? raw[i] : encoded[i]);
-        }
+#pragma HLS DATAFLOW
+    hls::stream<ap_uint<64> > compression[LANES],encoded[LANES],original("original");
+    hls::stream<InputMeta> input_metadata[LANES];
+    hls::stream<OutputMeta> output_metadata[LANES];
+    // One complete block per lane is sufficient before size publication. The
+    // encoder caps attempted output at BLOCK bytes; EOS adds no payload word.
+#pragma HLS STREAM variable=compression depth=1024
+#pragma HLS STREAM variable=original depth=8192
+#pragma HLS STREAM variable=encoded depth=1024
+#pragma HLS STREAM variable=input_metadata depth=4
+#pragma HLS STREAM variable=output_metadata depth=4
+#pragma HLS BIND_STORAGE variable=compression type=fifo impl=bram
+    // Raw retention uses the spare URAM capacity; eight byte-wide compressors
+    // otherwise exhaust BRAM when replicated across all four DMA engines.
+#pragma HLS BIND_STORAGE variable=original type=fifo impl=uram
+#pragma HLS BIND_STORAGE variable=encoded type=fifo impl=bram
+    read_blocks(inStream,compression,original,input_metadata);
+    for (unsigned i=0;i<LANES;++i) {
+#pragma HLS UNROLL
+        encode_blocks(compression[i],input_metadata[i],encoded[i],output_metadata[i]);
     }
-    output.u32(0); // EndMark, not an empty data block
-    output.flush(true);
+    write_blocks(original,encoded,output_metadata,outStream);
 }
+
 #else
 #error unsupported HLS algorithm
 #endif
