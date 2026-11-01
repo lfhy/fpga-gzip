@@ -54,7 +54,8 @@ EOP 镜像只识别为 legacy gzip，不能被当作其他算法使用。其他�
 
 gzip 使用已有的头部、CRC32、ISIZE 校验。LZ4 和 Zstd HLS 输出没有内容校验和，
 因此通用 SDK 同时用有界纯 Go 解码器验证整个输出，再比对输入 CRC32 和长度；
-这部分消耗 CPU，计入 `Result.Total`。raw 直接校验长度和 CRC32。
+这部分消耗 CPU，计入 `Result.Total`。MinLZ 同样完整解码，额外检查流内 CRC32C
+和 EOF；其核实现及范围见 [MinLZ 指导](../docs/minlz-fpga.md)。raw 直接校验长度和 CRC32。
 输入在调用结束前必须保持不变。空输入暂不支持。库不改变应用的 GOMAXPROCS。
 文件 CLI 在验证并同步临时文件后才发布目标文件。
 
@@ -84,7 +85,7 @@ worker。应用通过该进程提交请求；各进程的 `device.Pool` 不共�
 | --- | --- |
 | `0x44` | Magic `0x434d5058`，CMPX |
 | `0x48` | ABI，major:minor 各 16 bit，当前 `0x00010000` |
-| `0x4c` | 算法 ID：1 raw、2 gzip、3 LZ4、4 Zstd |
+| `0x4c` | 算法 ID：1 raw、2 gzip、3 LZ4、4 Zstd、5 MinLZ |
 | `0x50` | 编码格式版本，当前 1 |
 | `0x54` | 可用独立 DMA 核数，1–4 |
 | `0x58` | 特性位：bit 0 EOP、bit 1 标准帧 |

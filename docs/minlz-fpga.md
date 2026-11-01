@@ -24,6 +24,10 @@ SDK 和 MinLZ 官方 Go 解码器要求 Go 1.25 或更新版本，不使用 cgo�
 - 输入 CRC32C 使用 64 位并行变换，最后不足 8 字节单独处理。字典保持真实 RAM
   依赖，没有将同地址冲突声明为不存在。
 
+固件的原文块仍处于 MinLZ 流内，带帧头、CRC 与 EOF，因此随机输入的完整输出
+可能略大于原文。compactfs 在 chunk 层比较完整输出大小，无收益时保存原始字节，
+不会保留膨胀的 MinLZ 流。
+
 SDK 对完整输出使用有界官方 Go 解码器，检查块 CRC32C、EOF、长度，并比对解码后
 CRC32 与输入。校验时间包含在 SDK 吞吐中。编码通道基准将完整解压比对放在计时后，
 两种计时分别报告，不能混用。
@@ -52,7 +56,8 @@ VIVADO_BIN=/opt/Xilinx/2025.2/Vivado/bin/vivado \
   /data1/my-minlz-hls/hls-minlz/sol1/impl/ip /path/to/reference.dcp
 ```
 
-构建器在 setup/hold、时钟覆盖和 DRC 检查通过后生成 manifest。
+构建器在 setup/hold、时钟覆盖和 DRC 检查通过后生成 manifest，并逐个检查
+四个 MinLZ HLS 实例直接使用 4 ns 时钟，防止误接 Zstd 的 125 MHz 分频分支。
 装载流程、驱动准备与回滚见[固件指导](../firmware/README.md)。
 
 ```sh
@@ -72,4 +77,5 @@ HTTP/Unix daemon 通过 `--algorithms gzip,lz4,zstd,minlz,raw` 启用请求；
 默认仍只接受 gzip，Token 认证仍默认关闭。
 
 新格式的实际压缩率取决于块长和匹配策略，不能套用官方 CPU Fastest/Balanced 的
-数字。CPU 候选比较见[算法报告](algorithm-candidates-20261101.md)。
+数字。CPU 候选比较见[算法报告](algorithm-candidates-20261101.md)，本机最终镜像、
+正确性、组件性能与 compactfs 混合读取结果见[板测报告](minlz-fpga-20261101.md)。

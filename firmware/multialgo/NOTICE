@@ -2,11 +2,17 @@ The common DMA shell derives from the user-provided KU5P FPGA-4IP project
 and the qz01-eop modifications in this repository. New adapters and framework
 code are distributed under the repository's MIT license.
 
-The HLS adapters include the Xilinx Vitis Data Compression Library, licensed
+The LZ4/Zstd HLS adapters include the Xilinx Vitis Data Compression Library, licensed
 under Apache-2.0. That library is an external build dependency and is not
 relicensed under MIT. Preserve its license and notices in distributed IP.
 Upstream: https://github.com/Xilinx/Vitis_Libraries
 Pinned revision: f217398d03b018c2774816200e562750872d9c31
+
+The MinLZ HLS encoder and parallel CRC32C implementation are new MIT-licensed
+code. They implement the public MinLZ specification v1.0 and do not copy the
+official CPU encoder. The host decoder is the external github.com/minio/minlz
+module under its own Apache-2.0 license; that dependency is not relicensed.
+Specification: https://github.com/minio/minlz/blob/v1.2.3/SPEC.md
 
 zstd-literal-buffer.patch, zstd-frame-fse.patch, zstd-fifo.patch and
 zstd-huffman-padding.patch modify Apache-2.0 upstream

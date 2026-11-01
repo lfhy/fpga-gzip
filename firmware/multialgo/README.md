@@ -64,7 +64,7 @@ VITIS_HLS_BIN=/opt/Xilinx/2025.2/Vitis/bin/vitis-run \
   /data/lsw/Vitis_Libraries-2021.1 cosim
 ```
 
-算法可改为 `zstd`。`csim` 运行 115 组边界输入，`cosim` 运行 25 组 C/RTL
+算法可改为 `zstd` 或 `minlz`。`csim` 运行 115 组边界输入（MinLZ 为 130 组），`cosim` 运行 25 组 C/RTL
 联合仿真；两种模式随后自动用纯 Go 解码并逐字节比较。解码失败会使构建失败，
 cosim 不会继续导出 IP。`synth` 只综合并导出候选 IP，不代表功能已验证。
 cosim 的可选第五个参数 `entropy` 运行全零、文本、随机、重复字符、二符号的 5 组回归，
@@ -139,11 +139,14 @@ launcher 冻结工程、RTL、脚本、参考 DCP 和 IP 仓库，再按实际�
 ```sh
 firmware/multialgo/tests/run-identity.sh
 firmware/multialgo/tests/run-bridge.sh raw
+firmware/multialgo/tests/run-bridge.sh lz4
 firmware/multialgo/tests/run-bridge.sh zstd
+firmware/multialgo/tests/run-bridge.sh minlz
 ```
 
 测试使用实际 XPM FIFO、BUFGCE_DIV 和 AXI-Lite 控制模块，覆盖 AXI 背压、
 只读身份寄存器、独立控制 bank、跨时钟尾字节、重复任务和软复位。
+LZ4/MinLZ 测试还确认实际选择的是直接 250 MHz HLS 分支。
 这些脚本中的 `VIVADO_BIN` 表示 Vivado 的 `bin` 目录，可用 `TEST_BUILD_DIR`
 指定独立日志目录。
 
