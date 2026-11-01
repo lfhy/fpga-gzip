@@ -79,21 +79,8 @@ func Switch(ctx context.Context, manifest Manifest, bitPath string, options Swit
 			return Info{}, fmt.Errorf("unexpected PCI %s: %s", name, got)
 		}
 	}
-	stat := syscall.Stat_t{}
-	if err := syscall.Stat(options.UserDevice, &stat); err != nil {
+	if err := verifyUserPCI(options.UserDevice, options.PCI); err != nil {
 		return Info{}, err
-	}
-	if stat.Mode&syscall.S_IFMT != syscall.S_IFCHR {
-		return Info{}, errors.New("user device is not a character device")
-	}
-	major := (stat.Rdev>>8)&0xfff | (stat.Rdev>>32)&0xfffff000
-	minor := stat.Rdev&0xff | (stat.Rdev>>12)&0xffffff00
-	devicePath, err := filepath.EvalSymlinks(fmt.Sprintf("/sys/dev/char/%d:%d/device", major, minor))
-	if err != nil {
-		return Info{}, err
-	}
-	if !strings.Contains(devicePath, "/"+options.PCI+"/") && !strings.HasSuffix(devicePath, "/"+options.PCI) {
-		return Info{}, errors.New("user device does not belong to the selected PCI function")
 	}
 	realPCI, err := filepath.EvalSymlinks(pciDir)
 	if err != nil {
@@ -174,6 +161,9 @@ exit
 			return Info{}, fmt.Errorf("wait for re-enumerated FPGA: %w", err)
 		}
 	}
+	if err := verifyUserPCI(options.UserDevice, options.PCI); err != nil {
+		return Info{}, fmt.Errorf("verify re-enumerated device: %w", err)
+	}
 	if err := manifest.Check(info); err != nil {
 		return Info{}, err
 	}
@@ -250,4 +240,24 @@ func DeviceOwners() ([]string, error) {
 		}
 	}
 	return owners, nil
+}
+
+func verifyUserPCI(user, pci string) error {
+	stat := syscall.Stat_t{}
+	if err := syscall.Stat(user, &stat); err != nil {
+		return err
+	}
+	if stat.Mode&syscall.S_IFMT != syscall.S_IFCHR {
+		return errors.New("user device is not a character device")
+	}
+	major := (stat.Rdev>>8)&0xfff | (stat.Rdev>>32)&0xfffff000
+	minor := stat.Rdev&0xff | (stat.Rdev>>12)&0xffffff00
+	devicePath, err := filepath.EvalSymlinks(fmt.Sprintf("/sys/dev/char/%d:%d/device", major, minor))
+	if err != nil {
+		return err
+	}
+	if !strings.Contains(devicePath, "/"+pci+"/") && !strings.HasSuffix(devicePath, "/"+pci) {
+		return errors.New("user device does not belong to the selected PCI function")
+	}
+	return nil
 }
