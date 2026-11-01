@@ -26,10 +26,14 @@ type Paths struct {
 
 // Device is a handle to the user BAR and one H2C/C2H streaming pair.
 type Device struct {
-	user         *os.File
-	h2c          *os.File
-	c2h          *os.File
-	registerBase uint32
+	user            *os.File
+	h2c             *os.File
+	c2h             *os.File
+	registerBase    uint32
+	registerMu      sync.RWMutex
+	registerMap     []byte
+	registerMapBase uint64
+	registerClosed  bool
 
 	closeStreamsOnce sync.Once
 	closeOnce        sync.Once
@@ -71,6 +75,14 @@ func (d *Device) SetRegisterBase(base uint32) error {
 	if base%4 != 0 || base > ^uint32(0)-RegDebug {
 		return errors.New("invalid register base alignment or range")
 	}
+	d.registerMu.Lock()
+	defer d.registerMu.Unlock()
+	if d.registerClosed {
+		return os.ErrClosed
+	}
+	if len(d.registerMap) != 0 && base != d.registerBase {
+		return errors.New("select register base before enabling mapped access")
+	}
 	d.registerBase = base
 	return nil
 }
@@ -101,6 +113,9 @@ func (d *Device) Close() error {
 		if err := d.CloseStreams(); err != nil {
 			first = err
 		}
+		if err := d.closeRegisterMap(); err != nil && first == nil {
+			first = err
+		}
 		if err := d.user.Close(); err != nil && !errors.Is(err, os.ErrInvalid) && first == nil {
 			first = err
 		}
@@ -121,6 +136,9 @@ func (d *Device) ReadC2H(p []byte) (int, error) {
 
 // ReadReg32 reads a little-endian 32-bit user-BAR register.
 func (d *Device) ReadReg32(_ context.Context, offset uint32) (uint32, error) {
+	if value, mapped, err := d.readMappedRegister(offset); mapped {
+		return value, err
+	}
 	var buf [4]byte
 	n, err := d.user.ReadAt(buf[:], int64(d.registerBase)+int64(offset))
 	if err != nil {
@@ -134,6 +152,9 @@ func (d *Device) ReadReg32(_ context.Context, offset uint32) (uint32, error) {
 
 // WriteReg32 writes a little-endian 32-bit user-BAR register.
 func (d *Device) WriteReg32(_ context.Context, offset uint32, value uint32) error {
+	if mapped, err := d.writeMappedRegister(offset, value); mapped {
+		return err
+	}
 	var buf [4]byte
 	binary.LittleEndian.PutUint32(buf[:], value)
 	n, err := d.user.WriteAt(buf[:], int64(d.registerBase)+int64(offset))
