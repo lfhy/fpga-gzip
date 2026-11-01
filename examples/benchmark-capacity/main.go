@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/lfhy/fpga-gzip/device"
+	"github.com/lfhy/fpga-gzip/firmware"
 	"github.com/lfhy/fpga-gzip/pipeline"
 )
 
@@ -40,6 +41,12 @@ func (o *operation) values() map[string]uint64 {
 type measured struct {
 	pipeline.Hardware
 	h2c, c2h, snapshots, arms operation
+}
+
+// Preserve identity negotiation through the measurement wrapper. Embedding
+// Hardware alone hides Device's optional FirmwareInfo method.
+func (m *measured) FirmwareInfo(ctx context.Context) (firmware.Info, error) {
+	return firmware.Require(ctx, m.Hardware, firmware.Gzip)
 }
 
 func (m *measured) PacketReadsEnabled() bool {
@@ -91,11 +98,13 @@ type result struct {
 	InputBytes        int64                          `json:"input_bytes"`
 	OutputBytes       int64                          `json:"output_bytes"`
 	Seconds           float64                        `json:"seconds"`
+	CPUSeconds        *float64                       `json:"process_cpu_seconds,omitempty"`
 	GBs               float64                        `json:"gb_s"`
 	AllocatedBytes    uint64                         `json:"allocated_bytes"`
 	CoreOperations    []map[string]map[string]uint64 `json:"core_operations"`
 	Verified          bool                           `json:"verified"`
 	PacketReads       bool                           `json:"packet_reads"`
+	DirectOutput      bool                           `json:"direct_output"`
 	C2HRequestBytes   uint64                         `json:"c2h_request_bytes"`
 	Interrupts        *uint64                        `json:"xdma_interrupts,omitempty"`
 	VerificationProcs int                            `json:"verification_procs"`
@@ -164,6 +173,7 @@ func main() {
 	mmap := flag.Bool("mmap", false, "use optional mapped register access")
 	packetSize := flag.Int("packet-kib", 1024, "negotiated EOP request size")
 	legacy := flag.Bool("legacy", false, "force legacy exact-length packets")
+	bufferedOutput := flag.Bool("buffered-output", false, "force bounded C2H buffers for comparison with direct RAM output")
 	profiles := flag.String("profiles", "", "optional directory for per-case CPU profiles")
 	flag.Parse()
 	sizes, err := numbers(*sizeList)
@@ -219,7 +229,7 @@ func main() {
 						fail(os.MkdirAll(*profiles, 0700))
 						profile = filepath.Join(*profiles, fmt.Sprintf("%s-%dMiB-%dcores-r%d.pprof", pattern, mib, count, round))
 					}
-					row, err := run(pattern, round, mib<<20, count, *procs, *perCore/mib, fixture, opts, *mmap, *legacy, profile, *verifyProcs)
+					row, err := run(pattern, round, mib<<20, count, *procs, *perCore/mib, fixture, opts, *mmap, *legacy, profile, *verifyProcs, *bufferedOutput)
 					fail(err)
 					results = append(results, row)
 					data, err := json.MarshalIndent(map[string]any{"unit": "decimal GB/s, input bytes / group wall time", "mmap": *mmap, "legacy": *legacy, "fixture": *source, "fixture_decoded_sha256": fmt.Sprintf("%x", sha256.Sum256(fixture)), "go_version": runtime.Version(), "arguments": os.Args, "options": opts, "results": results}, "", "  ")
@@ -232,7 +242,7 @@ func main() {
 	}
 }
 
-func run(pattern string, round, size, cores, procs, iterations int, fixture []byte, opts pipeline.Options, mmap, legacy bool, profile string, verifyProcs int) (result, error) {
+func run(pattern string, round, size, cores, procs, iterations int, fixture []byte, opts pipeline.Options, mmap, legacy bool, profile string, verifyProcs int, bufferedOutput bool) (result, error) {
 	raw := make([]byte, size)
 	switch pattern {
 	case "fixture":
@@ -283,9 +293,11 @@ func run(pattern string, round, size, cores, procs, iterations int, fixture []by
 	var before, after runtime.MemStats
 	runtime.ReadMemStats(&before)
 	irqBefore, irqOK := interruptCount()
+	cpuBefore, cpuOK := processCPUSeconds()
 	start := time.Now()
 	var wg sync.WaitGroup
 	errs := make(chan error, cores)
+	var directCalls atomic.Uint64
 	for c := range inputs {
 		wg.Add(1)
 		go func(c int) {
@@ -312,7 +324,15 @@ func run(pattern string, round, size, cores, procs, iterations int, fixture []by
 				}
 				meters[c].Hardware = hw
 				ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-				_, err = pipeline.RunReader(ctx, bytes.NewReader(inputs[c]), uint64(size), outputs[c][i], meters[c], opts, nil)
+				var dst io.Writer = outputs[c][i]
+				if bufferedOutput {
+					dst = struct{ io.Writer }{dst}
+				}
+				result, runErr := pipeline.RunReader(ctx, bytes.NewReader(inputs[c]), uint64(size), dst, meters[c], opts, nil)
+				err = runErr
+				if result.DirectOutput {
+					directCalls.Add(1)
+				}
 				cancel()
 				closeErr := hw.Close()
 				if err != nil {
@@ -328,6 +348,7 @@ func run(pattern string, round, size, cores, procs, iterations int, fixture []by
 	}
 	wg.Wait()
 	elapsed := time.Since(start)
+	cpuAfter, cpuAfterOK := processCPUSeconds()
 	irqAfter, irqAfterOK := interruptCount()
 	runtime.ReadMemStats(&after)
 	if pf != nil {
@@ -340,11 +361,16 @@ func run(pattern string, round, size, cores, procs, iterations int, fixture []by
 	}
 	row := result{Pattern: pattern, Round: round, Cores: cores, Procs: procs, ChunkBytes: size, IterationsPerCore: iterations, InputBytes: int64(size) * int64(cores) * int64(iterations), Seconds: elapsed.Seconds(), AllocatedBytes: after.TotalAlloc - before.TotalAlloc}
 	row.GBs = float64(row.InputBytes) / elapsed.Seconds() / 1e9
+	if cpuOK && cpuAfterOK && cpuAfter >= cpuBefore {
+		delta := cpuAfter - cpuBefore
+		row.CPUSeconds = &delta
+	}
 	if irqOK && irqAfterOK && irqAfter >= irqBefore {
 		delta := irqAfter - irqBefore
 		row.Interrupts = &delta
 	}
 	row.PacketReads = meters[0].PacketReadsEnabled()
+	row.DirectOutput = directCalls.Load() == uint64(cores)*uint64(iterations)
 	row.C2HRequestBytes = opts.C2HRequestBytes
 	if row.PacketReads && opts.PacketRequestBytes != 0 {
 		row.C2HRequestBytes = opts.PacketRequestBytes
