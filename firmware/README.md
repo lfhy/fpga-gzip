@@ -30,8 +30,10 @@ SDK 句柄释放，检查所有 XDMA 描述符，再卸载驱动、移除目标 
 
 ## SDK 接口
 
-根包 `github.com/lfhy/fpga-gzip` 仍然只输出 gzip。多算法使用公开包
-`github.com/lfhy/fpga-gzip/accelerator`，无 cgo、无 `internal` 包。
+根包的 `CompressReader`、`Writer` 等原有接口继续输出 gzip。多算法可用根包的
+`CompressAlgorithm(ctx, "lz4", src, size, dst, hw, options, nil)`，或公开包
+`github.com/lfhy/fpga-gzip/accelerator`。`InspectFirmware(ctx, userDevice)`
+只查询身份，不打开 DMA、不重置压缩核。所有接口无 cgo、无 `internal` 包。
 
 ```go
 hw, err := device.Open(device.Paths{

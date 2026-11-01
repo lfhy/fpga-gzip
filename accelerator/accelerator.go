@@ -1,6 +1,7 @@
 // Package accelerator uses the common FPGA shell with raw, gzip, LZ4 and Zstd
 // images. It does not program the card or change process-wide scheduler settings.
-// The root fpgagzip package remains the gzip-only API.
+// The root fpgagzip package retains its gzip APIs and offers a convenience
+// CompressAlgorithm wrapper for callers that select a format explicitly.
 package accelerator
 
 import (
