@@ -97,6 +97,34 @@ type result struct {
 	Verified          bool                           `json:"verified"`
 	PacketReads       bool                           `json:"packet_reads"`
 	C2HRequestBytes   uint64                         `json:"c2h_request_bytes"`
+	Interrupts        *uint64                        `json:"xdma_interrupts,omitempty"`
+}
+
+func interruptCount() (uint64, bool) {
+	data, err := os.ReadFile("/proc/interrupts")
+	if err != nil {
+		return 0, false
+	}
+	var total uint64
+	found := false
+	for _, line := range strings.Split(string(data), "\n") {
+		if !strings.Contains(line, "xdma") {
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) < 2 {
+			continue
+		}
+		found = true
+		for _, field := range fields[1:] {
+			n, err := strconv.ParseUint(field, 10, 64)
+			if err != nil {
+				break
+			}
+			total += n
+		}
+	}
+	return total, found
 }
 
 func numbers(s string) ([]int, error) {
@@ -249,6 +277,7 @@ func run(pattern string, round, size, cores, procs, iterations int, fixture []by
 	}
 	var before, after runtime.MemStats
 	runtime.ReadMemStats(&before)
+	irqBefore, irqOK := interruptCount()
 	start := time.Now()
 	var wg sync.WaitGroup
 	errs := make(chan error, cores)
@@ -294,6 +323,7 @@ func run(pattern string, round, size, cores, procs, iterations int, fixture []by
 	}
 	wg.Wait()
 	elapsed := time.Since(start)
+	irqAfter, irqAfterOK := interruptCount()
 	runtime.ReadMemStats(&after)
 	if pf != nil {
 		pprof.StopCPUProfile()
@@ -305,6 +335,10 @@ func run(pattern string, round, size, cores, procs, iterations int, fixture []by
 	}
 	row := result{Pattern: pattern, Round: round, Cores: cores, Procs: procs, ChunkBytes: size, IterationsPerCore: iterations, InputBytes: int64(size) * int64(cores) * int64(iterations), Seconds: elapsed.Seconds(), AllocatedBytes: after.TotalAlloc - before.TotalAlloc}
 	row.GBs = float64(row.InputBytes) / elapsed.Seconds() / 1e9
+	if irqOK && irqAfterOK && irqAfter >= irqBefore {
+		delta := irqAfter - irqBefore
+		row.Interrupts = &delta
+	}
 	row.PacketReads = meters[0].PacketReadsEnabled()
 	row.C2HRequestBytes = opts.C2HRequestBytes
 	if row.PacketReads && opts.PacketRequestBytes != 0 {
