@@ -8,7 +8,7 @@
 | Profile | 算法 ID | 核数 | 压缩核时钟 | 引擎 |
 | --- | --- | --- | --- | --- |
 | raw | 1 | 4 | 250 MHz | 双寄存缓冲透传 |
-| gzip | 2 | 4 | 250 MHz | 已验证的 8 lane、8 KiB gzip IP |
+| gzip | 2 | 4 | 250 MHz | 8 lane、8 KiB gzip IP，四路 32 KiB 输入预取 |
 | lz4 | 3 | 4 | 250 MHz | 每引擎 8 条 LZ77 通道，标准独立块帧 |
 | zstd | 4 | 2 | 125 MHz | 每引擎 4 条 LZ77 通道，经 AXI FIFO 与 250 MHz shell 交互 |
 | minlz | 5 | 4 | 250 MHz | 每引擎 4 条 64 位匹配通道，16 KiB 独立块、CRC32C 和 EOF |
@@ -38,6 +38,36 @@ flowchart LR
 
 Zstd 使用 8 KiB 块，每引擎把输入分配到 4 条 LZ77 通道，后续共享树生成与
 FSE 阶段，输出标准 Zstd 帧。两种算法的吞吐需要各自实测，不能套用 gzip 指标。
+
+## gzip 输入预取
+
+gzip profile 在每条 XDMA 512 位 H2C 总线与 512→64 位转换器之间插入
+32 KiB AXI Stream FIFO，四路共增加 36 个 BRAM36。放在转换器前，PCIe
+能够以高于压缩核的瞬时速度补充队列，在主机完成、映射并重启下一个请求时
+继续供数。64 位转换器后的 FIFO 无法以更高速度回填，不能达到同样效果。
+
+```mermaid
+flowchart LR
+    A[XDMA H2C 512 位] --> B[32 KiB BRAM FIFO]
+    B --> C[512→64 位转换器]
+    C --> D[长度与 TLAST]
+    D --> E[8 lane gzip]
+    E --> F[输出 FIFO 与 EOP]
+```
+
+每核软复位同时清空该核的预取 FIFO 和输入宽度转换器，丢弃中断事务的残留。
+TKEEP、TLAST 与背压完整传递，gzip 编码和 ABI 保持原有格式。
+`tests/run-prefetch.sh` 验证队列填满、随机背压、尾包掩码和带队列数据的复位。
+
+`patch-prefetch.py` 只处理独立工程副本中的指定生成层级；原工程、已验证归档
+和原 PCIe IP 不改动，也不升级 2021 年的 PCIe IP。工程副本必须来自未加预取的
+原始工程；未知层级或已打补丁时终止。生成网表内嵌 FIFO 模块，使 Vivado 的
+BD 编译顺序能够发现它。脚本和 RTL 一并冻结、参与构建 ID 哈希。
+
+32 KiB 输入预取构建 `24138492833269` 已通过 setup、hold、DRC 和 720 组上板
+解压比较；四核 256 MiB 分块的三轮中位数为文本 7.748 GB/s、混合 7.602 GB/s，
+Silesia 全部 12 文件拼接、1 GiB 分块为 7.620 GB/s。具体口径、长期验证与其他
+缓冲方案见 [gzip 吞吐实测](../../docs/gzip-throughput-20261102.md)。
 
 ## 依赖
 
@@ -138,6 +168,7 @@ launcher 冻结工程、RTL、脚本、参考 DCP 和 IP 仓库，再按实际�
 
 ```sh
 firmware/multialgo/tests/run-identity.sh
+firmware/multialgo/tests/run-prefetch.sh
 firmware/multialgo/tests/run-bridge.sh raw
 firmware/multialgo/tests/run-bridge.sh lz4
 firmware/multialgo/tests/run-bridge.sh zstd
