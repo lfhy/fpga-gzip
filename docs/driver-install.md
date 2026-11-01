@@ -33,6 +33,11 @@ sudo dnf install gcc make git kernel-devel-$(uname -r) kernel-headers-$(uname -r
 `sg_alloc_table_from_pages_segment`，在设备 DMA 段长度上限内合并物理连续页。
 H2C 和原精确长度读取保持原 SG 布局；页固定、DMA 映射和释放仍由驱动执行。
 内核 helper 的实现见 [Linux v6.12 scatterlist.c](https://github.com/torvalds/linux/blob/v6.12/lib/scatterlist.c)。
+EOP 还需要 [描述符链尾修补](patches/xdma-2025.2-eop-chain-tail.patch)：一个读取请求
+可能在描述符环回绕处拆成多次传输。官方代码只在部分描述符完成时检查 EOP；
+若末包落在当前链的最后一个描述符，驱动会漏判并继续提交剩余链，空等 10 秒后
+才返回已经收到的数据。补丁也在整链完成时传播 EOP，正常结束当前读取。
+四核长测和带链尾命中日志的定向压力测试覆盖了这个边界，真实超时保持原值。
 补丁基于官方提交 `a918c5196a09f95756af244a607d543d9dce5bfb`，实测内核为 Linux 6.12。
 下面固定到该源码版本；其他版本需要重新核对补丁及实机测试。
 
@@ -49,6 +54,8 @@ git apply --check "$fpga_gzip_dir/docs/patches/xdma-2025.2-readonly-h2c.patch"
 git apply "$fpga_gzip_dir/docs/patches/xdma-2025.2-readonly-h2c.patch"
 git apply --check "$fpga_gzip_dir/docs/patches/xdma-2025.2-eop-sg-merge.patch"
 git apply "$fpga_gzip_dir/docs/patches/xdma-2025.2-eop-sg-merge.patch"
+git apply --check "$fpga_gzip_dir/docs/patches/xdma-2025.2-eop-chain-tail.patch"
+git apply "$fpga_gzip_dir/docs/patches/xdma-2025.2-eop-chain-tail.patch"
 cd XDMA/linux-kernel/xdma
 make
 ```
@@ -77,8 +84,9 @@ cat /sys/module/xdma/srcversion
 /lib/modules/$(uname -r)/updates/xdma.ko
 ```
 
-`modinfo -n xdma` 应指向该文件；本机三个补丁的修补版 `srcversion` 为
-`94DCC95A2173C02F0AD9552`。仅等待与只读页补丁的版本为 `C6055D7044FEB6C79C6C438`，
+`modinfo -n xdma` 应指向该文件；本机四个补丁的修补版 `srcversion` 为
+`E3CDCD760B1013A292DE373`。仅前三个补丁的版本为 `94DCC95A2173C02F0AD9552`，
+仅等待与只读页补丁的版本为 `C6055D7044FEB6C79C6C438`，
 只含等待补丁的旧版为 `4053DCC3523124C6CC000FA`。安装前应另存当前已验证的模块用于回滚。
 内核升级后需要为新内核重新编译安装。此驱动补丁不会加载或持久化 FPGA bitstream。
 

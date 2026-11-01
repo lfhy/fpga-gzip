@@ -1,0 +1,27 @@
+--- a/XDMA/linux-kernel/xdma/libxdma.c
++++ b/XDMA/linux-kernel/xdma/libxdma.c
+@@ -1002,6 +1002,24 @@
+ 			 */
+ 			WARN_ON(*pdesc_completed > transfer->desc_num);
+ 		}
++		/* An EOP can also land in the final descriptor of this
++		 * sub-transfer. The request may still have SG entries after a
++		 * descriptor-ring wrap, so propagate EOP before the waiter
++		 * decides whether to submit another chain.
++		 */
++		if (engine->eop_flush && engine->streaming &&
++		    engine->dir == DMA_FROM_DEVICE) {
++			struct xdma_result *result = transfer->res_virt;
++			int i;
++
++			for (i = 0; i < transfer->desc_num; i++) {
++				if (le32_to_cpu(result[i].status) & RX_STATUS_EOP) {
++					transfer->flags |= XFER_FLAG_ST_C2H_EOP_RCVED;
++					break;
++				}
++			}
++		}
++
+ 		/* mark transfer as successfully completed */
+ 		transfer->state = TRANSFER_STATE_COMPLETED;
+ 		transfer->desc_cmpl = transfer->desc_num;
