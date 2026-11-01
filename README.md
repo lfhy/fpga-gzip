@@ -21,6 +21,10 @@ Silesia 全部 12 文件拼接、1 GiB 分块为 **7.67 GB/s**。每组 96 GiB �
 这是 RAM 中完整 gzip 事务的吞吐。固件、CPU 用量、测试口径与复现
 数据见[gzip 吞吐分析](docs/gzip-throughput-20261102.md)。
 
+可选[深预取固件](firmware/multialgo/variants/README.md)的每核单个 10 GiB member、
+四核共 40 GiB 文本三轮中位数为 **7.887 GB/s**，达到理论值的 **98.6%**。
+该分配对大块混合数据有回退，默认仍保留上述通用方案；两套镜像可以独立构建和切换。
+
 这些改动尚未发布为新版本。寄存器分区、独立通道租借、四核 daemon 与 compactfs 独立 worker 的接入见[四核接口说明](docs/multicore-20261101.md)；新 shell 的协议与隔离构建脚本见 [EOP 固件指导](firmware/qz01-eop/README.md)。
 
 2026-10-31 已在本机修补后的 RTL 和 XDMA 驱动上验证：10 GiB 随机数据完整压缩、解压并逐字节比较通过。

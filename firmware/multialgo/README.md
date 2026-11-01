@@ -71,6 +71,11 @@ BD 编译顺序能够发现它。脚本和 RTL 一并冻结、参与构建 ID �
 具体口径、长期验证与其他
 缓冲方案见 [gzip 吞吐实测](../../docs/gzip-throughput-20261102.md)。
 
+另提供 [64 KiB 输入、16 KiB 输出变体](variants/README.md)，每核单个 10 GiB
+member、四核共 40 GiB 的文本三轮中位数为 7.887 GB/s。准备脚本在新的源码
+目录应用补丁，生成与已上板镜像相同的 RTL；默认分配保持原样。深预取对大块
+混合数据有回退，两套镜像可通过 manifest 独立构建、验证与切换。
+
 ## 依赖
 
 - Vivado / Vitis HLS 2025.2，器件 `xcku5p-ffvb676-2-e`。
