@@ -25,13 +25,16 @@ type Config struct {
 	OutputPath string
 	CSVPath    string
 
-	UserDevice string
-	H2CDevice  string
-	C2HDevice  string
+	UserDevice    string
+	H2CDevice     string
+	C2HDevice     string
+	LegacyPackets bool
+	MmapRegisters bool
 
-	RingSlots       uint
-	H2CSlotBytes    uint64
-	C2HRequestBytes uint64
+	RingSlots          uint
+	H2CSlotBytes       uint64
+	C2HRequestBytes    uint64
+	PacketRequestBytes uint64
 
 	PollInterval     time.Duration
 	DrainIdle        time.Duration
@@ -50,6 +53,7 @@ func Parse(args []string) (Config, error) {
 	var cfg Config
 	var h2cSlotText = "4MiB"
 	var c2hRequestText = "32KiB"
+	var packetRequestText = "1MiB"
 
 	fs := lfyflag.NewFlagSet("fpga-gzip", lfyflag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
@@ -62,10 +66,13 @@ func Parse(args []string) (Config, error) {
 	fs.StringFullVar(&cfg.UserDevice, "user-device", "device", "user", "FPGA_GZIP_USER_DEVICE", "/dev/xdma0_user", "XDMA user BAR 设备节点")
 	fs.StringFullVar(&cfg.H2CDevice, "h2c-device", "device", "h2c", "FPGA_GZIP_H2C_DEVICE", "/dev/xdma0_h2c_0", "XDMA H2C 设备节点")
 	fs.StringFullVar(&cfg.C2HDevice, "c2h-device", "device", "c2h", "FPGA_GZIP_C2H_DEVICE", "/dev/xdma0_c2h_0", "XDMA C2H 设备节点")
+	fs.BoolFullVar(&cfg.LegacyPackets, "legacy-packets", "device", "legacy_packets", "FPGA_GZIP_LEGACY_PACKETS", false, "强制原精确长度包协议，用于诊断")
+	fs.BoolFullVar(&cfg.MmapRegisters, "mmap-registers", "device", "mmap_registers", "FPGA_GZIP_MMAP_REGISTERS", false, "Linux amd64 可选 BAR 映射")
 
 	fs.UintFullVar(&cfg.RingSlots, "ring-slots", "pipeline", "ring_slots", "FPGA_GZIP_RING_SLOTS", 8, "输入/输出环形队列槽位数")
 	fs.StringFullVar(&h2cSlotText, "h2c-slot-bytes", "pipeline", "h2c_slot_bytes", "FPGA_GZIP_H2C_SLOT_BYTES", h2cSlotText, "H2C 分块大小，例如 4MiB")
 	fs.StringFullVar(&c2hRequestText, "c2h-request-bytes", "pipeline", "c2h_request_bytes", "FPGA_GZIP_C2H_REQUEST_BYTES", c2hRequestText, "C2H 请求缓冲大小，例如 32KiB")
+	fs.StringFullVar(&packetRequestText, "packet-request-bytes", "pipeline", "packet_request_bytes", "FPGA_GZIP_PACKET_REQUEST_BYTES", packetRequestText, "新 EOP 固件的请求大小，例如 1MiB")
 
 	fs.DurationFullVar(&cfg.PollInterval, "poll-interval", "pipeline", "poll_interval", "FPGA_GZIP_POLL_INTERVAL", 50*time.Microsecond, "FPGA 状态轮询间隔")
 	fs.DurationFullVar(&cfg.DrainIdle, "drain-idle", "pipeline", "drain_idle", "FPGA_GZIP_DRAIN_IDLE", 200*time.Microsecond, "输出暂缓时提前排空 FIFO 的等待时间")
@@ -109,6 +116,12 @@ func Parse(args []string) (Config, error) {
 	}
 	if cfg.C2HRequestBytes, err = size.Parse(c2hRequestText); err != nil {
 		return Config{}, fmt.Errorf("c2h-request-bytes: %w", err)
+	}
+	if cfg.PacketRequestBytes, err = size.Parse(packetRequestText); err != nil {
+		return Config{}, fmt.Errorf("packet-request-bytes: %w", err)
+	}
+	if cfg.PacketRequestBytes < 8 || cfg.PacketRequestBytes > math.MaxUint32 || cfg.PacketRequestBytes%8 != 0 {
+		return Config{}, errors.New("packet-request-bytes must be an 8-byte multiple between 8 and uint32 maximum")
 	}
 	if cfg.H2CSlotBytes == 0 {
 		return Config{}, errors.New("h2c-slot-bytes must be greater than zero")

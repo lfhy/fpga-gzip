@@ -2,16 +2,18 @@ package device
 
 // User-BAR register offsets for the gzip shell implemented in the FPGA.
 const (
-	RegCtrl          uint32 = 0x00
-	RegStatus        uint32 = 0x04
-	RegInputSizeLo   uint32 = 0x08
-	RegInputSizeHi   uint32 = 0x0c
-	RegOutBytesLo    uint32 = 0x10
-	RegOutBytesHi    uint32 = 0x14
-	RegInBytesLo     uint32 = 0x18
-	RegInBytesHi     uint32 = 0x1c
-	RegC2HRequestLen uint32 = 0x20
-	RegDebug         uint32 = 0x24
+	RegCtrl               uint32 = 0x00
+	RegStatus             uint32 = 0x04
+	RegInputSizeLo        uint32 = 0x08
+	RegInputSizeHi        uint32 = 0x0c
+	RegOutBytesLo         uint32 = 0x10
+	RegOutBytesHi         uint32 = 0x14
+	RegInBytesLo          uint32 = 0x18
+	RegInBytesHi          uint32 = 0x1c
+	RegC2HRequestLen      uint32 = 0x20
+	RegDebug              uint32 = 0x24
+	RegCapabilities       uint32 = 0x40
+	CapabilitiesPacketEOP uint32 = 0x475a0001
 )
 
 // Control register bits.

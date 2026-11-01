@@ -42,6 +42,39 @@ func TestRegisterBanksRemainIndependent(t *testing.T) {
 	}
 }
 
+func TestPacketCapabilityNeverTruncatesRegularFiles(t *testing.T) {
+	dir := t.TempDir()
+	bar := filepath.Join(dir, "bar")
+	data := make([]byte, 4096)
+	binary.LittleEndian.PutUint32(data[RegCapabilities:], CapabilitiesPacketEOP)
+	if err := os.WriteFile(bar, data, 0600); err != nil {
+		t.Fatal(err)
+	}
+	c2h := filepath.Join(dir, "c2h")
+	original := []byte("caller data must survive O_TRUNC negotiation")
+	if err := os.WriteFile(c2h, original, 0600); err != nil {
+		t.Fatal(err)
+	}
+	paths := Paths{User: bar, H2C: "/dev/null", C2H: c2h}
+	if d, err := Open(paths); err == nil {
+		d.Close()
+		t.Fatal("accepted ordinary file for EOP")
+	}
+	got, err := os.ReadFile(c2h)
+	if err != nil || string(got) != string(original) {
+		t.Fatal("truncated ordinary file", err)
+	}
+	paths.LegacyPackets = true
+	d, err := Open(paths)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer d.Close()
+	if d.PacketReadsEnabled() {
+		t.Fatal("ignored forced legacy mode")
+	}
+}
+
 func TestSoftResetWaitsForOldCompletionToClear(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "bar")
 	data := make([]byte, 4096)
@@ -130,7 +163,7 @@ func TestPoolRejectsPartialRegisterOverlap(t *testing.T) {
 			t.Fatalf("accepted overlapping bank at %#x", base)
 		}
 	}
-	paths[1].RegisterBase = RegDebug + 4
+	paths[1].RegisterBase = RegCapabilities + 4
 	if _, err := NewPool(paths); err != nil {
 		t.Fatalf("rejected adjacent nonoverlapping banks: %v", err)
 	}

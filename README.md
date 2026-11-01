@@ -260,6 +260,11 @@ SDK 不修改宿主进程的 `GOMAXPROCS`，FUSE 仍可独立配置并发度。
 
 ## HTTP/Unix 压缩服务
 
+新版源码包含可协商的 EOP 读取协议、内存输入借用和有界 DMA 缓冲复用。
+旧固件自动沿用精确长度分包；新协议需要匹配的 RTL，见
+[KU5P EOP 补丁与验证方法](firmware/qz01-eop/README.md)。吞吐测试应区分
+RAM 压缩、文件同步和完整文件系统排空，并保留输出做完整解压比较。
+
 `server` 包和 `fpga-gzipd` 命令把 FPGA 放到独立进程中，FUSE 或其他程序通过 Unix socket 或 TCP 发送请求。服务进程默认使用 4 个 Go P；库本身不会改调用方的调度器。请求必须有精确的 `Content-Length`，因为 shell 在 H2C 开始前需要完整输入长度：
 
 ```bash

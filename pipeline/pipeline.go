@@ -31,14 +31,17 @@ const (
 
 // Options controls buffering, polling and timeout behavior.
 type Options struct {
-	RingSlots        int
-	H2CSlotBytes     uint64
-	C2HRequestBytes  uint64
-	PollInterval     time.Duration
-	DrainIdle        time.Duration
-	ResetTimeout     time.Duration
-	StartTimeout     time.Duration
-	ProgressInterval time.Duration
+	RingSlots       int
+	H2CSlotBytes    uint64
+	C2HRequestBytes uint64
+	// PacketRequestBytes applies only after EOP packet capability negotiation.
+	// The legacy shell continues using C2HRequestBytes.
+	PacketRequestBytes uint64
+	PollInterval       time.Duration
+	DrainIdle          time.Duration
+	ResetTimeout       time.Duration
+	StartTimeout       time.Duration
+	ProgressInterval   time.Duration
 	// MaxProcs is a validation/configuration field for standalone callers. The
 	// library does not call runtime.GOMAXPROCS because doing so would change the
 	// scheduler width of a hosting FUSE or HTTP process.
@@ -55,13 +58,14 @@ func DefaultOptions() Options {
 		RingSlots:    8,
 		H2CSlotBytes: 4 * 1024 * 1024,
 		// The bundled shorttail72 packetizer is validated with 32 KiB requests.
-		C2HRequestBytes:  32 * 1024,
-		PollInterval:     50 * time.Microsecond,
-		DrainIdle:        200 * time.Microsecond,
-		ResetTimeout:     2 * time.Second,
-		StartTimeout:     time.Second,
-		ProgressInterval: 100 * time.Millisecond,
-		MaxProcs:         4,
+		C2HRequestBytes:    32 * 1024,
+		PacketRequestBytes: 1 << 20,
+		PollInterval:       50 * time.Microsecond,
+		DrainIdle:          200 * time.Microsecond,
+		ResetTimeout:       2 * time.Second,
+		StartTimeout:       time.Second,
+		ProgressInterval:   100 * time.Millisecond,
+		MaxProcs:           4,
 	}
 }
 
@@ -103,7 +107,16 @@ type Result struct {
 	Pipeline    time.Duration
 	Status      uint32
 	Debug       uint32
+	// C2HRequestBytes is the effective request limit for this transaction.
+	C2HRequestBytes uint64
+	PacketReads     bool
+	InputCRC32      uint32
 }
+
+// InputChecksumIEEE returns the input CRC already checked against the gzip
+// trailer on a successful run. Storage adapters can retain a separate trailer
+// check without hashing the same immutable input a second time.
+func (r Result) InputChecksumIEEE() uint32 { return r.InputCRC32 }
 
 type chunk struct {
 	data []byte
@@ -125,7 +138,7 @@ func newBytePool(slots int, size uint64) (*bytePool, error) {
 	}
 	p := &bytePool{buffers: make(chan []byte, slots)}
 	for i := 0; i < slots; i++ {
-		p.buffers <- make([]byte, int(size))
+		p.buffers <- takeDMABuffer(size)
 	}
 	return p, nil
 }
@@ -300,10 +313,19 @@ func RunReader(ctx context.Context, input io.Reader, inputSize uint64, output io
 			return Result{}, fmt.Errorf("allocate H2C buffers: %w", err)
 		}
 	}
-	c2hPool, err := newBytePool(opts.RingSlots, opts.C2HRequestBytes)
+	defer h2cPool.releaseIdle()
+	c2hSize, c2hSlots := opts.C2HRequestBytes, opts.RingSlots
+	if packetReadsEnabled(hw) && opts.PacketRequestBytes != 0 {
+		c2hSize = opts.PacketRequestBytes
+		if c2hSlots > 2 {
+			c2hSlots = 2
+		}
+	}
+	c2hPool, err := newBytePool(c2hSlots, c2hSize)
 	if err != nil {
 		return Result{}, fmt.Errorf("allocate C2H buffers: %w", err)
 	}
+	defer c2hPool.releaseIdle()
 	stats.mark("fpga-start")
 	if err := hw.Start(ctx, inputSize, opts.StartTimeout); err != nil {
 		return Result{}, fmt.Errorf("start FPGA gzip task: %w", err)
@@ -416,15 +438,18 @@ func RunReader(ctx context.Context, input io.Reader, inputSize uint64, output io
 	}
 
 	return Result{
-		InputBytes:  inputSize,
-		OutputBytes: outputBytes,
-		Total:       total,
-		Sync:        syncDuration,
-		FPGA:        stats.duration("fpga"),
-		C2H:         stats.duration("c2h"),
-		Pipeline:    stats.duration("pipeline"),
-		Status:      finalSnapshot.Status,
-		Debug:       finalSnapshot.Debug,
+		InputBytes:      inputSize,
+		OutputBytes:     outputBytes,
+		Total:           total,
+		Sync:            syncDuration,
+		FPGA:            stats.duration("fpga"),
+		C2H:             stats.duration("c2h"),
+		Pipeline:        stats.duration("pipeline"),
+		Status:          finalSnapshot.Status,
+		Debug:           finalSnapshot.Debug,
+		C2HRequestBytes: c2hSize,
+		PacketReads:     packetReadsEnabled(hw),
+		InputCRC32:      stats.inputCRC.Load(),
 	}, nil
 }
 
@@ -440,6 +465,9 @@ func truncateOutput(output io.Writer) {
 }
 
 func validateOptions(opts Options) error {
+	if opts.PacketRequestBytes != 0 && (opts.PacketRequestBytes < 8 || opts.PacketRequestBytes > math.MaxUint32 || opts.PacketRequestBytes%8 != 0) {
+		return errors.New("packet request size must be an 8-byte multiple between 8 and uint32 maximum")
+	}
 	if opts.RingSlots <= 0 {
 		return errors.New("ring slots must be greater than zero")
 	}
@@ -572,6 +600,9 @@ func writeAll(hw Hardware, data []byte) error {
 }
 
 func receiveC2H(ctx context.Context, hw Hardware, opts Options, rx chan<- chunk, pool *bytePool, stats *runStats) error {
+	if packetReadsEnabled(hw) {
+		return receivePackets(ctx, hw, opts, rx, pool, stats)
+	}
 	defer close(rx)
 	received := uint64(0)
 	lastProduced := uint64(0)

@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"os/signal"
 	"runtime"
@@ -25,23 +26,26 @@ type daemonConfig struct {
 	Unix string
 	TCP  string
 
-	User  string
-	H2C   string
-	C2H   string
-	Cores uint
+	User          string
+	H2C           string
+	C2H           string
+	Cores         uint
+	LegacyPackets bool
+	MmapRegisters bool
 
-	RingSlots      uint
-	H2CSlotText    string
-	C2HRequestText string
-	PollInterval   timeDuration
-	DrainIdle      timeDuration
-	ResetTimeout   timeDuration
-	StartTimeout   timeDuration
-	MaxProcs       uint
-	MaxConcurrent  uint
-	QueueDepth     uint
-	MaxInputText   string
-	AuthToken      string
+	RingSlots         uint
+	H2CSlotText       string
+	C2HRequestText    string
+	PacketRequestText string
+	PollInterval      timeDuration
+	DrainIdle         timeDuration
+	ResetTimeout      timeDuration
+	StartTimeout      timeDuration
+	MaxProcs          uint
+	MaxConcurrent     uint
+	QueueDepth        uint
+	MaxInputText      string
+	AuthToken         string
 }
 
 // timeDuration is a named alias so the flag package can bind it through its
@@ -77,6 +81,11 @@ func run() int {
 		return 2
 	}
 	var maxInput int64
+	packetBytes, err := size.Parse(cfg.PacketRequestText)
+	if err != nil || packetBytes < 8 || packetBytes > math.MaxUint32 || packetBytes%8 != 0 {
+		fmt.Fprintln(os.Stderr, "packet-request-bytes must be an 8-byte multiple between 8 and uint32 maximum")
+		return 2
+	}
 	if cfg.MaxInputText != "" && cfg.MaxInputText != "0" {
 		value, parseErr := size.Parse(cfg.MaxInputText)
 		if parseErr != nil || value > uint64(^uint64(0)>>1) {
@@ -105,13 +114,14 @@ func run() int {
 	options.RingSlots = int(cfg.RingSlots)
 	options.H2CSlotBytes = h2cBytes
 	options.C2HRequestBytes = c2hBytes
+	options.PacketRequestBytes = packetBytes
 	options.PollInterval = cfg.PollInterval.value
 	options.DrainIdle = cfg.DrainIdle.value
 	options.ResetTimeout = cfg.ResetTimeout.value
 	options.StartTimeout = cfg.StartTimeout.value
 	options.MaxProcs = int(cfg.MaxProcs)
 
-	paths := device.Paths{User: cfg.User, H2C: cfg.H2C, C2H: cfg.C2H}
+	paths := device.Paths{User: cfg.User, H2C: cfg.H2C, C2H: cfg.C2H, LegacyPackets: cfg.LegacyPackets}
 	corePaths, err := device.FourCorePaths(paths, int(cfg.Cores))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -128,7 +138,17 @@ func run() int {
 	}
 	svc, err := server.New(server.Config{
 		HardwareFactory: func(ctx context.Context) (pipeline.Hardware, error) {
-			return pool.Acquire(ctx)
+			lease, err := pool.Acquire(ctx)
+			if err != nil {
+				return nil, err
+			}
+			if cfg.MmapRegisters {
+				if err = lease.EnableRegisterMmap(); err != nil {
+					lease.Close()
+					return nil, err
+				}
+			}
+			return lease, nil
 		},
 		Options:       options,
 		MaxConcurrent: int(cfg.MaxConcurrent),
@@ -188,21 +208,22 @@ func run() int {
 func parseConfig(args []string) (daemonConfig, error) {
 	defaults := pipeline.DefaultOptions()
 	cfg := daemonConfig{
-		User:           "/dev/xdma0_user",
-		H2C:            "/dev/xdma0_h2c_0",
-		C2H:            "/dev/xdma0_c2h_0",
-		RingSlots:      uint(defaults.RingSlots),
-		H2CSlotText:    fmt.Sprintf("%d", defaults.H2CSlotBytes),
-		C2HRequestText: fmt.Sprintf("%d", defaults.C2HRequestBytes),
-		PollInterval:   durationValue{value: defaults.PollInterval},
-		DrainIdle:      durationValue{value: defaults.DrainIdle},
-		ResetTimeout:   durationValue{value: defaults.ResetTimeout},
-		StartTimeout:   durationValue{value: defaults.StartTimeout},
-		MaxProcs:       uint(defaults.MaxProcs),
-		Cores:          1,
-		MaxConcurrent:  0,
-		QueueDepth:     2,
-		MaxInputText:   "0",
+		User:              "/dev/xdma0_user",
+		H2C:               "/dev/xdma0_h2c_0",
+		C2H:               "/dev/xdma0_c2h_0",
+		RingSlots:         uint(defaults.RingSlots),
+		H2CSlotText:       fmt.Sprintf("%d", defaults.H2CSlotBytes),
+		C2HRequestText:    fmt.Sprintf("%d", defaults.C2HRequestBytes),
+		PacketRequestText: fmt.Sprintf("%d", defaults.PacketRequestBytes),
+		PollInterval:      durationValue{value: defaults.PollInterval},
+		DrainIdle:         durationValue{value: defaults.DrainIdle},
+		ResetTimeout:      durationValue{value: defaults.ResetTimeout},
+		StartTimeout:      durationValue{value: defaults.StartTimeout},
+		MaxProcs:          uint(defaults.MaxProcs),
+		Cores:             1,
+		MaxConcurrent:     0,
+		QueueDepth:        2,
+		MaxInputText:      "0",
 	}
 	fs := lfyflag.NewFlagSet("fpga-gzipd", lfyflag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
@@ -213,9 +234,12 @@ func parseConfig(args []string) (daemonConfig, error) {
 	fs.StringFullVar(&cfg.H2C, "h2c-device", "device", "h2c", "FPGA_GZIP_H2C_DEVICE", cfg.H2C, "XDMA H2C stream")
 	fs.StringFullVar(&cfg.C2H, "c2h-device", "device", "c2h", "FPGA_GZIP_C2H_DEVICE", cfg.C2H, "XDMA C2H stream")
 	fs.UintFullVar(&cfg.Cores, "cores", "device", "cores", "FPGA_GZIP_CORES", cfg.Cores, "validated independent gzip cores, 1 to 4")
+	fs.BoolFullVar(&cfg.LegacyPackets, "legacy-packets", "device", "legacy_packets", "FPGA_GZIP_LEGACY_PACKETS", false, "force original exact-length packet protocol")
+	fs.BoolFullVar(&cfg.MmapRegisters, "mmap-registers", "device", "mmap_registers", "FPGA_GZIP_MMAP_REGISTERS", false, "optional Linux amd64 BAR mapping")
 	fs.UintFullVar(&cfg.RingSlots, "ring-slots", "pipeline", "ring_slots", "FPGA_GZIP_RING_SLOTS", cfg.RingSlots, "DMA ring slots")
 	fs.StringFullVar(&cfg.H2CSlotText, "h2c-slot-bytes", "pipeline", "h2c_slot_bytes", "FPGA_GZIP_H2C_SLOT_BYTES", cfg.H2CSlotText, "H2C slot size")
 	fs.StringFullVar(&cfg.C2HRequestText, "c2h-request-bytes", "pipeline", "c2h_request_bytes", "FPGA_GZIP_C2H_REQUEST_BYTES", cfg.C2HRequestText, "C2H packet size")
+	fs.StringFullVar(&cfg.PacketRequestText, "packet-request-bytes", "pipeline", "packet_request_bytes", "FPGA_GZIP_PACKET_REQUEST_BYTES", cfg.PacketRequestText, "negotiated EOP packet size")
 	fs.DurationFullVar(&cfg.PollInterval.value, "poll-interval", "pipeline", "poll_interval", "FPGA_GZIP_POLL_INTERVAL", cfg.PollInterval.value, "FPGA poll interval")
 	fs.DurationFullVar(&cfg.DrainIdle.value, "drain-idle", "pipeline", "drain_idle", "FPGA_GZIP_DRAIN_IDLE", cfg.DrainIdle.value, "early drain idle time")
 	fs.DurationFullVar(&cfg.ResetTimeout.value, "reset-timeout", "pipeline", "reset_timeout", "FPGA_GZIP_RESET_TIMEOUT", cfg.ResetTimeout.value, "FPGA reset timeout")

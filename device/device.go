@@ -22,6 +22,8 @@ type Paths struct {
 	// RegisterBase selects an independent control bank. The validated four-core
 	// shell uses core*0x1000; DMA channel indices must match that core.
 	RegisterBase uint32
+	// LegacyPackets forces the original exact-length protocol for diagnosis.
+	LegacyPackets bool
 }
 
 // Device is a handle to the user BAR and one H2C/C2H streaming pair.
@@ -34,6 +36,7 @@ type Device struct {
 	registerMap     []byte
 	registerMapBase uint64
 	registerClosed  bool
+	packetReads     bool
 
 	closeStreamsOnce sync.Once
 	closeOnce        sync.Once
@@ -58,15 +61,29 @@ func Open(paths Paths) (*Device, error) {
 		_ = user.Close()
 		return nil, fmt.Errorf("open H2C device %q: %w", paths.H2C, err)
 	}
-	c2h, err := os.OpenFile(paths.C2H, os.O_RDONLY, 0)
+	packetReads := false
+	if !paths.LegacyPackets && paths.RegisterBase <= ^uint32(0)-RegCapabilities {
+		var capability [4]byte
+		n, readErr := user.ReadAt(capability[:], int64(paths.RegisterBase)+int64(RegCapabilities))
+		packetReads = readErr == nil && n == 4 && binary.LittleEndian.Uint32(capability[:]) == CapabilitiesPacketEOP
+	}
+	var c2h *os.File
+	if packetReads {
+		c2h, err = openPacketC2H(paths.C2H)
+	} else {
+		c2h, err = os.OpenFile(paths.C2H, os.O_RDONLY, 0)
+	}
 	if err != nil {
 		_ = user.Close()
 		_ = h2c.Close()
 		return nil, fmt.Errorf("open C2H device %q: %w", paths.C2H, err)
 	}
 
-	return &Device{user: user, h2c: h2c, c2h: c2h, registerBase: paths.RegisterBase}, nil
+	return &Device{user: user, h2c: h2c, c2h: c2h, registerBase: paths.RegisterBase, packetReads: packetReads}, nil
 }
+
+// PacketReadsEnabled reports negotiated end-of-gzip packets and XDMA EOP flush.
+func (d *Device) PacketReadsEnabled() bool { return d != nil && d.packetReads }
 
 // SetRegisterBase selects a bank before the first transaction. Do not call it
 // concurrently with register access or DMA. It also allows callers built with

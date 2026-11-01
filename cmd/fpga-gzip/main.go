@@ -33,29 +33,37 @@ func run() int {
 	// callers such as FUSE daemons must keep their own scheduler width.
 	runtime.GOMAXPROCS(int(cfg.MaxProcs))
 	hw, err := device.Open(device.Paths{
-		User: cfg.UserDevice,
-		H2C:  cfg.H2CDevice,
-		C2H:  cfg.C2HDevice,
+		User:          cfg.UserDevice,
+		H2C:           cfg.H2CDevice,
+		C2H:           cfg.C2HDevice,
+		LegacyPackets: cfg.LegacyPackets,
 	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "打开 FPGA 设备失败: %v\n", err)
 		return 1
 	}
 	defer hw.Close()
+	if cfg.MmapRegisters {
+		if err := hw.EnableRegisterMmap(); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	opts := pipeline.Options{
-		RingSlots:        int(cfg.RingSlots),
-		H2CSlotBytes:     cfg.H2CSlotBytes,
-		C2HRequestBytes:  cfg.C2HRequestBytes,
-		PollInterval:     cfg.PollInterval,
-		DrainIdle:        cfg.DrainIdle,
-		ResetTimeout:     cfg.ResetTimeout,
-		StartTimeout:     cfg.StartTimeout,
-		ProgressInterval: cfg.ProgressInterval,
-		MaxProcs:         int(cfg.MaxProcs),
+		RingSlots:          int(cfg.RingSlots),
+		H2CSlotBytes:       cfg.H2CSlotBytes,
+		C2HRequestBytes:    cfg.C2HRequestBytes,
+		PacketRequestBytes: cfg.PacketRequestBytes,
+		PollInterval:       cfg.PollInterval,
+		DrainIdle:          cfg.DrainIdle,
+		ResetTimeout:       cfg.ResetTimeout,
+		StartTimeout:       cfg.StartTimeout,
+		ProgressInterval:   cfg.ProgressInterval,
+		MaxProcs:           int(cfg.MaxProcs),
 	}
 
 	var report func(pipeline.Progress)
@@ -84,6 +92,7 @@ func run() int {
 	fmt.Printf("压缩后/原始大小       : %.4f%%\n", ratio)
 	fmt.Printf("STATUS                : 0x%08x\n", result.Status)
 	fmt.Printf("DEBUG                 : 0x%08x\n", result.Debug)
+	fmt.Printf("EOP 包模式            : %t，C2H 请求 %d bytes\n", result.PacketReads, result.C2HRequestBytes)
 	fmt.Printf("总耗时                : %s\n", result.Total)
 	fmt.Printf("输出落盘 Sync         : %s\n", result.Sync)
 	fmt.Printf("FPGA 处理             : %s\n", result.FPGA)

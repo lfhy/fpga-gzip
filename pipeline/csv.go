@@ -37,13 +37,17 @@ func AppendCSV(path string, result Result, opts Options) error {
 		pipelineMBps = float64(result.InputBytes) / (1024 * 1024) / pipelineSeconds
 	}
 	ratio := 0.0
+	requestBytes := result.C2HRequestBytes
+	if requestBytes == 0 {
+		requestBytes = opts.C2HRequestBytes
+	}
 	if result.InputBytes > 0 {
 		ratio = float64(result.OutputBytes) / float64(result.InputBytes)
 	}
 
 	_, err = fmt.Fprintf(file, "%d,%d,%d,%d,%d,%.9f,%.9f,%.9f,%.9f,%.9f,%.6f,%.6f,%.9f\n",
 		result.InputBytes, result.OutputBytes, opts.RingSlots,
-		opts.H2CSlotBytes, opts.C2HRequestBytes,
+		opts.H2CSlotBytes, requestBytes,
 		totalSeconds, syncSeconds, pipelineSeconds, fpgaSeconds, c2hSeconds,
 		totalMBps, pipelineMBps, ratio)
 	if err != nil {

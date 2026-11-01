@@ -25,7 +25,7 @@ func FourCorePaths(first Paths, count int) ([]Paths, error) {
 	paths := make([]Paths, count)
 	for core := range paths {
 		paths[core] = Paths{User: first.User, H2C: strings.TrimSuffix(first.H2C, "_0") + fmt.Sprint("_", core),
-			C2H: strings.TrimSuffix(first.C2H, "_0") + fmt.Sprint("_", core), RegisterBase: uint32(core) * 0x1000}
+			C2H: strings.TrimSuffix(first.C2H, "_0") + fmt.Sprint("_", core), RegisterBase: uint32(core) * 0x1000, LegacyPackets: first.LegacyPackets}
 	}
 	return paths, nil
 }
@@ -51,8 +51,8 @@ func NewPool(paths []Paths) (*Pool, error) {
 		user := canonicalPath(path.User)
 		for _, base := range banks[user] {
 			// Include the final 32-bit register, without uint32 overflow.
-			if uint64(path.RegisterBase) < uint64(base)+uint64(RegDebug)+4 &&
-				uint64(base) < uint64(path.RegisterBase)+uint64(RegDebug)+4 {
+			if uint64(path.RegisterBase) < uint64(base)+uint64(RegCapabilities)+4 &&
+				uint64(base) < uint64(path.RegisterBase)+uint64(RegCapabilities)+4 {
 				return nil, fmt.Errorf("overlapping control banks on %s: %#x and %#x", user, base, path.RegisterBase)
 			}
 		}

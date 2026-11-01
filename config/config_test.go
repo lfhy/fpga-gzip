@@ -11,6 +11,8 @@ func TestParsePositionalAndSizes(t *testing.T) {
 		"--h2c-slot-bytes=2MiB",
 		"--c2h-request-bytes=64KiB",
 		"--max-procs=2",
+		"--packet-request-bytes=2MiB",
+		"--legacy-packets=true",
 		"in.bin",
 		"out.gz",
 	})
@@ -28,5 +30,8 @@ func TestParsePositionalAndSizes(t *testing.T) {
 	}
 	if cfg.MaxProcs != 2 {
 		t.Fatalf("max-procs = %d, want 2", cfg.MaxProcs)
+	}
+	if cfg.PacketRequestBytes != 2<<20 || !cfg.LegacyPackets {
+		t.Fatal("packet options", cfg)
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"crypto/sha256"
 	"encoding/binary"
 	"encoding/json"
 	"flag"
@@ -39,6 +40,11 @@ func (o *operation) values() map[string]uint64 {
 type measured struct {
 	pipeline.Hardware
 	h2c, c2h, snapshots, arms operation
+}
+
+func (m *measured) PacketReadsEnabled() bool {
+	p, ok := m.Hardware.(interface{ PacketReadsEnabled() bool })
+	return ok && p.PacketReadsEnabled()
 }
 
 func (m *measured) WriteH2C(p []byte) (int, error) {
@@ -89,6 +95,8 @@ type result struct {
 	AllocatedBytes    uint64                         `json:"allocated_bytes"`
 	CoreOperations    []map[string]map[string]uint64 `json:"core_operations"`
 	Verified          bool                           `json:"verified"`
+	PacketReads       bool                           `json:"packet_reads"`
+	C2HRequestBytes   uint64                         `json:"c2h_request_bytes"`
 }
 
 func numbers(s string) ([]int, error) {
@@ -121,7 +129,11 @@ func main() {
 	h2c := flag.Int("h2c-mib", 1, "H2C slot size")
 	c2h := flag.Int("c2h-kib", 32, "C2H request size")
 	slots := flag.Int("slots", 4, "buffer slots")
+	poll := flag.Duration("poll-interval", 50*time.Microsecond, "status poll interval")
+	drain := flag.Duration("drain-idle", 200*time.Microsecond, "partial output drain interval")
 	mmap := flag.Bool("mmap", false, "use optional mapped register access")
+	packetSize := flag.Int("packet-kib", 1024, "negotiated EOP request size")
+	legacy := flag.Bool("legacy", false, "force legacy exact-length packets")
 	profiles := flag.String("profiles", "", "optional directory for per-case CPU profiles")
 	flag.Parse()
 	sizes, err := numbers(*sizeList)
@@ -165,15 +177,18 @@ func main() {
 					opts.H2CSlotBytes = uint64(*h2c) << 20
 					opts.C2HRequestBytes = uint64(*c2h) << 10
 					opts.RingSlots = *slots
+					opts.PollInterval = *poll
+					opts.DrainIdle = *drain
+					opts.PacketRequestBytes = uint64(*packetSize) << 10
 					profile := ""
 					if *profiles != "" {
 						fail(os.MkdirAll(*profiles, 0700))
 						profile = filepath.Join(*profiles, fmt.Sprintf("%s-%dMiB-%dcores-r%d.pprof", pattern, mib, count, round))
 					}
-					row, err := run(pattern, round, mib<<20, count, *procs, *perCore/mib, fixture, opts, *mmap, profile)
+					row, err := run(pattern, round, mib<<20, count, *procs, *perCore/mib, fixture, opts, *mmap, *legacy, profile)
 					fail(err)
 					results = append(results, row)
-					data, err := json.MarshalIndent(map[string]any{"unit": "decimal GB/s, input bytes / group wall time", "mmap": *mmap, "options": opts, "results": results}, "", "  ")
+					data, err := json.MarshalIndent(map[string]any{"unit": "decimal GB/s, input bytes / group wall time", "mmap": *mmap, "legacy": *legacy, "fixture": *source, "fixture_decoded_sha256": fmt.Sprintf("%x", sha256.Sum256(fixture)), "go_version": runtime.Version(), "arguments": os.Args, "options": opts, "results": results}, "", "  ")
 					fail(err)
 					fail(os.WriteFile(*output, append(data, '\n'), 0600))
 					fmt.Printf("PASS round=%d pattern=%s chunk=%dMiB cores=%d P=%d input=%.1fGiB %.3f GB/s ratio=%.4f\n", round, pattern, mib, count, *procs, float64(row.InputBytes)/(1<<30), row.GBs, float64(row.OutputBytes)/float64(row.InputBytes))
@@ -183,7 +198,7 @@ func main() {
 	}
 }
 
-func run(pattern string, round, size, cores, procs, iterations int, fixture []byte, opts pipeline.Options, mmap bool, profile string) (result, error) {
+func run(pattern string, round, size, cores, procs, iterations int, fixture []byte, opts pipeline.Options, mmap, legacy bool, profile string) (result, error) {
 	raw := make([]byte, size)
 	switch pattern {
 	case "fixture":
@@ -242,7 +257,7 @@ func run(pattern string, round, size, cores, procs, iterations int, fixture []by
 			defer wg.Done()
 			for i := range outputs[c] {
 				binary.LittleEndian.PutUint64(inputs[c][:8], uint64(c)+uint64(i)*256+uint64(round)*1000000)
-				hw, err := device.Open(device.Paths{User: "/dev/xdma0_user", H2C: fmt.Sprintf("/dev/xdma0_h2c_%d", c), C2H: fmt.Sprintf("/dev/xdma0_c2h_%d", c), RegisterBase: uint32(c) * 0x1000})
+				hw, err := device.Open(device.Paths{User: "/dev/xdma0_user", H2C: fmt.Sprintf("/dev/xdma0_h2c_%d", c), C2H: fmt.Sprintf("/dev/xdma0_c2h_%d", c), RegisterBase: uint32(c) * 0x1000, LegacyPackets: legacy})
 				if err != nil {
 					errs <- err
 					return
@@ -289,6 +304,11 @@ func run(pattern string, round, size, cores, procs, iterations int, fixture []by
 	}
 	row := result{Pattern: pattern, Round: round, Cores: cores, Procs: procs, ChunkBytes: size, IterationsPerCore: iterations, InputBytes: int64(size) * int64(cores) * int64(iterations), Seconds: elapsed.Seconds(), AllocatedBytes: after.TotalAlloc - before.TotalAlloc}
 	row.GBs = float64(row.InputBytes) / elapsed.Seconds() / 1e9
+	row.PacketReads = meters[0].PacketReadsEnabled()
+	row.C2HRequestBytes = opts.C2HRequestBytes
+	if row.PacketReads && opts.PacketRequestBytes != 0 {
+		row.C2HRequestBytes = opts.PacketRequestBytes
+	}
 	for c := range outputs {
 		for _, b := range outputs[c] {
 			row.OutputBytes += int64(b.Len())
