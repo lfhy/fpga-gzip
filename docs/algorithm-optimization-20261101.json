@@ -1,0 +1,1137 @@
+{
+  "pass": true,
+  "date": "2026-11-01",
+  "source": "/data1/fpga-algorithm-opt-20261101-xnr5z9nf",
+  "baseline_source": "/data1/fpga-algorithms-20261101-snkvnq9w",
+  "benchmark_binary_sha256": "254512dc61e572c7731e0e32265a2742e333d1a2aa79fc09ad9cf6cae722f2c2",
+  "accepted": {
+    "lz4": {
+      "pass": true,
+      "started_at": "2026-11-01T13:17:21.331426+00:00",
+      "completed_at": "2026-11-01T13:17:58.939611+00:00",
+      "profile": "lz4",
+      "identity": {
+        "algorithm": "lz4",
+        "magic": 1129140312,
+        "abi": 65536,
+        "algorithm_id": 3,
+        "format": 1,
+        "cores": 4,
+        "features": 3,
+        "build": 29490582638624,
+        "legacy": false
+      },
+      "manifest": {
+        "schema": 1,
+        "name": "ku5p-lz4-29490582638624",
+        "part": "xcku5p-ffvb676-2-e",
+        "algorithm": "lz4",
+        "abi": 65536,
+        "format": 1,
+        "cores": 4,
+        "build": 29490582638624,
+        "bitstream": "compactfs-lz4.bit",
+        "sha256": "337c708cdccb8407ba6739091150ef01d715a6b67a5c026af4ad12c5c65333c3",
+        "validation": "hardware-verified"
+      },
+      "reports": [
+        "lz4-fpga-sdk.json",
+        "lz4-fpga-pipeline.json"
+      ],
+      "functional_cases": {
+        "board": 288,
+        "edge": 72,
+        "service": 48
+      },
+      "irq_affinity": [
+        {
+          "irq": 1065,
+          "before": "0-23,48-71",
+          "after": "0-23,48-71"
+        }
+      ],
+      "benchmark_binary_sha256": "254512dc61e572c7731e0e32265a2742e333d1a2aa79fc09ad9cf6cae722f2c2",
+      "commands": [
+        {
+          "command": [
+            "/root/fpga-gzip/bin/fpga-fw",
+            "switch",
+            "--manifest",
+            "/data1/fpga-algorithm-opt-20261101-xnr5z9nf/lz4-v4/lz4-firmware/manifest.json",
+            "--pci",
+            "0000:39:00.0",
+            "--target",
+            "localhost:3121/xilinx_tcf/Digilent/210251A08870",
+            "--vivado",
+            "/opt/Xilinx/2025.2/Vivado/bin/vivado"
+          ],
+          "started_at": "2026-11-01T13:17:21.331517+00:00",
+          "completed_at": "2026-11-01T13:17:37.881827+00:00"
+        },
+        {
+          "command": [
+            "/data1/fpga-multialgo-20261101-155656/verify-firmware",
+            "--algorithm",
+            "lz4",
+            "--output",
+            "/data1/fpga-algorithm-opt-20261101-xnr5z9nf/lz4-v4/board-lz4.json"
+          ],
+          "started_at": "2026-11-01T13:17:37.884874+00:00",
+          "completed_at": "2026-11-01T13:17:38.052851+00:00"
+        },
+        {
+          "command": [
+            "/data1/fpga-multialgo-20261101-155656/verify-firmware",
+            "--algorithm",
+            "lz4",
+            "--edge",
+            "--output",
+            "/data1/fpga-algorithm-opt-20261101-xnr5z9nf/lz4-v4/edge-lz4.json"
+          ],
+          "started_at": "2026-11-01T13:17:38.053651+00:00",
+          "completed_at": "2026-11-01T13:17:38.185565+00:00"
+        },
+        {
+          "command": [
+            "/data1/fpga-multialgo-20261101-155656/verify-firmware",
+            "--algorithm",
+            "lz4",
+            "--unix",
+            "/data1/fpga-algorithm-opt-20261101-xnr5z9nf/lz4-v4/lz4-service.sock",
+            "--quick",
+            "--large",
+            "1048576",
+            "--output",
+            "/data1/fpga-algorithm-opt-20261101-xnr5z9nf/lz4-v4/service-lz4.json"
+          ],
+          "started_at": "2026-11-01T13:17:38.286833+00:00",
+          "completed_at": "2026-11-01T13:17:38.324817+00:00"
+        },
+        {
+          "command": [
+            "taskset",
+            "-c",
+            "8-23,56-71",
+            "/data1/fpga-algorithms-20261101-snkvnq9w/benchmark-algorithms",
+            "-engine",
+            "fpga-sdk",
+            "-algorithm",
+            "lz4",
+            "-source",
+            "/data1/compactfs-output-read-20261031-154041-fmjve2n4/compactfs-sdk-v0.0.2-20261031-154048-cq5kka6s/cpu/backend/chunks/xxh3-128/2e/05/2e05bbbfa4e774eb942dd905e3f28319",
+            "-output",
+            "/data1/fpga-algorithm-opt-20261101-xnr5z9nf/lz4-v4/lz4-fpga-sdk.json",
+            "-lanes",
+            "1,4",
+            "-sizes-mib",
+            "4,64",
+            "-per-lane-mib",
+            "128",
+            "-rounds",
+            "3",
+            "-procs",
+            "8"
+          ],
+          "started_at": "2026-11-01T13:17:38.332336+00:00",
+          "completed_at": "2026-11-01T13:17:54.093765+00:00"
+        },
+        {
+          "command": [
+            "taskset",
+            "-c",
+            "8-23,56-71",
+            "/data1/fpga-algorithms-20261101-snkvnq9w/benchmark-algorithms",
+            "-engine",
+            "fpga-pipeline",
+            "-algorithm",
+            "lz4",
+            "-source",
+            "/data1/compactfs-output-read-20261031-154041-fmjve2n4/compactfs-sdk-v0.0.2-20261031-154048-cq5kka6s/cpu/backend/chunks/xxh3-128/2e/05/2e05bbbfa4e774eb942dd905e3f28319",
+            "-output",
+            "/data1/fpga-algorithm-opt-20261101-xnr5z9nf/lz4-v4/lz4-fpga-pipeline.json",
+            "-lanes",
+            "4",
+            "-sizes-mib",
+            "64",
+            "-per-lane-mib",
+            "128",
+            "-rounds",
+            "3",
+            "-procs",
+            "8"
+          ],
+          "started_at": "2026-11-01T13:17:54.094340+00:00",
+          "completed_at": "2026-11-01T13:17:58.939038+00:00"
+        }
+      ]
+    },
+    "zstd": {
+      "pass": true,
+      "started_at": "2026-11-01T12:55:43.341971+00:00",
+      "completed_at": "2026-11-01T12:56:34.232729+00:00",
+      "profile": "zstd-v2",
+      "identity": {
+        "algorithm": "zstd",
+        "magic": 1129140312,
+        "abi": 65536,
+        "algorithm_id": 4,
+        "format": 1,
+        "cores": 2,
+        "features": 3,
+        "build": 228945806614231,
+        "legacy": false
+      },
+      "manifest": {
+        "schema": 1,
+        "name": "ku5p-zstd-228945806614231",
+        "part": "xcku5p-ffvb676-2-e",
+        "algorithm": "zstd",
+        "abi": 65536,
+        "format": 1,
+        "cores": 2,
+        "build": 228945806614231,
+        "bitstream": "compactfs-zstd.bit",
+        "sha256": "f3872717986fc508beb39792a770ea18c77a5c662d329a3001d03334dd3cc63c",
+        "validation": "hardware-verified"
+      },
+      "reports": [
+        "zstd-fpga-sdk.json",
+        "zstd-fpga-pipeline.json"
+      ],
+      "functional_cases": {
+        "board": 144,
+        "edge": 36,
+        "service": 24
+      },
+      "irq_affinity": [
+        {
+          "irq": 1065,
+          "before": "0-23,48-71",
+          "after": "0-23,48-71"
+        }
+      ],
+      "benchmark_binary_sha256": "254512dc61e572c7731e0e32265a2742e333d1a2aa79fc09ad9cf6cae722f2c2",
+      "commands": [
+        {
+          "command": [
+            "/root/fpga-gzip/bin/fpga-fw",
+            "switch",
+            "--manifest",
+            "/data1/fpga-algorithm-opt-20261101-xnr5z9nf/zstd-firmware/manifest.json",
+            "--pci",
+            "0000:39:00.0",
+            "--target",
+            "localhost:3121/xilinx_tcf/Digilent/210251A08870",
+            "--vivado",
+            "/opt/Xilinx/2025.2/Vivado/bin/vivado"
+          ],
+          "started_at": "2026-11-01T12:55:43.342083+00:00",
+          "completed_at": "2026-11-01T12:56:00.654869+00:00"
+        },
+        {
+          "command": [
+            "/data1/fpga-multialgo-20261101-155656/verify-firmware",
+            "--algorithm",
+            "zstd",
+            "--output",
+            "/data1/fpga-algorithm-opt-20261101-xnr5z9nf/board-zstd.json"
+          ],
+          "started_at": "2026-11-01T12:56:00.659523+00:00",
+          "completed_at": "2026-11-01T12:56:01.011772+00:00"
+        },
+        {
+          "command": [
+            "/data1/fpga-multialgo-20261101-155656/verify-firmware",
+            "--algorithm",
+            "zstd",
+            "--edge",
+            "--output",
+            "/data1/fpga-algorithm-opt-20261101-xnr5z9nf/edge-zstd.json"
+          ],
+          "started_at": "2026-11-01T12:56:01.012992+00:00",
+          "completed_at": "2026-11-01T12:56:01.273142+00:00"
+        },
+        {
+          "command": [
+            "/data1/fpga-multialgo-20261101-155656/verify-firmware",
+            "--algorithm",
+            "zstd",
+            "--unix",
+            "/data1/fpga-algorithm-opt-20261101-xnr5z9nf/zstd-service.sock",
+            "--quick",
+            "--large",
+            "1048576",
+            "--output",
+            "/data1/fpga-algorithm-opt-20261101-xnr5z9nf/service-zstd.json"
+          ],
+          "started_at": "2026-11-01T12:56:01.375019+00:00",
+          "completed_at": "2026-11-01T12:56:01.440949+00:00"
+        },
+        {
+          "command": [
+            "taskset",
+            "-c",
+            "8-23,56-71",
+            "/data1/fpga-algorithms-20261101-snkvnq9w/benchmark-algorithms",
+            "-engine",
+            "fpga-sdk",
+            "-algorithm",
+            "zstd",
+            "-source",
+            "/data1/compactfs-output-read-20261031-154041-fmjve2n4/compactfs-sdk-v0.0.2-20261031-154048-cq5kka6s/cpu/backend/chunks/xxh3-128/2e/05/2e05bbbfa4e774eb942dd905e3f28319",
+            "-output",
+            "/data1/fpga-algorithm-opt-20261101-xnr5z9nf/zstd-fpga-sdk.json",
+            "-lanes",
+            "1,2",
+            "-sizes-mib",
+            "4,64",
+            "-per-lane-mib",
+            "128",
+            "-rounds",
+            "3",
+            "-procs",
+            "8"
+          ],
+          "started_at": "2026-11-01T12:56:01.450846+00:00",
+          "completed_at": "2026-11-01T12:56:27.876716+00:00"
+        },
+        {
+          "command": [
+            "taskset",
+            "-c",
+            "8-23,56-71",
+            "/data1/fpga-algorithms-20261101-snkvnq9w/benchmark-algorithms",
+            "-engine",
+            "fpga-pipeline",
+            "-algorithm",
+            "zstd",
+            "-source",
+            "/data1/compactfs-output-read-20261031-154041-fmjve2n4/compactfs-sdk-v0.0.2-20261031-154048-cq5kka6s/cpu/backend/chunks/xxh3-128/2e/05/2e05bbbfa4e774eb942dd905e3f28319",
+            "-output",
+            "/data1/fpga-algorithm-opt-20261101-xnr5z9nf/zstd-fpga-pipeline.json",
+            "-lanes",
+            "2",
+            "-sizes-mib",
+            "64",
+            "-per-lane-mib",
+            "128",
+            "-rounds",
+            "3",
+            "-procs",
+            "8"
+          ],
+          "started_at": "2026-11-01T12:56:27.877305+00:00",
+          "completed_at": "2026-11-01T12:56:34.232147+00:00"
+        }
+      ]
+    }
+  },
+  "physical": {
+    "lz4": {
+      "wns_ns": 0.007,
+      "whs_ns": 0.009,
+      "resources": {
+        "CLB LUTs": 169195.0,
+        "CLB Registers": 164906.0,
+        "Block RAM Tile": 414.0,
+        "URAM": 40.0
+      }
+    },
+    "zstd": {
+      "wns_ns": 0.1,
+      "whs_ns": 0.01,
+      "resources": {
+        "CLB LUTs": 150744.0,
+        "CLB Registers": 147797.0,
+        "Block RAM Tile": 353.0,
+        "URAM": 52.0
+      }
+    }
+  },
+  "reports_sha256": {
+    "/data1/fpga-algorithm-opt-20261101-xnr5z9nf/lz4-v4/lz4-fpga-sdk.json": "b3cdc3414418c02907e4a2b12ac6942db01c93d70f2e9d2fa36bc1abffcaec0d",
+    "/data1/fpga-algorithm-opt-20261101-xnr5z9nf/lz4-v4/lz4-fpga-pipeline.json": "53db81032d4e086de6e787161d814a452d5e390c5cfd839791d54035fa148786",
+    "/data1/fpga-algorithm-opt-20261101-xnr5z9nf/zstd-fpga-sdk.json": "b4615916619865e3f28a15d453ee1a7324a7f053244645f1663114a24296fc04",
+    "/data1/fpga-algorithm-opt-20261101-xnr5z9nf/zstd-fpga-pipeline.json": "b580bc34a60120e519b41f5b9d027ebe298e7916f63f32c8a0d33d73beb4ae7d",
+    "/data1/fpga-algorithm-opt-20261101-xnr5z9nf/lz4-4m-stability/benchmark.json": "31ccdf9eea25656562a91876d3bc8aea62da7db388a65668f0dfa320a5b03efc"
+  },
+  "groups": [
+    {
+      "algorithm": "lz4",
+      "engine": "fpga-pipeline",
+      "pattern": "fixture",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "verified": true,
+      "gb_s_rounds": [
+        4.044780687138113,
+        4.029323869315455,
+        4.0821368301169105
+      ],
+      "gb_s_median": 4.044780687138113,
+      "gb_s_min": 4.029323869315455,
+      "gb_s_max": 4.0821368301169105,
+      "baseline_gb_s_median": 0.27967666186321716,
+      "speedup": 14.462346125671058,
+      "output_input_ratio": 0.5124513357877731,
+      "baseline_output_input_ratio": 0.5090333670377731,
+      "cpu_cores_median": 0.8751964476865055,
+      "baseline_cpu_cores_median": 0.06062829818149268,
+      "input_bytes_per_round": 536870912,
+      "allocated_bytes_median": 51704
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "fpga-pipeline",
+      "pattern": "random",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "verified": true,
+      "gb_s_rounds": [
+        3.210532850132226,
+        3.2609877918377763,
+        3.262164184109679
+      ],
+      "gb_s_median": 3.2609877918377763,
+      "gb_s_min": 3.210532850132226,
+      "gb_s_max": 3.262164184109679,
+      "baseline_gb_s_median": 0.2189006794423435,
+      "speedup": 14.897111329874567,
+      "output_input_ratio": 1.0004884451627731,
+      "baseline_output_input_ratio": 1.0001222342252731,
+      "cpu_cores_median": 0.9301212813036863,
+      "baseline_cpu_cores_median": 0.06433060219536454,
+      "input_bytes_per_round": 536870912,
+      "allocated_bytes_median": 57736
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "fpga-pipeline",
+      "pattern": "text",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "verified": true,
+      "gb_s_rounds": [
+        5.380435779782035,
+        5.366965392943833,
+        5.469694949211349
+      ],
+      "gb_s_median": 5.380435779782035,
+      "gb_s_min": 5.366965392943833,
+      "gb_s_max": 5.469694949211349,
+      "baseline_gb_s_median": 0.38506031019545794,
+      "speedup": 13.972969005948462,
+      "output_input_ratio": 0.03267203830182552,
+      "baseline_output_input_ratio": 0.019867202267050743,
+      "cpu_cores_median": 0.7049909484408513,
+      "baseline_cpu_cores_median": 0.056080269914461016,
+      "input_bytes_per_round": 536870912,
+      "allocated_bytes_median": 54880
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "fpga-sdk",
+      "pattern": "fixture",
+      "chunk_bytes": 4194304,
+      "lanes": 1,
+      "verified": true,
+      "gb_s_rounds": [
+        0.5364963838744173,
+        0.5361687903902832,
+        0.5342073094815112
+      ],
+      "gb_s_median": 0.5361687903902832,
+      "gb_s_min": 0.5342073094815112,
+      "gb_s_max": 0.5364963838744173,
+      "baseline_gb_s_median": 0.06769955661139286,
+      "speedup": 7.9198272075544685,
+      "output_input_ratio": 0.5124537944793701,
+      "baseline_output_input_ratio": 0.5090358257293701,
+      "cpu_cores_median": 0.6708095641428016,
+      "baseline_cpu_cores_median": 0.07136056684309286,
+      "input_bytes_per_round": 134217728,
+      "allocated_bytes_median": 3496944
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "fpga-sdk",
+      "pattern": "fixture",
+      "chunk_bytes": 4194304,
+      "lanes": 4,
+      "verified": true,
+      "gb_s_rounds": [
+        2.279430710270668,
+        2.1433587027359753,
+        2.0957948173085215
+      ],
+      "gb_s_median": 2.1433587027359753,
+      "gb_s_min": 2.0957948173085215,
+      "gb_s_max": 2.279430710270668,
+      "baseline_gb_s_median": 0.2716477226463724,
+      "speedup": 7.890214141519504,
+      "output_input_ratio": 0.5124537944793701,
+      "baseline_output_input_ratio": 0.5090358257293701,
+      "cpu_cores_median": 2.376670041465118,
+      "baseline_cpu_cores_median": 0.28074709327657876,
+      "input_bytes_per_round": 536870912,
+      "allocated_bytes_median": 13995320
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "fpga-sdk",
+      "pattern": "fixture",
+      "chunk_bytes": 67108864,
+      "lanes": 1,
+      "verified": true,
+      "gb_s_rounds": [
+        0.9826273492911339,
+        0.9746616433731397,
+        0.9711919138966703
+      ],
+      "gb_s_median": 0.9746616433731397,
+      "gb_s_min": 0.9711919138966703,
+      "gb_s_max": 0.9826273492911339,
+      "baseline_gb_s_median": 0.06980278769572808,
+      "speedup": 13.963076197210228,
+      "output_input_ratio": 0.5124513357877731,
+      "baseline_output_input_ratio": 0.5090333670377731,
+      "cpu_cores_median": 1.223311958276507,
+      "baseline_cpu_cores_median": 0.07331757097090019,
+      "input_bytes_per_round": 134217728,
+      "allocated_bytes_median": 278360
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "fpga-sdk",
+      "pattern": "fixture",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "verified": true,
+      "gb_s_rounds": [
+        3.625758864868115,
+        3.7144857912459486,
+        3.7404572032491474
+      ],
+      "gb_s_median": 3.7144857912459486,
+      "gb_s_min": 3.625758864868115,
+      "gb_s_max": 3.7404572032491474,
+      "baseline_gb_s_median": 0.27918513206423656,
+      "speedup": 13.304740706576371,
+      "output_input_ratio": 0.5124513357877731,
+      "baseline_output_input_ratio": 0.5090333670377731,
+      "cpu_cores_median": 4.062119945535728,
+      "baseline_cpu_cores_median": 0.2715134664431511,
+      "input_bytes_per_round": 536870912,
+      "allocated_bytes_median": 1278584
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "fpga-sdk",
+      "pattern": "random",
+      "chunk_bytes": 4194304,
+      "lanes": 1,
+      "verified": true,
+      "gb_s_rounds": [
+        0.6063169794079578,
+        0.6079289361710782,
+        0.604206442838618
+      ],
+      "gb_s_median": 0.6063169794079578,
+      "gb_s_min": 0.604206442838618,
+      "gb_s_max": 0.6079289361710782,
+      "baseline_gb_s_median": 0.053443550288114525,
+      "speedup": 11.34499815486245,
+      "output_input_ratio": 1.0004909038543701,
+      "baseline_output_input_ratio": 1.0001246929168701,
+      "cpu_cores_median": 0.4167765715731525,
+      "baseline_cpu_cores_median": 0.0335638503796289,
+      "input_bytes_per_round": 134217728,
+      "allocated_bytes_median": 3443912
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "fpga-sdk",
+      "pattern": "random",
+      "chunk_bytes": 4194304,
+      "lanes": 4,
+      "verified": true,
+      "gb_s_rounds": [
+        2.561284249890942,
+        2.25274885288001,
+        2.2705973816652483
+      ],
+      "gb_s_median": 2.2705973816652483,
+      "gb_s_min": 2.25274885288001,
+      "gb_s_max": 2.561284249890942,
+      "baseline_gb_s_median": 0.2145704048267856,
+      "speedup": 10.582062253637513,
+      "output_input_ratio": 1.0004909038543701,
+      "baseline_output_input_ratio": 1.0001246929168701,
+      "cpu_cores_median": 1.5224607033477193,
+      "baseline_cpu_cores_median": 0.12887551348437767,
+      "input_bytes_per_round": 536870912,
+      "allocated_bytes_median": 13871432
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "fpga-sdk",
+      "pattern": "random",
+      "chunk_bytes": 67108864,
+      "lanes": 1,
+      "verified": true,
+      "gb_s_rounds": [
+        0.8151356651150767,
+        0.8157412749183489,
+        0.8156621252725088
+      ],
+      "gb_s_median": 0.8156621252725088,
+      "gb_s_min": 0.8151356651150767,
+      "gb_s_max": 0.8157412749183489,
+      "baseline_gb_s_median": 0.05470179271613575,
+      "speedup": 14.911067531282345,
+      "output_input_ratio": 1.0004884451627731,
+      "baseline_output_input_ratio": 1.0001222342252731,
+      "cpu_cores_median": 0.579312526445031,
+      "baseline_cpu_cores_median": 0.03352630265520505,
+      "input_bytes_per_round": 134217728,
+      "allocated_bytes_median": 279208
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "fpga-sdk",
+      "pattern": "random",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "verified": true,
+      "gb_s_rounds": [
+        3.207594005789086,
+        3.195730896022265,
+        3.191570781440573
+      ],
+      "gb_s_median": 3.195730896022265,
+      "gb_s_min": 3.191570781440573,
+      "gb_s_max": 3.207594005789086,
+      "baseline_gb_s_median": 0.21884093146870767,
+      "speedup": 14.602985257715495,
+      "output_input_ratio": 1.0004884451627731,
+      "baseline_output_input_ratio": 1.0001222342252731,
+      "cpu_cores_median": 2.0241935948070937,
+      "baseline_cpu_cores_median": 0.12162068336521219,
+      "input_bytes_per_round": 536870912,
+      "allocated_bytes_median": 1240232
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "fpga-sdk",
+      "pattern": "text",
+      "chunk_bytes": 4194304,
+      "lanes": 1,
+      "verified": true,
+      "gb_s_rounds": [
+        0.48729785378694446,
+        0.48794349627728834,
+        0.4870452391655956
+      ],
+      "gb_s_median": 0.48729785378694446,
+      "gb_s_min": 0.4870452391655956,
+      "gb_s_max": 0.48794349627728834,
+      "baseline_gb_s_median": 0.0870515786097814,
+      "speedup": 5.597806054400375,
+      "output_input_ratio": 0.03267620503902435,
+      "baseline_output_input_ratio": 0.019871219992637634,
+      "cpu_cores_median": 0.6664489767658404,
+      "baseline_cpu_cores_median": 0.08782227377024318,
+      "input_bytes_per_round": 134217728,
+      "allocated_bytes_median": 3562088
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "fpga-sdk",
+      "pattern": "text",
+      "chunk_bytes": 4194304,
+      "lanes": 4,
+      "verified": true,
+      "gb_s_rounds": [
+        2.2427440489735564,
+        2.1967773008079035,
+        2.243895527424393
+      ],
+      "gb_s_median": 2.2427440489735564,
+      "gb_s_min": 2.1967773008079035,
+      "gb_s_max": 2.243895527424393,
+      "baseline_gb_s_median": 0.34787510826239293,
+      "speedup": 6.446980527511369,
+      "output_input_ratio": 0.0326762106269598,
+      "baseline_output_input_ratio": 0.019871225580573082,
+      "cpu_cores_median": 2.5395805094472985,
+      "baseline_cpu_cores_median": 0.35036336195406825,
+      "input_bytes_per_round": 536870912,
+      "allocated_bytes_median": 13864256
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "fpga-sdk",
+      "pattern": "text",
+      "chunk_bytes": 67108864,
+      "lanes": 1,
+      "verified": true,
+      "gb_s_rounds": [
+        0.7167433761140036,
+        0.727698527971406,
+        0.7309253146147064
+      ],
+      "gb_s_median": 0.727698527971406,
+      "gb_s_min": 0.7167433761140036,
+      "gb_s_max": 0.7309253146147064,
+      "baseline_gb_s_median": 0.09473142962755357,
+      "speedup": 7.68170110841173,
+      "output_input_ratio": 0.032672032713890076,
+      "baseline_output_input_ratio": 0.019867196679115295,
+      "cpu_cores_median": 1.0016765277359985,
+      "baseline_cpu_cores_median": 0.0935592511404467,
+      "input_bytes_per_round": 134217728,
+      "allocated_bytes_median": 278360
+    },
+    {
+      "algorithm": "lz4",
+      "engine": "fpga-sdk",
+      "pattern": "text",
+      "chunk_bytes": 67108864,
+      "lanes": 4,
+      "verified": true,
+      "gb_s_rounds": [
+        2.9652504029498754,
+        2.895355237782674,
+        2.9582781114918446
+      ],
+      "gb_s_median": 2.9582781114918446,
+      "gb_s_min": 2.895355237782674,
+      "gb_s_max": 2.9652504029498754,
+      "baseline_gb_s_median": 0.3785406573343012,
+      "speedup": 7.81495475895287,
+      "output_input_ratio": 0.03267203830182552,
+      "baseline_output_input_ratio": 0.019867202267050743,
+      "cpu_cores_median": 3.1974510864601644,
+      "baseline_cpu_cores_median": 0.351141041702987,
+      "input_bytes_per_round": 536870912,
+      "allocated_bytes_median": 1241312
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "fpga-pipeline",
+      "pattern": "fixture",
+      "chunk_bytes": 67108864,
+      "lanes": 2,
+      "verified": true,
+      "gb_s_rounds": [
+        0.6087168057692999,
+        0.6091356946817894,
+        0.6091415693228808
+      ],
+      "gb_s_median": 0.6091356946817894,
+      "gb_s_min": 0.6087168057692999,
+      "gb_s_max": 0.6091415693228808,
+      "baseline_gb_s_median": 0.16035516285363943,
+      "speedup": 3.798665935301156,
+      "output_input_ratio": 0.50567626953125,
+      "baseline_output_input_ratio": 0.50567626953125,
+      "cpu_cores_median": 0.13128541212534015,
+      "baseline_cpu_cores_median": 0.036938307941055015,
+      "input_bytes_per_round": 268435456,
+      "allocated_bytes_median": 30688
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "fpga-pipeline",
+      "pattern": "random",
+      "chunk_bytes": 67108864,
+      "lanes": 2,
+      "verified": true,
+      "gb_s_rounds": [
+        0.45732927408512647,
+        0.456948396565719,
+        0.4573366932213912
+      ],
+      "gb_s_median": 0.45732927408512647,
+      "gb_s_min": 0.456948396565719,
+      "gb_s_max": 0.4573366932213912,
+      "baseline_gb_s_median": 0.11983268376057946,
+      "speedup": 3.8163984960801733,
+      "output_input_ratio": 1.0013427734375,
+      "baseline_output_input_ratio": 1.0013427734375,
+      "cpu_cores_median": 0.13097967072638608,
+      "baseline_cpu_cores_median": 0.03688531482295591,
+      "input_bytes_per_round": 268435456,
+      "allocated_bytes_median": 31784
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "fpga-pipeline",
+      "pattern": "text",
+      "chunk_bytes": 67108864,
+      "lanes": 2,
+      "verified": true,
+      "gb_s_rounds": [
+        0.9037615127594304,
+        0.9026553156500599,
+        0.9068394122066333
+      ],
+      "gb_s_median": 0.9037615127594304,
+      "gb_s_min": 0.9026553156500599,
+      "gb_s_max": 0.9068394122066333,
+      "baseline_gb_s_median": 0.22786269931026726,
+      "speedup": 3.9662547468062397,
+      "output_input_ratio": 0.02261185273528099,
+      "baseline_output_input_ratio": 0.02261185273528099,
+      "cpu_cores_median": 0.13043892491176218,
+      "baseline_cpu_cores_median": 0.0351601852398003,
+      "input_bytes_per_round": 268435456,
+      "allocated_bytes_median": 31024
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "fpga-sdk",
+      "pattern": "fixture",
+      "chunk_bytes": 4194304,
+      "lanes": 1,
+      "verified": true,
+      "gb_s_rounds": [
+        0.19680933585448082,
+        0.22961390006926477,
+        0.2291283504598578
+      ],
+      "gb_s_median": 0.2291283504598578,
+      "gb_s_min": 0.19680933585448082,
+      "gb_s_max": 0.22961390006926477,
+      "baseline_gb_s_median": 0.07659683458388342,
+      "speedup": 2.9913553439200244,
+      "output_input_ratio": 0.50567626953125,
+      "baseline_output_input_ratio": 0.50567626953125,
+      "cpu_cores_median": 0.42044074030759004,
+      "baseline_cpu_cores_median": 0.1444866572502429,
+      "input_bytes_per_round": 134217728,
+      "allocated_bytes_median": 2568944
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "fpga-sdk",
+      "pattern": "fixture",
+      "chunk_bytes": 4194304,
+      "lanes": 2,
+      "verified": true,
+      "gb_s_rounds": [
+        0.45744131214820705,
+        0.4591560505986081,
+        0.46764235544118105
+      ],
+      "gb_s_median": 0.4591560505986081,
+      "gb_s_min": 0.45744131214820705,
+      "gb_s_max": 0.46764235544118105,
+      "baseline_gb_s_median": 0.15398094403541565,
+      "speedup": 2.9819017767094746,
+      "output_input_ratio": 0.50567626953125,
+      "baseline_output_input_ratio": 0.50567626953125,
+      "cpu_cores_median": 0.8369500883401542,
+      "baseline_cpu_cores_median": 0.27838560001539864,
+      "input_bytes_per_round": 268435456,
+      "allocated_bytes_median": 5103680
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "fpga-sdk",
+      "pattern": "fixture",
+      "chunk_bytes": 67108864,
+      "lanes": 1,
+      "verified": true,
+      "gb_s_rounds": [
+        0.3015372829505894,
+        0.3020507477520884,
+        0.30006646421488115
+      ],
+      "gb_s_median": 0.3015372829505894,
+      "gb_s_min": 0.30006646421488115,
+      "gb_s_max": 0.3020507477520884,
+      "baseline_gb_s_median": 0.0800369530105071,
+      "speedup": 3.7674757922256754,
+      "output_input_ratio": 0.50567626953125,
+      "baseline_output_input_ratio": 0.50567626953125,
+      "cpu_cores_median": 0.5516268261813781,
+      "baseline_cpu_cores_median": 0.14914938848738823,
+      "input_bytes_per_round": 134217728,
+      "allocated_bytes_median": 157680
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "fpga-sdk",
+      "pattern": "fixture",
+      "chunk_bytes": 67108864,
+      "lanes": 2,
+      "verified": true,
+      "gb_s_rounds": [
+        0.604520497671299,
+        0.6051272849216699,
+        0.6050761523565976
+      ],
+      "gb_s_median": 0.6050761523565976,
+      "gb_s_min": 0.604520497671299,
+      "gb_s_max": 0.6051272849216699,
+      "baseline_gb_s_median": 0.1601246733533943,
+      "speedup": 3.778781493725191,
+      "output_input_ratio": 0.50567626953125,
+      "baseline_output_input_ratio": 0.50567626953125,
+      "cpu_cores_median": 1.0462445076446105,
+      "baseline_cpu_cores_median": 0.27968651758861307,
+      "input_bytes_per_round": 268435456,
+      "allocated_bytes_median": 496848
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "fpga-sdk",
+      "pattern": "random",
+      "chunk_bytes": 4194304,
+      "lanes": 1,
+      "verified": true,
+      "gb_s_rounds": [
+        0.20140913661420884,
+        0.20214612909688118,
+        0.20216161631077773
+      ],
+      "gb_s_median": 0.20214612909688118,
+      "gb_s_min": 0.20140913661420884,
+      "gb_s_max": 0.20216161631077773,
+      "baseline_gb_s_median": 0.057988441788519064,
+      "speedup": 3.4859727708169492,
+      "output_input_ratio": 1.0013427734375,
+      "baseline_output_input_ratio": 1.0013427734375,
+      "cpu_cores_median": 0.2404531868387251,
+      "baseline_cpu_cores_median": 0.07074346734920217,
+      "input_bytes_per_round": 134217728,
+      "allocated_bytes_median": 2145008
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "fpga-sdk",
+      "pattern": "random",
+      "chunk_bytes": 4194304,
+      "lanes": 2,
+      "verified": true,
+      "gb_s_rounds": [
+        0.4107453915022226,
+        0.4093278465740556,
+        0.4155294523527868
+      ],
+      "gb_s_median": 0.4107453915022226,
+      "gb_s_min": 0.4093278465740556,
+      "gb_s_max": 0.4155294523527868,
+      "baseline_gb_s_median": 0.11680733499751153,
+      "speedup": 3.516434918329171,
+      "output_input_ratio": 1.0013427734375,
+      "baseline_output_input_ratio": 1.0013427734375,
+      "cpu_cores_median": 0.47690002131532644,
+      "baseline_cpu_cores_median": 0.1416567469006775,
+      "input_bytes_per_round": 268435456,
+      "allocated_bytes_median": 4289488
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "fpga-sdk",
+      "pattern": "random",
+      "chunk_bytes": 67108864,
+      "lanes": 1,
+      "verified": true,
+      "gb_s_rounds": [
+        0.22788969594765363,
+        0.22813296723406298,
+        0.2281175411316469
+      ],
+      "gb_s_median": 0.2281175411316469,
+      "gb_s_min": 0.22788969594765363,
+      "gb_s_max": 0.22813296723406298,
+      "baseline_gb_s_median": 0.05988903715754343,
+      "speedup": 3.809003316108814,
+      "output_input_ratio": 1.0013427734375,
+      "baseline_output_input_ratio": 1.0013427734375,
+      "cpu_cores_median": 0.267231085223486,
+      "baseline_cpu_cores_median": 0.07283495990045173,
+      "input_bytes_per_round": 134217728,
+      "allocated_bytes_median": 135040
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "fpga-sdk",
+      "pattern": "random",
+      "chunk_bytes": 67108864,
+      "lanes": 2,
+      "verified": true,
+      "gb_s_rounds": [
+        0.45760227473161397,
+        0.4569387654614914,
+        0.4560855719775098
+      ],
+      "gb_s_median": 0.4569387654614914,
+      "gb_s_min": 0.4560855719775098,
+      "gb_s_max": 0.45760227473161397,
+      "baseline_gb_s_median": 0.11982371417454801,
+      "speedup": 3.813425152185365,
+      "output_input_ratio": 1.0013427734375,
+      "baseline_output_input_ratio": 1.0013427734375,
+      "cpu_cores_median": 0.5043774245727859,
+      "baseline_cpu_cores_median": 0.14005336702181162,
+      "input_bytes_per_round": 268435456,
+      "allocated_bytes_median": 270424
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "fpga-sdk",
+      "pattern": "text",
+      "chunk_bytes": 4194304,
+      "lanes": 1,
+      "verified": true,
+      "gb_s_rounds": [
+        0.2294631378983403,
+        0.23060327847368534,
+        0.23099811574666135
+      ],
+      "gb_s_median": 0.23060327847368534,
+      "gb_s_min": 0.2294631378983403,
+      "gb_s_max": 0.23099811574666135,
+      "baseline_gb_s_median": 0.09175713786821206,
+      "speedup": 2.5131917127242316,
+      "output_input_ratio": 0.022613994777202606,
+      "baseline_output_input_ratio": 0.022613994777202606,
+      "cpu_cores_median": 0.48842436220246344,
+      "baseline_cpu_cores_median": 0.19754370515782343,
+      "input_bytes_per_round": 134217728,
+      "allocated_bytes_median": 2156000
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "fpga-sdk",
+      "pattern": "text",
+      "chunk_bytes": 4194304,
+      "lanes": 2,
+      "verified": true,
+      "gb_s_rounds": [
+        0.46941237661829616,
+        0.46498717479606017,
+        0.4719336655097703
+      ],
+      "gb_s_median": 0.46941237661829616,
+      "gb_s_min": 0.46498717479606017,
+      "gb_s_max": 0.4719336655097703,
+      "baseline_gb_s_median": 0.18453912060745048,
+      "speedup": 2.5437011679318924,
+      "output_input_ratio": 0.022614087909460068,
+      "baseline_output_input_ratio": 0.022614087909460068,
+      "cpu_cores_median": 0.9625197565206112,
+      "baseline_cpu_cores_median": 0.38489530203450284,
+      "input_bytes_per_round": 268435456,
+      "allocated_bytes_median": 4476160
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "fpga-sdk",
+      "pattern": "text",
+      "chunk_bytes": 67108864,
+      "lanes": 1,
+      "verified": true,
+      "gb_s_rounds": [
+        0.2998569138655304,
+        0.30088993954206805,
+        0.30056488455971087
+      ],
+      "gb_s_median": 0.30056488455971087,
+      "gb_s_min": 0.2998569138655304,
+      "gb_s_max": 0.30088993954206805,
+      "baseline_gb_s_median": 0.1070805920878635,
+      "speedup": 2.806903461208792,
+      "output_input_ratio": 0.022611849009990692,
+      "baseline_output_input_ratio": 0.022611849009990692,
+      "cpu_cores_median": 0.6295017292660294,
+      "baseline_cpu_cores_median": 0.22827811400667117,
+      "input_bytes_per_round": 134217728,
+      "allocated_bytes_median": 140224
+    },
+    {
+      "algorithm": "zstd",
+      "engine": "fpga-sdk",
+      "pattern": "text",
+      "chunk_bytes": 67108864,
+      "lanes": 2,
+      "verified": true,
+      "gb_s_rounds": [
+        0.6113156004962061,
+        0.6119736332382578,
+        0.609978395187528
+      ],
+      "gb_s_median": 0.6113156004962061,
+      "gb_s_min": 0.609978395187528,
+      "gb_s_max": 0.6119736332382578,
+      "baseline_gb_s_median": 0.21477581246155,
+      "speedup": 2.8462963007328685,
+      "output_input_ratio": 0.02261185273528099,
+      "baseline_output_input_ratio": 0.02261185273528099,
+      "cpu_cores_median": 1.1952792406539818,
+      "baseline_cpu_cores_median": 0.42538197339672273,
+      "input_bytes_per_round": 268435456,
+      "allocated_bytes_median": 460000
+    }
+  ],
+  "rows": 90,
+  "input_bytes": 26575110144,
+  "sdk_commit": "5ee90c73556bfdf2ce28f3cc5ee4c06874366c46",
+  "fuse": {
+    "pass": true,
+    "bytes": 201326592,
+    "cold_read": true
+  },
+  "stability": {
+    "pass": true,
+    "input_bytes": 38654705664,
+    "rows": 9,
+    "purpose": "Check 4 MiB short-test variation with 1 GiB per lane",
+    "benchmark_binary_sha256": "254512dc61e572c7731e0e32265a2742e333d1a2aa79fc09ad9cf6cae722f2c2",
+    "report_sha256": "31ccdf9eea25656562a91876d3bc8aea62da7db388a65668f0dfa320a5b03efc",
+    "groups": [
+      {
+        "pattern": "fixture",
+        "gb_s_rounds": [
+          2.141704781294496,
+          2.315109205246955,
+          2.321141981323961
+        ],
+        "gb_s_median": 2.315109205246955,
+        "gb_s_min": 2.141704781294496,
+        "gb_s_max": 2.321141981323961,
+        "output_input_ratio": 0.5124537944793701,
+        "verified": true
+      },
+      {
+        "pattern": "text",
+        "gb_s_rounds": [
+          2.263974207432905,
+          2.2242135125923115,
+          2.231602377673584
+        ],
+        "gb_s_median": 2.231602377673584,
+        "gb_s_min": 2.2242135125923115,
+        "gb_s_max": 2.263974207432905,
+        "output_input_ratio": 0.03267621877603233,
+        "verified": true
+      },
+      {
+        "pattern": "random",
+        "gb_s_rounds": [
+          2.7451952464742213,
+          2.6280573791863096,
+          2.559788643549897
+        ],
+        "gb_s_median": 2.6280573791863096,
+        "gb_s_min": 2.559788643549897,
+        "gb_s_max": 2.7451952464742213,
+        "output_input_ratio": 1.0004909038543701,
+        "verified": true
+      }
+    ]
+  }
+}

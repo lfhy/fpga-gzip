@@ -1,5 +1,8 @@
 # 多算法 FPGA / CPU 性能对照（2026-11-01）
 
+本页保留 LZ4/Zstd 优化前的基线数据。后续并行流水线改造与新镜像结果见
+[固件优化实测](algorithm-optimization-20261101.md)。
+
 同一台 KU5P 与 Xeon Gold 6336Y，比较 gzip、LZ4、Zstd、raw 的内存编码吞吐。
 四个镜像与功能验收相同；gzip/LZ4/raw 四核，Zstd 两核、125 MHz。
 全部数值为三轮中位数，GB/s 使用十进制。比例为输出 / 输入，越小越省空间。

@@ -3,6 +3,8 @@
 统一控制协议和 DMA shell，每个 bitstream 包含一种算法：gzip、LZ4、Zstd 或 raw。
 整卡切换替换压缩核，不要求将所有算法同时放进 KU5P。压缩数据保留标准
 格式，切换硬件不影响已有数据的 CPU 解码。框架源码位于 [multialgo](multialgo/)。
+优化版 LZ4/Zstd 的构建 ID、性能、源码归档与切换路径见
+[固件优化实测](../docs/algorithm-optimization-20261101.md)。
 
 ```sh
 CGO_ENABLED=0 GOWORK=off go build -o bin/fpga-fw ./cmd/fpga-fw

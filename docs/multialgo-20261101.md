@@ -1,5 +1,8 @@
 # KU5P 多算法固件验收（2026-11-01）
 
+本页保留首版镜像的验收记录。后续 LZ4/Zstd 并行优化与新镜像归档见
+[固件优化实测](algorithm-optimization-20261101.md)。
+
 gzip、LZ4、Zstd、raw 四种独立镜像均完成本机上板验收，共用 XDMA shell、ABI、Go SDK
 和切换工具。新数据跟随当前镜像编码；已有对象按其保存的格式解码。
 框架源码与构建说明见 [firmware/multialgo](../firmware/multialgo/README.md)，
