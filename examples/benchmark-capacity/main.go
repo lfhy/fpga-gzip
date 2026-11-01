@@ -173,6 +173,7 @@ func main() {
 	mmap := flag.Bool("mmap", false, "use optional mapped register access")
 	packetSize := flag.Int("packet-kib", 1024, "negotiated EOP request size")
 	legacy := flag.Bool("legacy", false, "force legacy exact-length packets")
+	directOutput := flag.Bool("direct-output", false, "opt in to C2H DMA into RAM output buffers")
 	bufferedOutput := flag.Bool("buffered-output", false, "force bounded C2H buffers for comparison with direct RAM output")
 	profiles := flag.String("profiles", "", "optional directory for per-case CPU profiles")
 	flag.Parse()
@@ -224,6 +225,7 @@ func main() {
 					opts.PollInterval = *poll
 					opts.DrainIdle = *drain
 					opts.PacketRequestBytes = uint64(*packetSize) << 10
+					opts.DirectOutput = *directOutput && !*bufferedOutput
 					profile := ""
 					if *profiles != "" {
 						fail(os.MkdirAll(*profiles, 0700))

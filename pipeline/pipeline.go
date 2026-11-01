@@ -38,11 +38,16 @@ type Options struct {
 	// PacketRequestBytes applies only after EOP packet capability negotiation.
 	// The legacy shell continues using C2HRequestBytes.
 	PacketRequestBytes uint64
-	PollInterval       time.Duration
-	DrainIdle          time.Duration
-	ResetTimeout       time.Duration
-	StartTimeout       time.Duration
-	ProgressInterval   time.Duration
+	// DirectOutput lets EOP gzip DMA fill a bytes.Buffer's unused capacity.
+	// This reduces CPU copying when the destination pages are contiguous, but
+	// fragmented output pages can increase XDMA EOP interrupts. The default
+	// reuses bounded DMA buffers for predictable sustained throughput.
+	DirectOutput     bool
+	PollInterval     time.Duration
+	DrainIdle        time.Duration
+	ResetTimeout     time.Duration
+	StartTimeout     time.Duration
+	ProgressInterval time.Duration
 	// MaxProcs is a validation/configuration field for standalone callers. The
 	// library does not call runtime.GOMAXPROCS because doing so would change the
 	// scheduler width of a hosting FUSE or HTTP process.
@@ -352,7 +357,7 @@ func RunReaderAlgorithm(ctx context.Context, input io.Reader, inputSize uint64, 
 		}
 	}
 	directBuffer, directOutput := output.(*bytes.Buffer)
-	directOutput = directOutput && validator == nil && packetReadsEnabled(hw) && c2hSize >= 16
+	directOutput = opts.DirectOutput && directOutput && validator == nil && packetReadsEnabled(hw) && c2hSize >= 16
 	var c2hPool *bytePool
 	if !directOutput {
 		c2hPool, err = newBytePool(c2hSlots, c2hSize)

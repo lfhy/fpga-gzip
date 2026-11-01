@@ -67,23 +67,26 @@ func (p *packetHardware) CloseStreams() error { p.stopOnce.Do(func() { close(p.s
 
 func TestPacketCompressionPreservesCRCAndLength(t *testing.T) {
 	input := bytes.Repeat([]byte("packet stream test, gzip CRC and exact input;"), 3000)
-	for _, request := range []uint64{8, 64, 1 << 20} {
-		hw := &packetHardware{fakeHardware: newFakeHardware()}
-		opts := DefaultOptions()
-		opts.PacketRequestBytes = request
-		opts.H2CSlotBytes = 4096
-		var out bytes.Buffer
-		result, err := CompressReader(context.Background(), bytes.NewReader(input), uint64(len(input)), &out, hw, opts, nil)
-		if err != nil {
-			t.Fatal(err)
+	for _, direct := range []bool{false, true} {
+		for _, request := range []uint64{8, 64, 1 << 20} {
+			hw := &packetHardware{fakeHardware: newFakeHardware()}
+			opts := DefaultOptions()
+			opts.PacketRequestBytes = request
+			opts.DirectOutput = direct
+			opts.H2CSlotBytes = 4096
+			var out bytes.Buffer
+			result, err := CompressReader(context.Background(), bytes.NewReader(input), uint64(len(input)), &out, hw, opts, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !result.PacketReads || result.C2HRequestBytes != request || result.InputChecksumIEEE() != crc32.ChecksumIEEE(input) {
+				t.Fatal(result)
+			}
+			if result.DirectOutput != (direct && request >= 16) {
+				t.Fatal("wrong direct-output selection", result)
+			}
+			assertGzipData(t, out.Bytes(), input)
 		}
-		if !result.PacketReads || result.C2HRequestBytes != request || result.InputChecksumIEEE() != crc32.ChecksumIEEE(input) {
-			t.Fatal(result)
-		}
-		if result.DirectOutput != (request >= 16) {
-			t.Fatal("wrong direct-output selection", result)
-		}
-		assertGzipData(t, out.Bytes(), input)
 	}
 }
 

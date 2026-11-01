@@ -105,9 +105,11 @@ result, err := fpgagzip.CompressReader(
 )
 ```
 
-使用 EOP 固件时，gzip 输出为 `*bytes.Buffer` 会直接接收 C2H DMA，省去中间
-输出缓冲的复制；`result.DirectOutput` 可确认路径。可用 `Buffer.Grow` 预留输出容量，
-尾包优先使用剩余空间；文件与网络 writer 仍使用有界缓冲。
+默认复用有界 DMA 缓冲，减少长时间压缩时分散内存页带来的 EOP 中断。
+使用 EOP 固件、gzip 输出为 `*bytes.Buffer` 时，可设置 `options.DirectOutput = true`
+直接接收 C2H DMA，省去中间输出复制；`result.DirectOutput` 可确认路径。
+此选项在输出页连续时降低 CPU 用量，大量分散页面可能降低吞吐，应按实际负载对照。
+可用 `Buffer.Grow` 预留输出容量，尾包优先使用剩余空间。
 输入 CRC、gzip 头尾、EOS 和最终硬件字节计数始终校验。默认 H2C 请求为 1 MiB。
 
 根包还提供了 `NewWriter`、`NewWriterOptions` 和 `NewWriterContext`，调用形状接近 `compress/gzip.Writer`：
