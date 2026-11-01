@@ -1,0 +1,126 @@
+# 多算法 KU5P 框架
+
+同一套 XDMA、AXI-Lite、长度/TLAST、计数与 EOP packetizer，按构建 profile
+替换压缩核。一个镜像一种算法，整卡通过 JTAG 切换。主机协议与操作命令见
+[固件指导](../README.md)。生成文件放在独立构建目录，原 PCIe 工程和 Vitis
+库都保持不变。
+
+| Profile | 算法 ID | 核数 | 压缩核时钟 | 引擎 |
+| --- | --- | --- | --- | --- |
+| raw | 1 | 4 | 250 MHz | 双寄存缓冲透传 |
+| gzip | 2 | 4 | 250 MHz | 已验证的 8 lane、8 KiB gzip IP |
+| lz4 | 3 | 4 | 250 MHz | Vitis LZ4，标准独立块帧 |
+| zstd | 4 | 2 | 125 MHz | Vitis Zstd，经 AXI FIFO 与 250 MHz shell 交互 |
+
+KU5P 的 gzip profile 已使用全部 64 个 URAM。按镜像替换允许每种引擎独立使用
+资源。Zstd 的 HLS 综合估算为每核约 61,718 LUT、133 BRAM18K、7 URAM，关键路径约 153 MHz，
+因此当前采用 2 核、125 MHz。表中的频率是配置值，镜像必须实际布线并通过
+setup、hold 和 DRC 检查才能装载。
+
+LZ4 当前以 32 KiB 块工作，每块保留原始数据，压缩后不变小时选标准原始块。
+长度不超过 72 字节时直接发原始块。Zstd 使用 8 KiB 块，输出标准 Zstd 帧。
+两者为功能优先的首版，不能套用已优化 gzip 的持续吞吐指标。尤其 LZ4 当前
+逐块读取、编码、择优写出且以字节打包，后续可改成宽数据流和双缓冲流水线。
+
+## 依赖
+
+- Vivado / Vitis HLS 2025.2，器件 `xcku5p-ffvb676-2-e`。
+- 本机已验证的四通道 XDMA 工程完整副本、gzip IP 仓库和路由参考 DCP。
+  `build.sh` 依赖工程文件 `qz01_compress_4ip_8k8lane_ml2_bramfifo.xpr`。
+- Vitis Libraries revision `f217398d03b018c2774816200e562750872d9c31`。
+  构建需要 `data_compression/L1/include/hw`、`security/L1/include`。
+  该源码目录名虽含 `2021.1`，实际内容以 revision 为准。
+- 已验证的 XDMA EOP 驱动，安装步骤见[驱动指导](../../docs/driver-install.md)。
+
+HLS 适配器和新 RTL 使用本项目 MIT 许可。Vitis 外部依赖和针对其头文件的补丁
+保留 Apache-2.0 许可；见 [NOTICE](NOTICE) 与
+[上游许可证](LICENSE.Vitis-Libraries)。完整 PCIe IP 仍需对应工具许可和工程。
+
+## 构建 HLS IP
+
+设置环境变量后运行，`CF_HLS_BUILD` 使用新的空目录。`vitis-run` 不接受位置式
+Tcl 参数，故使用下列环境变量：
+
+```sh
+export CF_HLS_LIBRARY=/data/lsw/Vitis_Libraries-2021.1
+export CF_HLS_ALGORITHM=lz4
+export CF_HLS_BUILD=/data1/my-compression-build/lz4-hls
+export CF_HLS_MODE=synth
+/opt/Xilinx/2025.2/Vitis/bin/vitis-run --mode hls \
+  --tcl "$PWD/firmware/multialgo/hls/build.tcl"
+```
+
+算法可改为 `zstd`。`CF_HLS_MODE=csim` 运行 69 组边界输入，`cosim` 运行
+15 组 C/RTL 联合仿真并导出 IP。Csim/co-sim 完成后必须独立解码，不能只看
+HLS 的 PASS：
+
+```sh
+CGO_ENABLED=0 GOWORK=off go run ./examples/verify-hls lz4 "$CF_HLS_BUILD"
+# cosim 使用精简的 15 组
+CGO_ENABLED=0 GOWORK=off go run ./examples/verify-hls lz4 "$CF_HLS_BUILD" quick
+```
+
+`build.tcl` 把所需的四个 Zstd 头文件复制到构建目录，再应用补丁：
+
+- literal 反向缓冲增加一个存储槽，覆盖非对齐子流。
+- 新帧清除旧帧遗留的 FCS 标志。
+- 原始块分支容纳完整块及结束标志，解除随机数据时的循环背压。
+- Huffman 中间流按最多 11 bit/byte 计算容量，序列缓冲包含最短匹配产生的
+  全部序列及结束标志，避免编码膨胀时先填满 FIFO。
+- 单一符号的 FSE 表保留一个未使用符号状态，供严格 Go 解码器验证；修正概率
+  查表的越界访问。
+
+这些修复已通过零值、文本、随机输入的完整解码比较。联合仿真可能报告上游
+LZ 字典 dependence pragma 告警；只有实际 RTL 仿真成功且输出逐字节一致才算
+通过，告警本身不是正确性的证明。
+
+## 构建完整镜像
+
+从 SDK 根目录调用，六个参数分别是算法、新目录、PCIe 工程、gzip IP 仓库、
+新算法 HLS IP 仓库或 `-`、参考 DCP。每次使用新目录：
+
+```sh
+VIVADO_BIN=/opt/Xilinx/2025.2/Vivado/bin/vivado \
+  firmware/multialgo/build.sh lz4 /data1/my-compression-build/lz4-image \
+  /path/to/verified-pcie-project /path/to/gzip-ip-repo \
+  /data1/my-compression-build/lz4-hls/hls-lz4/sol1/impl/ip \
+  /path/to/packet-routed.dcp
+```
+
+gzip/raw 不需要新 HLS IP，传 `-`；Zstd 传对应 HLS IP，脚本自动选择两核。
+launcher 冻结 RTL、Tcl，再按算法、RTL、构建脚本、参考 DCP、IP HDL/约束计算
+非零构建 ID，并保存 `build-inputs.json`。只更换 HLS IP 也会产生新 ID。
+脚本复制原工程，检查所有综合与实现输出都位于副本中。
+
+成功目录包含 `.bit`、`manifest.json`、路由 DCP、时序/资源/DRC 报告。时序
+失败不会生成可装载 manifest。清单状态 `timing-closed` 是首次上板候选，
+完整板测通过后才可标记 `hardware-verified`。
+
+## RTL 与上板验证
+
+```sh
+firmware/multialgo/tests/run-identity.sh
+firmware/multialgo/tests/run-bridge.sh raw
+firmware/multialgo/tests/run-bridge.sh zstd
+```
+
+测试使用实际 XPM FIFO、BUFGCE_DIV 和 AXI-Lite 控制模块，覆盖 AXI 背压、
+只读身份寄存器、独立控制 bank、跨时钟尾字节、重复任务和软复位。
+这些脚本中的 `VIVADO_BIN` 表示 Vivado 的 `bin` 目录，可用 `TEST_BUILD_DIR`
+指定独立日志目录。
+
+使用 `fpga-fw switch` 装载后验证每个核心：
+
+```sh
+CGO_ENABLED=0 GOWORK=off go run ./examples/verify-firmware \
+  --algorithm lz4 --output /data1/lz4-board.json
+# 服务接口验证：先启动允许全部算法、配置 --cores 4 的 fpga-gzipd
+CGO_ENABLED=0 GOWORK=off go run ./examples/verify-firmware \
+  --algorithm lz4 --unix /run/fpga-compress.sock --quick \
+  --output /data1/lz4-service.json
+```
+
+默认测试每核心 72 组输入：三种数据模式、字节/块边界与 8 MiB 大输入，
+独立 CPU 解码并逐字节比较。还核对错误算法请求没有改变 DMA 字节计数。
+daemon 的 `AcquireActive` 跟随当前镜像的核心数；配置 4 通道的服务可切换到
+两核 Zstd。已打开句柄每次必须关闭，切换工具才能排空并重新初始化板卡。

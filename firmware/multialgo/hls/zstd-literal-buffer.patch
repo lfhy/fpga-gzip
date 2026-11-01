@@ -1,0 +1,14 @@
+--- a/zstd_compress_internal.hpp
++++ b/zstd_compress_internal.hpp
+@@ -438,7 +438,10 @@
+      *               of equal size. Last stream can be upto 3 bytes less than other 3 streams. This module
+      *               streams literals in reverse order of input.
+      */
+-    constexpr uint16_t c_litBufSize = (BLOCK_SIZE / 32);
++    // An unaligned substream can retain 1..7 bytes from the previous word
++    // and still require ceil(substream_size/8) more words. The extra slot
++    // prevents the reverse writer from decrementing index zero to 65535.
++    constexpr uint16_t c_litBufSize = (BLOCK_SIZE / 32) + 1;
+     // storing only 1/4th of the block size, 8-bytes a time
+     // literal buffer
+     ap_uint<64> litBuffer[c_litBufSize];

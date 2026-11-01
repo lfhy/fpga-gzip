@@ -1,0 +1,38 @@
+--- a/zstd_compress.hpp
++++ b/zstd_compress.hpp
+@@ -377,6 +377,7 @@
+             // so that window size becomes equal to frame content size
+             frameHeader.range(7, 6) = c_fcsFlag;
+         } else {
++            frameHeader.range(7, 6) = 0;
+             // do not write frame content size to header
+         }
+         frameHeaderBuf[4] = frameHeader;
+--- a/zstd_encoders.hpp
++++ b/zstd_encoders.hpp
+@@ -475,7 +475,8 @@
+         // if (inFreq[s] == symbolSize) return 0;   /* rle special case */
+         auto freq = inFreq[s];
+         int16_t proba = (int16_t)((freq * step) >> scale);
+-        ap_uint<1> incrProba = (((freq * step) - ((uint64_t)proba << scale)) > rtbXvStepTable[proba]);
++        ap_uint<1> incrProba = (proba < 8) &&
++            (((freq * step) - ((uint64_t)proba << scale)) > rtbXvStepTable[proba]);
+         int16_t val = 0;
+         int16_t valDecrement = 0;
+         if (freq == 0) {
+@@ -582,6 +583,15 @@
+                 }
+                 // generate normalized distribution table
+                 normalizeFreq<MAX_FREQ_DWIDTH>(inFreq, symCnt_1, maxSymbol, tableLog, normTable);
++            }
++            // A single-symbol FSE table has self loops with zero input bits.
++            // Reserve one state for an unused symbol so strict Go decoders
++            // accept the table; the encoder emits only the actual symbol.
++            if (tableLog != 0 && symCnt != 0 && maxFreq == symCnt) {
++                uint16_t unused = (maxSymbol == 0) ? 1 : 0;
++                normTable[maxSymbol] = (1 << tableLog) - 1;
++                normTable[unused] = 1;
++                if (unused > maxSymbol) maxSymbol = unused;
+             }
+             // write normalized table to output
+             outVal.strobe = 1;

@@ -70,6 +70,9 @@ bin/fpga-gzipd --unix /run/fpga-compress.sock --cores 4 \
 多算法响应包含 `X-FPGA-Algorithm`，并在成功后给出 `X-FPGA-Complete: 1` 和
 输出长度 trailer。SDK 客户端检查该完成标志，避免将传输中途失败误判为成功。
 
+同一卡的 DMA 核由一个调度进程管理：使用此 daemon，或使用 compactfs 的算法
+worker。应用通过该进程提交请求；各进程的 `device.Pool` 不共享核心租借状态。
+
 ## ABI v1
 
 控制 bank 为 `core * 0x1000`。原有 `0x00..0x40` 的 DMA 控制和 EOP 保持不变。

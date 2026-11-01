@@ -1,0 +1,13 @@
+The common DMA shell derives from the user-provided KU5P FPGA-4IP project
+and the qz01-eop modifications in this repository. New adapters and framework
+code are distributed under the repository's MIT license.
+
+The HLS adapters include the Xilinx Vitis Data Compression Library, licensed
+under Apache-2.0. That library is an external build dependency and is not
+relicensed under MIT. Preserve its license and notices in distributed IP.
+Upstream: https://github.com/Xilinx/Vitis_Libraries
+Pinned revision: f217398d03b018c2774816200e562750872d9c31
+
+zstd-literal-buffer.patch, zstd-frame-fse.patch and zstd-fifo.patch modify Apache-2.0 upstream
+headers in a private build directory. The original library checkout remains
+unchanged. The upstream license is included as LICENSE.Vitis-Libraries.

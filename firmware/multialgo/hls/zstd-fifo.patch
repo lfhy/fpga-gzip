@@ -1,0 +1,43 @@
+--- a/zstd_compress_multicore.hpp
++++ b/zstd_compress_multicore.hpp
+@@ -382,11 +382,16 @@
+     // zstd compression main module
+     constexpr uint8_t c_parallel_huffman = (CORE_COUNT < 4) ? 2 : (CORE_COUNT < 6 ? 4 : 8);
+     constexpr uint32_t c_freq_dwidth = maxBitsUsed(BLOCK_SIZE);
+-    constexpr uint32_t c_dataUpSDepth = BLOCK_SIZE / 8;
+-    constexpr uint32_t c_seqInSDepth = BLOCK_SIZE / 4;
+-    constexpr uint32_t c_rawBlkSDepth = CORE_COUNT * BLOCK_SIZE / 8;
+-    constexpr uint32_t c_hfLitStreamDepth = BLOCK_SIZE / c_parallel_huffman;
+-    constexpr uint32_t c_seqBlockDepth = BLOCK_SIZE / 8;
++    constexpr uint32_t c_dataUpSDepth = BLOCK_SIZE / 8 + 2;
++    constexpr uint32_t c_seqInSDepth = (BLOCK_SIZE + MIN_MATCH - 1) / MIN_MATCH + 2;
++    constexpr uint32_t c_rawBlkSDepth = CORE_COUNT * (BLOCK_SIZE / 8 + 1) + 2;
++    // Literal bits can expand to 11 bits/byte before the raw-block decision.
++    // Include control/EOF words as the collector waits for sequence sizes.
++    constexpr uint32_t c_hfLitStreamDepth =
++        (BLOCK_SIZE * details::c_maxZstdHfBits + 8 * c_parallel_huffman - 1) /
++            (8 * c_parallel_huffman) + 16;
++    // Worst-case sequence codes and offsets may exceed the raw byte count.
++    constexpr uint32_t c_seqBlockDepth = BLOCK_SIZE / 4 + 2;
+     constexpr uint8_t c_wfreqSDepth = 24 * CORE_COUNT;
+ 
+     // Internal streams
+@@ -398,7 +403,8 @@
+ #pragma HLS STREAM variable = inBlockStream depth = c_dataUpSDepth
+ #pragma HLS STREAM variable = inBlockDszStream depth = 16
+ #pragma HLS STREAM variable = packerMetaStream depth = 16
+-#pragma HLS STREAM variable = rawBlkFinalStream depth = 16
++#pragma HLS STREAM variable = rawBlkFinalStream depth = c_rawBlkSDepth
++#pragma HLS BIND_STORAGE variable = rawBlkFinalStream type = FIFO impl = BRAM
+ #pragma HLS STREAM variable = rawBlockStream depth = c_rawBlkSDepth
+ #pragma HLS BIND_STORAGE variable = rawBlockStream type = FIFO impl = URAM
+ 
+@@ -417,7 +423,7 @@
+ #pragma HLS STREAM variable = seqStream depth = c_seqInSDepth
+ #pragma HLS AGGREGATE variable = seqStream
+ #pragma HLS STREAM variable = serialSeqStream depth = 8
+-#pragma HLS STREAM variable = reverseSeqStream depth = 2048 // 4096
++#pragma HLS STREAM variable = reverseSeqStream depth = c_seqInSDepth
+ // 2-4K depth needed to keep reading input sequences even if previous block decoding waits for fse table generation
+ #pragma HLS BIND_STORAGE variable = reverseSeqStream type = FIFO impl = BRAM
+ #pragma HLS BIND_STORAGE variable = seqStream type = FIFO impl = BRAM
