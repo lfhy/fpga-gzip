@@ -1,0 +1,15 @@
+diff --git a/XDMA/linux-kernel/xdma/cdev_sgdma.c b/XDMA/linux-kernel/xdma/cdev_sgdma.c
+index 665e841..32d5fc7 100755
+--- a/XDMA/linux-kernel/xdma/cdev_sgdma.c
++++ b/XDMA/linux-kernel/xdma/cdev_sgdma.c
+@@ -320,7 +320,9 @@ static int char_sgdma_map_user_buf_to_sgl(struct xdma_io_cb *cb, bool write)
+ 		goto err_out;
+ 	}
+ 
+-	rv = get_user_pages_fast((unsigned long)buf, pages_nr, 1/* write */,
++	/* H2C only reads host memory; C2H DMA writes and needs writable pages. */
++	rv = get_user_pages_fast((unsigned long)buf, pages_nr,
++				write ? 0 : FOLL_WRITE,
+ 				cb->pages);
+ 	/* No pages were pinned */
+ 	if (rv < 0) {

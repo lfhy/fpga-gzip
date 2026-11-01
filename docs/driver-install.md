@@ -23,6 +23,10 @@ sudo dnf install gcc make git kernel-devel-$(uname -r) kernel-headers-$(uname -r
 
 本机已确认官方 XDMA 2025.2 的同步等待会被 Go 的 SIGURG 提前唤醒，随后把未完成请求当成超时中止。
 使用本项目的 [DMA 等待补丁](patches/xdma-2025.2-killable-dma-wait.patch)，避免长流随机失败或丢失流数据。
+只读 mmap 输入还需要 [H2C 页权限补丁](patches/xdma-2025.2-readonly-h2c.patch)：
+官方代码对两个方向都要求 `FOLL_WRITE`，导致只读输入在 DMA 提交前返回 `-EFAULT`。
+补丁让 H2C 只固定可读页，C2H 保持可写页要求。SDK 对未修补驱动的零字节
+`EFAULT` 会复制到自有可写缓冲后重试一次；已经提交部分字节或其他错误不重试。
 补丁基于官方提交 `a918c5196a09f95756af244a607d543d9dce5bfb`，实测内核为 Linux 6.12。
 下面固定到该源码版本；其他版本需要重新核对补丁及实机测试。
 
@@ -35,6 +39,8 @@ git fetch --depth 1 origin a918c5196a09f95756af244a607d543d9dce5bfb
 git checkout --detach FETCH_HEAD
 git apply --check "$fpga_gzip_dir/docs/patches/xdma-2025.2-killable-dma-wait.patch"
 git apply "$fpga_gzip_dir/docs/patches/xdma-2025.2-killable-dma-wait.patch"
+git apply --check "$fpga_gzip_dir/docs/patches/xdma-2025.2-readonly-h2c.patch"
+git apply "$fpga_gzip_dir/docs/patches/xdma-2025.2-readonly-h2c.patch"
 cd XDMA/linux-kernel/xdma
 make
 ```
@@ -63,7 +69,8 @@ cat /sys/module/xdma/srcversion
 /lib/modules/$(uname -r)/updates/xdma.ko
 ```
 
-`modinfo -n xdma` 应指向该文件；本机修补版的 `srcversion` 为 `4053DCC3523124C6CC000FA`。
+`modinfo -n xdma` 应指向该文件；本机两个补丁的修补版 `srcversion` 为 `C6055D7044FEB6C79C6C438`
+（只含等待补丁的旧版为 `4053DCC3523124C6CC000FA`）。安装前应另存当前已验证的模块用于回滚。
 内核升级后需要为新内核重新编译安装。此驱动补丁不会加载或持久化 FPGA bitstream。
 
 需要开机自动加载时创建 `/etc/modules-load.d/xdma.conf`：

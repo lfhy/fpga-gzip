@@ -37,6 +37,7 @@ type Device struct {
 	registerMapBase uint64
 	registerClosed  bool
 	packetReads     bool
+	h2cInput        dmaInput
 
 	closeStreamsOnce sync.Once
 	closeOnce        sync.Once
@@ -142,7 +143,7 @@ func (d *Device) Close() error {
 
 // WriteH2C writes one or more bytes to the FPGA input stream.
 func (d *Device) WriteH2C(p []byte) (int, error) {
-	return d.h2c.Write(p)
+	return d.h2cInput.write(p, d.h2c.Write)
 }
 
 // ReadC2H reads one FPGA output packet.  The caller intentionally controls the
