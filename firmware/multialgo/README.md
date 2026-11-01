@@ -51,7 +51,17 @@ VITIS_HLS_BIN=/opt/Xilinx/2025.2/Vitis/bin/vitis-run \
 联合仿真；两种模式随后自动用纯 Go 解码并逐字节比较。解码失败会使构建失败，
 cosim 不会继续导出 IP。`synth` 只综合并导出候选 IP，不代表功能已验证。
 cosim 的可选第五个参数 `entropy` 运行全零、文本、随机、重复字符、二符号的 5 组回归，
-`random` 运行 3 组随机数据回归。也可重新验证已有结果：
+`random` 运行 3 组随机数据回归。`dma` 使用与上板测试相同的 Go 随机种子，
+生成 32767、65536 和 1 MiB 的三份输入，覆盖序列反转模块的跨块背压死锁。
+这些输入和生成器也会冻结并记录哈希。运行该回归：
+
+```sh
+VITIS_HLS_BIN=/opt/Xilinx/2025.2/Vitis/bin/vitis-run \
+  firmware/multialgo/hls/build.sh zstd /data1/my-compression-build/zstd-dma \
+  /data/lsw/Vitis_Libraries-2021.1 cosim dma
+```
+
+也可重新验证已有结果：
 
 ```sh
 CGO_ENABLED=0 GOWORK=off go run ./examples/verify-hls lz4 /path/to/csim-output
@@ -66,6 +76,8 @@ CGO_ENABLED=0 GOWORK=off go run ./examples/verify-hls lz4 /path/to/cosim-output 
 - 原始块分支容纳完整块及结束标志，解除随机数据时的循环背压。
 - Huffman 中间流按最多 11 bit/byte 计算容量，序列缓冲包含最短匹配产生的
   全部序列及结束标志，避免编码膨胀时先填满 FIFO。
+- 序列反转模块排出已缓冲块时，下一块的预读不会阻塞旧序列输出。原来的阻塞
+  预读可与字面量 FIFO、序列长度收集形成循环等待；仅增加超时无法解除该死锁。
 - 单一符号的 FSE 表保留一个未使用符号状态，供严格 Go 解码器验证；修正概率
   查表的越界访问。
 - Zstd 定义上游提供的 `DISABLE_DEPENDENCE`，让工具尊重字典和频率 RAM 的

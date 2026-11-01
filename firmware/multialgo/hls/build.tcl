@@ -1,7 +1,7 @@
 if {[info exists ::env(CF_HLS_ALGORITHM)]} {
     set argv [list $::env(CF_HLS_ALGORITHM) $::env(CF_HLS_BUILD) $::env(CF_HLS_LIBRARY) $::env(CF_HLS_MODE)]
 }
-if {[llength $argv] != 4} {error "usage: <lz4|zstd> <build-dir> <Vitis_Libraries> <csim|synth>"}
+if {[llength $argv] != 4} {error "usage: <lz4|zstd> <build-dir> <Vitis_Libraries> <csim|synth|cosim>"}
 set algorithm [lindex $argv 0]
 set root [file normalize [lindex $argv 1]]
 set library [file normalize [lindex $argv 2]]
@@ -49,8 +49,13 @@ create_clock -period 4.0 -name default
 config_dataflow -scalar_fifo_depth 32 -start_fifo_depth 32 -task_level_fifo_depth 32
 config_export -format ip_catalog -rtl verilog
 if {$mode eq "csim"} {
-    csim_design -argv $root
-    verify_frames $source $algorithm $root {}
+    if {[info exists ::env(CF_HLS_CASES)] && $::env(CF_HLS_CASES) eq "dma"} {
+        csim_design -argv "$root dma"
+        verify_frames $source $algorithm $root {dma}
+    } else {
+        csim_design -argv $root
+        verify_frames $source $algorithm $root {}
+    }
 } elseif {$mode eq "synth" || $mode eq "cosim"} {
     csynth_design
     if {$mode eq "cosim"} {

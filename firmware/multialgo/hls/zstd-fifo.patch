@@ -41,3 +41,18 @@
  // 2-4K depth needed to keep reading input sequences even if previous block decoding waits for fse table generation
  #pragma HLS BIND_STORAGE variable = reverseSeqStream type = FIFO impl = BRAM
  #pragma HLS BIND_STORAGE variable = seqStream type = FIFO impl = BRAM
+--- a/zstd_compress_internal.hpp
++++ b/zstd_compress_internal.hpp
+@@ -675,7 +675,11 @@
+ reverse_seq_stream:
+     while (bufferMode || streamMode) {
+ #pragma HLS PIPELINE II = 1 rewind
+-        if (bufferMode) {
++        // Drain a previously buffered block while the next block is not
++        // available. A blocking lookahead read otherwise holds its final
++        // sequence behind the next block's literals, forming a FIFO cycle
++        // through bytestreamCollector's sequence-size dependency.
++        if (bufferMode && (!streamMode || !seqStream.empty())) {
+             // Write to internal memory
+             inSeq = seqStream.read();
+             seqBuffer[wIdx].setData(inSeq.data[0].getData());

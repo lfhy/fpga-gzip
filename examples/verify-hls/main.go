@@ -16,7 +16,7 @@ import (
 
 func main() {
 	if len(os.Args) != 3 && len(os.Args) != 4 {
-		fmt.Fprintln(os.Stderr, "usage: verify-hls lz4|zstd <csim-output-directory>")
+		fmt.Fprintln(os.Stderr, "usage: verify-hls lz4|zstd <simulation-output-directory> [quick|random|entropy|dma]")
 		os.Exit(2)
 	}
 	paths, err := filepath.Glob(filepath.Join(os.Args[2], "case-*.raw"))
@@ -25,7 +25,7 @@ func main() {
 		switch os.Args[3] {
 		case "quick":
 			want = 25
-		case "random":
+		case "random", "dma":
 			want = 3
 		case "entropy":
 			want = 5
