@@ -98,6 +98,7 @@ type result struct {
 	PacketReads       bool                           `json:"packet_reads"`
 	C2HRequestBytes   uint64                         `json:"c2h_request_bytes"`
 	Interrupts        *uint64                        `json:"xdma_interrupts,omitempty"`
+	VerificationProcs int                            `json:"verification_procs"`
 }
 
 func interruptCount() (uint64, bool) {
@@ -153,6 +154,7 @@ func main() {
 	patterns := flag.String("patterns", "fixture,text,random", "comma-separated input patterns")
 	perCore := flag.Int("per-core-mib", 1024, "input per core per case")
 	procs := flag.Int("procs", 8, "Go P count, unchanged across core counts")
+	verifyProcs := flag.Int("verify-procs", 0, "Go P count for full decoding after timing; 0 uses procs")
 	rounds := flag.Int("rounds", 1, "rounds")
 	h2c := flag.Int("h2c-mib", 1, "H2C slot size")
 	c2h := flag.Int("c2h-kib", 32, "C2H request size")
@@ -168,8 +170,11 @@ func main() {
 	fail(err)
 	cores, err := numbers(*coreList)
 	fail(err)
-	if *output == "" || *perCore < 1 || *procs < 1 || *rounds < 1 || *h2c < 1 || *c2h < 1 || *slots < 1 {
+	if *output == "" || *perCore < 1 || *procs < 1 || *verifyProcs < 0 || *rounds < 1 || *h2c < 1 || *c2h < 1 || *slots < 1 {
 		fail(fmt.Errorf("invalid benchmark options"))
+	}
+	if *verifyProcs == 0 {
+		*verifyProcs = *procs
 	}
 	for _, c := range cores {
 		if c > 4 {
@@ -214,7 +219,7 @@ func main() {
 						fail(os.MkdirAll(*profiles, 0700))
 						profile = filepath.Join(*profiles, fmt.Sprintf("%s-%dMiB-%dcores-r%d.pprof", pattern, mib, count, round))
 					}
-					row, err := run(pattern, round, mib<<20, count, *procs, *perCore/mib, fixture, opts, *mmap, *legacy, profile)
+					row, err := run(pattern, round, mib<<20, count, *procs, *perCore/mib, fixture, opts, *mmap, *legacy, profile, *verifyProcs)
 					fail(err)
 					results = append(results, row)
 					data, err := json.MarshalIndent(map[string]any{"unit": "decimal GB/s, input bytes / group wall time", "mmap": *mmap, "legacy": *legacy, "fixture": *source, "fixture_decoded_sha256": fmt.Sprintf("%x", sha256.Sum256(fixture)), "go_version": runtime.Version(), "arguments": os.Args, "options": opts, "results": results}, "", "  ")
@@ -227,7 +232,7 @@ func main() {
 	}
 }
 
-func run(pattern string, round, size, cores, procs, iterations int, fixture []byte, opts pipeline.Options, mmap, legacy bool, profile string) (result, error) {
+func run(pattern string, round, size, cores, procs, iterations int, fixture []byte, opts pipeline.Options, mmap, legacy bool, profile string, verifyProcs int) (result, error) {
 	raw := make([]byte, size)
 	switch pattern {
 	case "fixture":
@@ -351,41 +356,10 @@ func run(pattern string, round, size, cores, procs, iterations int, fixture []by
 		m := meters[c]
 		row.CoreOperations = append(row.CoreOperations, map[string]map[string]uint64{"h2c": m.h2c.values(), "c2h": m.c2h.values(), "snapshots": m.snapshots.values(), "arms": m.arms.values()})
 	}
-	errs = make(chan error, cores)
-	for c := range inputs {
-		wg.Add(1)
-		go func(c int) {
-			defer wg.Done()
-			for i, b := range outputs[c] {
-				binary.LittleEndian.PutUint64(inputs[c][:8], uint64(c)+uint64(i)*256+uint64(round)*1000000)
-				r, err := gzip.NewReader(bytes.NewReader(b.Bytes()))
-				if err != nil {
-					errs <- err
-					return
-				}
-				cmp := &comparison{raw: inputs[c]}
-				_, err = io.Copy(cmp, r)
-				closeErr := r.Close()
-				if err != nil {
-					errs <- err
-					return
-				}
-				if closeErr != nil {
-					errs <- closeErr
-					return
-				}
-				if cmp.offset != size {
-					errs <- fmt.Errorf("decoded size %d expected %d", cmp.offset, size)
-					return
-				}
-			}
-		}(c)
-	}
-	wg.Wait()
-	close(errs)
-	for err := range errs {
+	if err := verifyOutputs(inputs, outputs, round, size, verifyProcs); err != nil {
 		return result{}, err
 	}
+	row.VerificationProcs = verifyProcs
 	row.Verified = true
 	return row, nil
 }
