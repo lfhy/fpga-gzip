@@ -105,6 +105,11 @@ result, err := fpgagzip.CompressReader(
 )
 ```
 
+使用 EOP 固件时，gzip 输出为 `*bytes.Buffer` 会直接接收 C2H DMA，省去中间
+输出缓冲的复制；`result.DirectOutput` 可确认路径。可用 `Buffer.Grow` 预留输出容量，
+尾包优先使用剩余空间；文件与网络 writer 仍使用有界缓冲。
+输入 CRC、gzip 头尾、EOS 和最终硬件字节计数始终校验。默认 H2C 请求为 1 MiB。
+
 根包还提供了 `NewWriter`、`NewWriterOptions` 和 `NewWriterContext`，调用形状接近 `compress/gzip.Writer`：
 
 ```go
@@ -134,7 +139,7 @@ sudo ./bin/fpga-gzip \
   --input input.bin \
   --output output.gz \
   --ring-slots 8 \
-  --h2c-slot-bytes 4MiB \
+  --h2c-slot-bytes 1MiB \
   --c2h-request-bytes 32KiB \
   --max-procs 4
 ```
@@ -176,7 +181,7 @@ c2h = "/dev/xdma0_c2h_0"
 
 [pipeline]
 ring_slots = 8
-h2c_slot_bytes = "4MiB"
+h2c_slot_bytes = "1MiB"
 c2h_request_bytes = "32KiB"
 packet_request_bytes = "1MiB" # 仅匹配 EOP 固件时使用
 poll_interval = "50us"

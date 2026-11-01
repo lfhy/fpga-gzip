@@ -49,15 +49,15 @@ type Options struct {
 	MaxProcs int
 }
 
-// DefaultOptions uses the ring and H2C defaults validated for the bundled
-// gzip shell. Legacy firmware uses 32 KiB C2H requests; negotiated EOP
+// DefaultOptions uses 1 MiB H2C requests to limit page mapping and startup
+// overhead. Legacy firmware uses 32 KiB C2H requests; negotiated EOP
 // firmware uses 1 MiB requests. Four Go scheduler Ps let the H2C writer,
 // C2H reader, file writer and register poller make progress independently;
 // forcing one P serializes those stages and cuts throughput by roughly half.
 func DefaultOptions() Options {
 	return Options{
 		RingSlots:    8,
-		H2CSlotBytes: 4 * 1024 * 1024,
+		H2CSlotBytes: 1 * 1024 * 1024,
 		// The bundled shorttail72 packetizer is validated with 32 KiB requests.
 		C2HRequestBytes:    32 * 1024,
 		PacketRequestBytes: 1 << 20,
@@ -111,7 +111,10 @@ type Result struct {
 	// C2HRequestBytes is the effective request limit for this transaction.
 	C2HRequestBytes uint64
 	PacketReads     bool
-	InputCRC32      uint32
+	// DirectOutput means C2H DMA filled a bytes.Buffer's unused capacity without
+	// an intermediate output buffer and copy. Other writers keep bounded buffers.
+	DirectOutput bool
+	InputCRC32   uint32
 }
 
 // InputChecksumIEEE returns the input CRC already checked against the gzip
@@ -348,9 +351,14 @@ func RunReaderAlgorithm(ctx context.Context, input io.Reader, inputSize uint64, 
 			c2hSlots = 2
 		}
 	}
-	c2hPool, err := newBytePool(c2hSlots, c2hSize)
-	if err != nil {
-		return Result{}, fmt.Errorf("allocate C2H buffers: %w", err)
+	directBuffer, directOutput := output.(*bytes.Buffer)
+	directOutput = directOutput && validator == nil && packetReadsEnabled(hw) && c2hSize >= 16
+	var c2hPool *bytePool
+	if !directOutput {
+		c2hPool, err = newBytePool(c2hSlots, c2hSize)
+		if err != nil {
+			return Result{}, fmt.Errorf("allocate C2H buffers: %w", err)
+		}
 	}
 	defer c2hPool.releaseIdle()
 	stats.mark("fpga-start")
@@ -390,8 +398,14 @@ func RunReaderAlgorithm(ctx context.Context, input io.Reader, inputSize uint64, 
 	if validatedOutput == nil {
 		validatedOutput = &gzipHeaderWriter{dst: output}
 	}
-	worker(func() error { return storeOutput(runCtx, validatedOutput, rx, c2hPool, stats, storeDone) })
-	worker(func() error { return receiveC2H(runCtx, hw, opts, rx, c2hPool, stats) })
+	if directOutput {
+		worker(func() error {
+			return receivePacketsDirect(runCtx, hw, int(c2hSize), directBuffer, validatedOutput.(*gzipHeaderWriter), stats, storeDone)
+		})
+	} else {
+		worker(func() error { return storeOutput(runCtx, validatedOutput, rx, c2hPool, stats, storeDone) })
+		worker(func() error { return receiveC2H(runCtx, hw, opts, rx, c2hPool, stats) })
+	}
 	worker(func() error { return sendH2C(runCtx, hw, inputSize, tx, h2cPool, stats) })
 	worker(func() error {
 		if borrowed != nil {
@@ -479,6 +493,7 @@ func RunReaderAlgorithm(ctx context.Context, input io.Reader, inputSize uint64, 
 		Debug:           finalSnapshot.Debug,
 		C2HRequestBytes: c2hSize,
 		PacketReads:     packetReadsEnabled(hw),
+		DirectOutput:    directOutput,
 		InputCRC32:      stats.inputCRC.Load(),
 	}, nil
 }
@@ -802,6 +817,15 @@ type gzipHeaderWriter struct {
 func (w *gzipHeaderWriter) Write(p []byte) (int, error) {
 	if w.err != nil {
 		return 0, w.err
+	}
+	if !w.checked && w.seen == 0 && len(p) >= len(w.header) {
+		if err := validateGzipHeader(p[:len(w.header)]); err != nil {
+			w.err = err
+			return 0, err
+		}
+		w.checked = true
+		w.seen = len(w.header)
+		return w.write(p)
 	}
 	if !w.checked {
 		need := len(w.header) - w.seen

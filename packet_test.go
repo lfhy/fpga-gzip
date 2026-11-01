@@ -80,6 +80,9 @@ func TestPacketCompressionPreservesCRCAndLength(t *testing.T) {
 		if !result.PacketReads || result.C2HRequestBytes != request || result.InputChecksumIEEE() != crc32.ChecksumIEEE(input) {
 			t.Fatal(result)
 		}
+		if result.DirectOutput != (request >= 16) {
+			t.Fatal("wrong direct-output selection", result)
+		}
 		assertGzipData(t, out.Bytes(), input)
 	}
 }

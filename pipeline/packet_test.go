@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"hash/crc32"
 	"testing"
 
 	"github.com/lfhy/fpga-gzip/device"
@@ -15,6 +16,105 @@ type packetScript struct {
 	read, request          int
 	missingEOS, wrongCount bool
 	order                  []string
+}
+
+type directPacketScript struct {
+	packetScript
+	output  *bytes.Buffer
+	aliased bool
+}
+
+func (p *directPacketScript) ReadC2H(dst []byte) (int, error) {
+	p.aliased = &dst[0] == &p.output.AvailableBuffer()[:len(dst)][0]
+	return p.packetScript.ReadC2H(dst)
+}
+
+func TestDirectPacketOutputPreservesAliasedData(t *testing.T) {
+	input := bytes.Repeat([]byte("direct FPGA output retains CRC, size and every payload byte;"), 1000)
+	compressed := makeGzip(t, input)
+	for _, request := range []int{16, 32, 1 << 20} {
+		for _, preallocated := range []bool{false, true} {
+			var output bytes.Buffer
+			if preallocated {
+				output.Grow(len(compressed) + request + 100)
+			}
+			// Include an unread prefix with a nonzero Buffer offset. Grow may
+			// compact it, but must not change the bytes already in the output.
+			output.WriteString("consumed:prefix:")
+			output.Next(len("consumed:"))
+			p := &directPacketScript{packetScript: packetScript{data: compressed}, output: &output}
+			v := &gzipHeaderWriter{dst: &output}
+			stats := &runStats{}
+			done := make(chan struct{})
+			if err := receivePacketsDirect(context.Background(), p, request, &output, v, stats, done); err != nil {
+				t.Fatal(err)
+			}
+			if err := v.Validate(crc32.ChecksumIEEE(input), uint64(len(input))); err != nil {
+				t.Fatal(err)
+			}
+			if !p.aliased || !bytes.Equal(output.Bytes(), append([]byte("prefix:"), compressed...)) {
+				t.Fatal("DMA did not fill output capacity or changed its contents")
+			}
+			if stats.fileWritten.Load() != uint64(len(compressed)) || stats.compressed.Load() != uint64(len(compressed)) {
+				t.Fatal("wrong direct-output byte count")
+			}
+			select {
+			case <-done:
+			default:
+				t.Fatal("output completion was not signaled")
+			}
+		}
+	}
+}
+
+func TestDirectPacketOutputRejectsBadBoundariesAndFrames(t *testing.T) {
+	input := []byte("gzip direct DMA validation")
+	for _, problem := range []string{"eos", "count", "header", "crc", "size"} {
+		compressed := append([]byte(nil), makeGzip(t, input)...)
+		var output bytes.Buffer
+		p := &packetScript{data: compressed}
+		switch problem {
+		case "eos":
+			p.missingEOS = true
+		case "count":
+			p.wrongCount = true
+		case "header":
+			compressed[0] ^= 1
+		case "crc":
+			compressed[len(compressed)-8] ^= 1
+		case "size":
+			compressed[len(compressed)-1] ^= 1
+		}
+		v := &gzipHeaderWriter{dst: &output}
+		err := receivePacketsDirect(context.Background(), p, 1024, &output, v, &runStats{}, make(chan struct{}))
+		if err == nil {
+			err = v.Validate(crc32.ChecksumIEEE(input), uint64(len(input)))
+		}
+		if err == nil {
+			t.Fatalf("accepted bad %s", problem)
+		}
+		if problem != "crc" && problem != "size" && output.Len() != 0 {
+			t.Fatalf("published unvalidated %s", problem)
+		}
+	}
+}
+
+func TestDirectPacketTailUsesRemainingCapacity(t *testing.T) {
+	input := bytes.Repeat([]byte("bounded output capacity"), 10000)
+	compressed := makeGzip(t, input)
+	output := bytes.NewBuffer(make([]byte, 0, len(compressed)+16))
+	capacity := output.Cap()
+	v := &gzipHeaderWriter{dst: output}
+	p := &packetScript{data: compressed}
+	if err := receivePacketsDirect(context.Background(), p, 1<<20, output, v, &runStats{}, make(chan struct{})); err != nil {
+		t.Fatal(err)
+	}
+	if output.Cap() != capacity || !bytes.Equal(output.Bytes(), compressed) {
+		t.Fatal("grew an output buffer that already fits the final member")
+	}
+	if err := v.Validate(crc32.ChecksumIEEE(input), uint64(len(input))); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func (p *packetScript) StartC2HRequest(_ context.Context, n uint32) error {

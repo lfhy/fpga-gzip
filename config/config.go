@@ -51,7 +51,7 @@ type Config struct {
 // arguments remain supported as input and output paths for shell compatibility.
 func Parse(args []string) (Config, error) {
 	var cfg Config
-	var h2cSlotText = "4MiB"
+	var h2cSlotText = "1MiB"
 	var c2hRequestText = "32KiB"
 	var packetRequestText = "1MiB"
 
@@ -70,7 +70,7 @@ func Parse(args []string) (Config, error) {
 	fs.BoolFullVar(&cfg.MmapRegisters, "mmap-registers", "device", "mmap_registers", "FPGA_GZIP_MMAP_REGISTERS", false, "Linux amd64 可选 BAR 映射")
 
 	fs.UintFullVar(&cfg.RingSlots, "ring-slots", "pipeline", "ring_slots", "FPGA_GZIP_RING_SLOTS", 8, "输入/输出环形队列槽位数")
-	fs.StringFullVar(&h2cSlotText, "h2c-slot-bytes", "pipeline", "h2c_slot_bytes", "FPGA_GZIP_H2C_SLOT_BYTES", h2cSlotText, "H2C 分块大小，例如 4MiB")
+	fs.StringFullVar(&h2cSlotText, "h2c-slot-bytes", "pipeline", "h2c_slot_bytes", "FPGA_GZIP_H2C_SLOT_BYTES", h2cSlotText, "H2C 分块大小，例如 1MiB")
 	fs.StringFullVar(&c2hRequestText, "c2h-request-bytes", "pipeline", "c2h_request_bytes", "FPGA_GZIP_C2H_REQUEST_BYTES", c2hRequestText, "C2H 请求缓冲大小，例如 32KiB")
 	fs.StringFullVar(&packetRequestText, "packet-request-bytes", "pipeline", "packet_request_bytes", "FPGA_GZIP_PACKET_REQUEST_BYTES", packetRequestText, "新 EOP 固件的请求大小，例如 1MiB")
 

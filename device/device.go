@@ -292,7 +292,10 @@ func (d *Device) SoftReset(ctx context.Context, timeout time.Duration) error {
 		return err
 	}
 	deadline := time.Now().Add(timeout)
-	for time.Now().Before(deadline) {
+	for checks := 0; time.Now().Before(deadline); checks++ {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		status, err := d.ReadReg32(ctx, RegStatus)
 		if err != nil {
 			return err
@@ -302,6 +305,13 @@ func (d *Device) SoftReset(ctx context.Context, timeout time.Duration) error {
 		// adding a millisecond to every bounded chunk before looking at it.
 		if status&(StatusResetBusy|StatusBusy|StatusDone|StatusError) == 0 {
 			return nil
+		}
+		// A normal 256-cycle reset lasts about 1 us at 250 MHz. A few
+		// immediate MMIO reads avoid putting that case on a Go timer, which
+		// can wake much later than its 50 us interval. Slow/faulted devices
+		// still use the bounded sleeping wait below.
+		if checks < 7 {
+			continue
 		}
 		if err := sleepContext(ctx, 50*time.Microsecond); err != nil {
 			return err
@@ -329,13 +339,19 @@ func (d *Device) Start(ctx context.Context, inputSize uint64, timeout time.Durat
 		return err
 	}
 	deadline := time.Now().Add(timeout)
-	for time.Now().Before(deadline) {
+	for checks := 0; time.Now().Before(deadline); checks++ {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		status, err := d.ReadReg32(ctx, RegStatus)
 		if err != nil {
 			return err
 		}
 		if status&(StatusBusy|StatusDone) != 0 {
 			return nil
+		}
+		if checks < 7 {
+			continue
 		}
 		if err := sleepContext(ctx, 50*time.Microsecond); err != nil {
 			return err
