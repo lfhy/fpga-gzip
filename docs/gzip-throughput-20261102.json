@@ -10502,6 +10502,2011 @@
         "unit": "decimal GB/s, input bytes / group wall time"
       }
     },
+    "prefetch32-sustained-after.json": {
+      "sha256": "cbfe54ed69f4edb34800e0f95ce1309bc6f95f490b37f96dd369ffb10b1db656",
+      "data": {
+        "arguments": [
+          "/data1/fpga-gzip-eightgb-20261101-ll4j3905/benchmark-policy",
+          "-source=/data1/compactfs-output-read-20261031-154041-fmjve2n4/compactfs-sdk-v0.0.2-20261031-154048-cq5kka6s/cpu/backend/chunks/xxh3-128/2e/05/2e05bbbfa4e774eb942dd905e3f28319",
+          "-patterns=fixture,text,random",
+          "-sizes-mib=256",
+          "-cores=4",
+          "-procs=16",
+          "-verify-procs=24",
+          "-per-core-mib=24576",
+          "-rounds=1",
+          "-h2c-mib=1",
+          "-slots=4",
+          "-packet-kib=1024",
+          "-output=/data1/fpga-gzip-eightgb-20261101-ll4j3905/prefetch32-sustained-after.json"
+        ],
+        "fixture": "/data1/compactfs-output-read-20261031-154041-fmjve2n4/compactfs-sdk-v0.0.2-20261031-154048-cq5kka6s/cpu/backend/chunks/xxh3-128/2e/05/2e05bbbfa4e774eb942dd905e3f28319",
+        "fixture_decoded_sha256": "d378f587d40daec3d80194bf95ba89d3b8851097cd5adc538ebff7955f5b77a1",
+        "go_version": "go1.26.0",
+        "legacy": false,
+        "mmap": false,
+        "options": {
+          "RingSlots": 4,
+          "H2CSlotBytes": 1048576,
+          "C2HRequestBytes": 32768,
+          "PacketRequestBytes": 1048576,
+          "DirectOutput": false,
+          "PollInterval": 50000,
+          "DrainIdle": 200000,
+          "ResetTimeout": 2000000000,
+          "StartTimeout": 1000000000,
+          "ProgressInterval": 100000000,
+          "MaxProcs": 16
+        },
+        "results": [
+          {
+            "pattern": "fixture",
+            "round": 1,
+            "cores": 4,
+            "procs": 16,
+            "chunk_bytes": 268435456,
+            "iterations_per_core": 96,
+            "input_bytes": 103079215104,
+            "output_bytes": 55280108544,
+            "seconds": 13.697424973,
+            "process_cpu_seconds": 20.453378999999998,
+            "gb_s": 7.525444768428154,
+            "allocated_bytes": 26370976,
+            "core_operations": [
+              {
+                "arms": {
+                  "calls": 13248,
+                  "nanos": 29611190
+                },
+                "c2h": {
+                  "calls": 13248,
+                  "nanos": 13361170709
+                },
+                "h2c": {
+                  "calls": 24576,
+                  "nanos": 13421858008
+                },
+                "snapshots": {
+                  "calls": 13248,
+                  "nanos": 68575284
+                }
+              },
+              {
+                "arms": {
+                  "calls": 13248,
+                  "nanos": 29699711
+                },
+                "c2h": {
+                  "calls": 13248,
+                  "nanos": 13375930553
+                },
+                "h2c": {
+                  "calls": 24576,
+                  "nanos": 13438554282
+                },
+                "snapshots": {
+                  "calls": 13248,
+                  "nanos": 69493116
+                }
+              },
+              {
+                "arms": {
+                  "calls": 13248,
+                  "nanos": 29416417
+                },
+                "c2h": {
+                  "calls": 13248,
+                  "nanos": 13367746058
+                },
+                "h2c": {
+                  "calls": 24576,
+                  "nanos": 13429750427
+                },
+                "snapshots": {
+                  "calls": 13248,
+                  "nanos": 69194221
+                }
+              },
+              {
+                "arms": {
+                  "calls": 13248,
+                  "nanos": 29515082
+                },
+                "c2h": {
+                  "calls": 13248,
+                  "nanos": 13550657643
+                },
+                "h2c": {
+                  "calls": 24576,
+                  "nanos": 13612724489
+                },
+                "snapshots": {
+                  "calls": 13248,
+                  "nanos": 69217996
+                }
+              }
+            ],
+            "verified": true,
+            "packet_reads": true,
+            "direct_output": false,
+            "c2h_request_bytes": 1048576,
+            "xdma_interrupts": 188365,
+            "verification_procs": 24
+          },
+          {
+            "pattern": "text",
+            "round": 1,
+            "cores": 4,
+            "procs": 16,
+            "chunk_bytes": 268435456,
+            "iterations_per_core": 96,
+            "input_bytes": 103079215104,
+            "output_bytes": 2862995712,
+            "seconds": 13.437686992,
+            "process_cpu_seconds": 15.536217999999963,
+            "gb_s": 7.670904610694328,
+            "allocated_bytes": 17913688,
+            "core_operations": [
+              {
+                "arms": {
+                  "calls": 768,
+                  "nanos": 2065020
+                },
+                "c2h": {
+                  "calls": 768,
+                  "nanos": 13262422425
+                },
+                "h2c": {
+                  "calls": 24576,
+                  "nanos": 13206640382
+                },
+                "snapshots": {
+                  "calls": 768,
+                  "nanos": 4248357
+                }
+              },
+              {
+                "arms": {
+                  "calls": 768,
+                  "nanos": 2025253
+                },
+                "c2h": {
+                  "calls": 768,
+                  "nanos": 13414675697
+                },
+                "h2c": {
+                  "calls": 24576,
+                  "nanos": 13355515575
+                },
+                "snapshots": {
+                  "calls": 768,
+                  "nanos": 4204022
+                }
+              },
+              {
+                "arms": {
+                  "calls": 768,
+                  "nanos": 2078576
+                },
+                "c2h": {
+                  "calls": 768,
+                  "nanos": 13403650028
+                },
+                "h2c": {
+                  "calls": 24576,
+                  "nanos": 13345592793
+                },
+                "snapshots": {
+                  "calls": 768,
+                  "nanos": 4233418
+                }
+              },
+              {
+                "arms": {
+                  "calls": 768,
+                  "nanos": 1984540
+                },
+                "c2h": {
+                  "calls": 768,
+                  "nanos": 13415371201
+                },
+                "h2c": {
+                  "calls": 24576,
+                  "nanos": 13357671932
+                },
+                "snapshots": {
+                  "calls": 768,
+                  "nanos": 4185486
+                }
+              }
+            ],
+            "verified": true,
+            "packet_reads": true,
+            "direct_output": false,
+            "c2h_request_bytes": 1048576,
+            "xdma_interrupts": 114528,
+            "verification_procs": 24
+          },
+          {
+            "pattern": "random",
+            "round": 1,
+            "cores": 4,
+            "procs": 16,
+            "chunk_bytes": 268435456,
+            "iterations_per_core": 96,
+            "input_bytes": 103079215104,
+            "output_bytes": 108782594304,
+            "seconds": 14.581920487,
+            "process_cpu_seconds": 32.58944399999996,
+            "gb_s": 7.068973884194244,
+            "allocated_bytes": 17922808,
+            "core_operations": [
+              {
+                "arms": {
+                  "calls": 26016,
+                  "nanos": 58698245
+                },
+                "c2h": {
+                  "calls": 26016,
+                  "nanos": 14318045980
+                },
+                "h2c": {
+                  "calls": 24576,
+                  "nanos": 14490616249
+                },
+                "snapshots": {
+                  "calls": 26016,
+                  "nanos": 135960781
+                }
+              },
+              {
+                "arms": {
+                  "calls": 26016,
+                  "nanos": 57980683
+                },
+                "c2h": {
+                  "calls": 26016,
+                  "nanos": 14309022639
+                },
+                "h2c": {
+                  "calls": 24576,
+                  "nanos": 14481417853
+                },
+                "snapshots": {
+                  "calls": 26016,
+                  "nanos": 136351053
+                }
+              },
+              {
+                "arms": {
+                  "calls": 26016,
+                  "nanos": 58558410
+                },
+                "c2h": {
+                  "calls": 26016,
+                  "nanos": 14311516480
+                },
+                "h2c": {
+                  "calls": 24576,
+                  "nanos": 14485888625
+                },
+                "snapshots": {
+                  "calls": 26016,
+                  "nanos": 137345313
+                }
+              },
+              {
+                "arms": {
+                  "calls": 26016,
+                  "nanos": 57587798
+                },
+                "c2h": {
+                  "calls": 26016,
+                  "nanos": 14316103102
+                },
+                "h2c": {
+                  "calls": 24576,
+                  "nanos": 14487130671
+                },
+                "snapshots": {
+                  "calls": 26016,
+                  "nanos": 136798257
+                }
+              }
+            ],
+            "verified": true,
+            "packet_reads": true,
+            "direct_output": false,
+            "c2h_request_bytes": 1048576,
+            "xdma_interrupts": 259349,
+            "verification_procs": 24
+          }
+        ],
+        "unit": "decimal GB/s, input bytes / group wall time"
+      }
+    },
+    "prefetch32-tune-h2c2.json": {
+      "sha256": "e1eee4f949455ab03a591d006907cf609aa6bea0405ddbe0654e5ff5c7b4798e",
+      "data": {
+        "arguments": [
+          "/data1/fpga-gzip-eightgb-20261101-ll4j3905/benchmark-policy",
+          "-source=/data1/compactfs-output-read-20261031-154041-fmjve2n4/compactfs-sdk-v0.0.2-20261031-154048-cq5kka6s/cpu/backend/chunks/xxh3-128/2e/05/2e05bbbfa4e774eb942dd905e3f28319",
+          "-patterns=fixture,text,random",
+          "-sizes-mib=256",
+          "-cores=4",
+          "-procs=16",
+          "-verify-procs=24",
+          "-per-core-mib=1024",
+          "-rounds=3",
+          "-h2c-mib=1",
+          "-slots=4",
+          "-packet-kib=1024",
+          "-h2c-mib=2",
+          "-output=/data1/fpga-gzip-eightgb-20261101-ll4j3905/prefetch32-tune-h2c2.json"
+        ],
+        "fixture": "/data1/compactfs-output-read-20261031-154041-fmjve2n4/compactfs-sdk-v0.0.2-20261031-154048-cq5kka6s/cpu/backend/chunks/xxh3-128/2e/05/2e05bbbfa4e774eb942dd905e3f28319",
+        "fixture_decoded_sha256": "d378f587d40daec3d80194bf95ba89d3b8851097cd5adc538ebff7955f5b77a1",
+        "go_version": "go1.26.0",
+        "legacy": false,
+        "mmap": false,
+        "options": {
+          "RingSlots": 4,
+          "H2CSlotBytes": 2097152,
+          "C2HRequestBytes": 32768,
+          "PacketRequestBytes": 1048576,
+          "DirectOutput": false,
+          "PollInterval": 50000,
+          "DrainIdle": 200000,
+          "ResetTimeout": 2000000000,
+          "StartTimeout": 1000000000,
+          "ProgressInterval": 100000000,
+          "MaxProcs": 16
+        },
+        "results": [
+          {
+            "pattern": "fixture",
+            "round": 1,
+            "cores": 4,
+            "procs": 16,
+            "chunk_bytes": 268435456,
+            "iterations_per_core": 4,
+            "input_bytes": 4294967296,
+            "output_bytes": 2303337856,
+            "seconds": 0.574057723,
+            "process_cpu_seconds": 0.9237549999999999,
+            "gb_s": 7.481769034574943,
+            "allocated_bytes": 24324688,
+            "core_operations": [
+              {
+                "arms": {
+                  "calls": 552,
+                  "nanos": 1213827
+                },
+                "c2h": {
+                  "calls": 552,
+                  "nanos": 565457886
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 568133699
+                },
+                "snapshots": {
+                  "calls": 552,
+                  "nanos": 2807419
+                }
+              },
+              {
+                "arms": {
+                  "calls": 552,
+                  "nanos": 1206618
+                },
+                "c2h": {
+                  "calls": 552,
+                  "nanos": 565328998
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 568286217
+                },
+                "snapshots": {
+                  "calls": 552,
+                  "nanos": 2832790
+                }
+              },
+              {
+                "arms": {
+                  "calls": 552,
+                  "nanos": 1225613
+                },
+                "c2h": {
+                  "calls": 552,
+                  "nanos": 565552904
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 568221458
+                },
+                "snapshots": {
+                  "calls": 552,
+                  "nanos": 2837993
+                }
+              },
+              {
+                "arms": {
+                  "calls": 552,
+                  "nanos": 1223130
+                },
+                "c2h": {
+                  "calls": 552,
+                  "nanos": 567853793
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 570545687
+                },
+                "snapshots": {
+                  "calls": 552,
+                  "nanos": 2849107
+                }
+              }
+            ],
+            "verified": true,
+            "packet_reads": true,
+            "direct_output": false,
+            "c2h_request_bytes": 1048576,
+            "xdma_interrupts": 5707,
+            "verification_procs": 24
+          },
+          {
+            "pattern": "text",
+            "round": 1,
+            "cores": 4,
+            "procs": 16,
+            "chunk_bytes": 268435456,
+            "iterations_per_core": 4,
+            "input_bytes": 4294967296,
+            "output_bytes": 119291488,
+            "seconds": 0.556403102,
+            "process_cpu_seconds": 0.5047069999999998,
+            "gb_s": 7.719164901420697,
+            "allocated_bytes": 15882048,
+            "core_operations": [
+              {
+                "arms": {
+                  "calls": 32,
+                  "nanos": 86338
+                },
+                "c2h": {
+                  "calls": 32,
+                  "nanos": 554442375
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 552564362
+                },
+                "snapshots": {
+                  "calls": 32,
+                  "nanos": 179017
+                }
+              },
+              {
+                "arms": {
+                  "calls": 32,
+                  "nanos": 89681
+                },
+                "c2h": {
+                  "calls": 32,
+                  "nanos": 554491767
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 552691529
+                },
+                "snapshots": {
+                  "calls": 32,
+                  "nanos": 177294
+                }
+              },
+              {
+                "arms": {
+                  "calls": 32,
+                  "nanos": 82399
+                },
+                "c2h": {
+                  "calls": 32,
+                  "nanos": 555229951
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 553198264
+                },
+                "snapshots": {
+                  "calls": 32,
+                  "nanos": 169963
+                }
+              },
+              {
+                "arms": {
+                  "calls": 32,
+                  "nanos": 82978
+                },
+                "c2h": {
+                  "calls": 32,
+                  "nanos": 555356593
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 553259694
+                },
+                "snapshots": {
+                  "calls": 32,
+                  "nanos": 193893
+                }
+              }
+            ],
+            "verified": true,
+            "packet_reads": true,
+            "direct_output": false,
+            "c2h_request_bytes": 1048576,
+            "xdma_interrupts": 2718,
+            "verification_procs": 24
+          },
+          {
+            "pattern": "random",
+            "round": 1,
+            "cores": 4,
+            "procs": 16,
+            "chunk_bytes": 268435456,
+            "iterations_per_core": 4,
+            "input_bytes": 4294967296,
+            "output_bytes": 4532608096,
+            "seconds": 0.611991543,
+            "process_cpu_seconds": 1.2034809999999965,
+            "gb_s": 7.018017397668516,
+            "allocated_bytes": 15882752,
+            "core_operations": [
+              {
+                "arms": {
+                  "calls": 1084,
+                  "nanos": 2290266
+                },
+                "c2h": {
+                  "calls": 1084,
+                  "nanos": 597682060
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 605020729
+                },
+                "snapshots": {
+                  "calls": 1084,
+                  "nanos": 5547404
+                }
+              },
+              {
+                "arms": {
+                  "calls": 1084,
+                  "nanos": 2362992
+                },
+                "c2h": {
+                  "calls": 1084,
+                  "nanos": 598836648
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 605883644
+                },
+                "snapshots": {
+                  "calls": 1084,
+                  "nanos": 5573858
+                }
+              },
+              {
+                "arms": {
+                  "calls": 1084,
+                  "nanos": 2538842
+                },
+                "c2h": {
+                  "calls": 1084,
+                  "nanos": 598367276
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 606420323
+                },
+                "snapshots": {
+                  "calls": 1084,
+                  "nanos": 5776684
+                }
+              },
+              {
+                "arms": {
+                  "calls": 1084,
+                  "nanos": 2532966
+                },
+                "c2h": {
+                  "calls": 1084,
+                  "nanos": 600384702
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 608652798
+                },
+                "snapshots": {
+                  "calls": 1084,
+                  "nanos": 5824513
+                }
+              }
+            ],
+            "verified": true,
+            "packet_reads": true,
+            "direct_output": false,
+            "c2h_request_bytes": 1048576,
+            "xdma_interrupts": 8998,
+            "verification_procs": 24
+          },
+          {
+            "pattern": "fixture",
+            "round": 2,
+            "cores": 4,
+            "procs": 16,
+            "chunk_bytes": 268435456,
+            "iterations_per_core": 4,
+            "input_bytes": 4294967296,
+            "output_bytes": 2303337856,
+            "seconds": 0.567264424,
+            "process_cpu_seconds": 0.8358670000000075,
+            "gb_s": 7.571367274743816,
+            "allocated_bytes": 15879816,
+            "core_operations": [
+              {
+                "arms": {
+                  "calls": 552,
+                  "nanos": 1249000
+                },
+                "c2h": {
+                  "calls": 552,
+                  "nanos": 559663076
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 562626229
+                },
+                "snapshots": {
+                  "calls": 552,
+                  "nanos": 2860381
+                }
+              },
+              {
+                "arms": {
+                  "calls": 552,
+                  "nanos": 1226178
+                },
+                "c2h": {
+                  "calls": 552,
+                  "nanos": 560649108
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 563418035
+                },
+                "snapshots": {
+                  "calls": 552,
+                  "nanos": 2845775
+                }
+              },
+              {
+                "arms": {
+                  "calls": 552,
+                  "nanos": 1207320
+                },
+                "c2h": {
+                  "calls": 552,
+                  "nanos": 561234060
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 564231473
+                },
+                "snapshots": {
+                  "calls": 552,
+                  "nanos": 2855951
+                }
+              },
+              {
+                "arms": {
+                  "calls": 552,
+                  "nanos": 1222310
+                },
+                "c2h": {
+                  "calls": 552,
+                  "nanos": 559354504
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 562368568
+                },
+                "snapshots": {
+                  "calls": 552,
+                  "nanos": 2857854
+                }
+              }
+            ],
+            "verified": true,
+            "packet_reads": true,
+            "direct_output": false,
+            "c2h_request_bytes": 1048576,
+            "xdma_interrupts": 5821,
+            "verification_procs": 24
+          },
+          {
+            "pattern": "text",
+            "round": 2,
+            "cores": 4,
+            "procs": 16,
+            "chunk_bytes": 268435456,
+            "iterations_per_core": 4,
+            "input_bytes": 4294967296,
+            "output_bytes": 119291488,
+            "seconds": 0.55561758,
+            "process_cpu_seconds": 0.5799909999999926,
+            "gb_s": 7.730078115958821,
+            "allocated_bytes": 15884528,
+            "core_operations": [
+              {
+                "arms": {
+                  "calls": 32,
+                  "nanos": 83224
+                },
+                "c2h": {
+                  "calls": 32,
+                  "nanos": 553619305
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 551528492
+                },
+                "snapshots": {
+                  "calls": 32,
+                  "nanos": 171322
+                }
+              },
+              {
+                "arms": {
+                  "calls": 32,
+                  "nanos": 79452
+                },
+                "c2h": {
+                  "calls": 32,
+                  "nanos": 553588928
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 551507784
+                },
+                "snapshots": {
+                  "calls": 32,
+                  "nanos": 165916
+                }
+              },
+              {
+                "arms": {
+                  "calls": 32,
+                  "nanos": 99784
+                },
+                "c2h": {
+                  "calls": 32,
+                  "nanos": 553449929
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 551518801
+                },
+                "snapshots": {
+                  "calls": 32,
+                  "nanos": 178276
+                }
+              },
+              {
+                "arms": {
+                  "calls": 32,
+                  "nanos": 79359
+                },
+                "c2h": {
+                  "calls": 32,
+                  "nanos": 554616495
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 552638399
+                },
+                "snapshots": {
+                  "calls": 32,
+                  "nanos": 173938
+                }
+              }
+            ],
+            "verified": true,
+            "packet_reads": true,
+            "direct_output": false,
+            "c2h_request_bytes": 1048576,
+            "xdma_interrupts": 2751,
+            "verification_procs": 24
+          },
+          {
+            "pattern": "random",
+            "round": 2,
+            "cores": 4,
+            "procs": 16,
+            "chunk_bytes": 268435456,
+            "iterations_per_core": 4,
+            "input_bytes": 4294967296,
+            "output_bytes": 4532608096,
+            "seconds": 0.613926778,
+            "process_cpu_seconds": 1.2945920000000086,
+            "gb_s": 6.995895031638447,
+            "allocated_bytes": 15880592,
+            "core_operations": [
+              {
+                "arms": {
+                  "calls": 1084,
+                  "nanos": 2320418
+                },
+                "c2h": {
+                  "calls": 1084,
+                  "nanos": 602655228
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 609751809
+                },
+                "snapshots": {
+                  "calls": 1084,
+                  "nanos": 5541845
+                }
+              },
+              {
+                "arms": {
+                  "calls": 1084,
+                  "nanos": 2546203
+                },
+                "c2h": {
+                  "calls": 1084,
+                  "nanos": 601851417
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 609852582
+                },
+                "snapshots": {
+                  "calls": 1084,
+                  "nanos": 5777691
+                }
+              },
+              {
+                "arms": {
+                  "calls": 1084,
+                  "nanos": 2355367
+                },
+                "c2h": {
+                  "calls": 1084,
+                  "nanos": 601031568
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 608250371
+                },
+                "snapshots": {
+                  "calls": 1084,
+                  "nanos": 5561494
+                }
+              },
+              {
+                "arms": {
+                  "calls": 1084,
+                  "nanos": 2377863
+                },
+                "c2h": {
+                  "calls": 1084,
+                  "nanos": 603291736
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 610373611
+                },
+                "snapshots": {
+                  "calls": 1084,
+                  "nanos": 5567466
+                }
+              }
+            ],
+            "verified": true,
+            "packet_reads": true,
+            "direct_output": false,
+            "c2h_request_bytes": 1048576,
+            "xdma_interrupts": 8688,
+            "verification_procs": 24
+          },
+          {
+            "pattern": "fixture",
+            "round": 3,
+            "cores": 4,
+            "procs": 16,
+            "chunk_bytes": 268435456,
+            "iterations_per_core": 4,
+            "input_bytes": 4294967296,
+            "output_bytes": 2303337856,
+            "seconds": 0.57346128,
+            "process_cpu_seconds": 0.8687620000000038,
+            "gb_s": 7.489550638885332,
+            "allocated_bytes": 15882368,
+            "core_operations": [
+              {
+                "arms": {
+                  "calls": 552,
+                  "nanos": 1360844
+                },
+                "c2h": {
+                  "calls": 552,
+                  "nanos": 566787496
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 570385671
+                },
+                "snapshots": {
+                  "calls": 552,
+                  "nanos": 3055843
+                }
+              },
+              {
+                "arms": {
+                  "calls": 552,
+                  "nanos": 1204499
+                },
+                "c2h": {
+                  "calls": 552,
+                  "nanos": 561607089
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 564512583
+                },
+                "snapshots": {
+                  "calls": 552,
+                  "nanos": 2815594
+                }
+              },
+              {
+                "arms": {
+                  "calls": 552,
+                  "nanos": 1233352
+                },
+                "c2h": {
+                  "calls": 552,
+                  "nanos": 563977712
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 566934103
+                },
+                "snapshots": {
+                  "calls": 552,
+                  "nanos": 2892837
+                }
+              },
+              {
+                "arms": {
+                  "calls": 552,
+                  "nanos": 1222497
+                },
+                "c2h": {
+                  "calls": 552,
+                  "nanos": 562035496
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 564870236
+                },
+                "snapshots": {
+                  "calls": 552,
+                  "nanos": 2862484
+                }
+              }
+            ],
+            "verified": true,
+            "packet_reads": true,
+            "direct_output": false,
+            "c2h_request_bytes": 1048576,
+            "xdma_interrupts": 5819,
+            "verification_procs": 24
+          },
+          {
+            "pattern": "text",
+            "round": 3,
+            "cores": 4,
+            "procs": 16,
+            "chunk_bytes": 268435456,
+            "iterations_per_core": 4,
+            "input_bytes": 4294967296,
+            "output_bytes": 119291488,
+            "seconds": 0.556712236,
+            "process_cpu_seconds": 0.5413660000000107,
+            "gb_s": 7.71487856430014,
+            "allocated_bytes": 15881048,
+            "core_operations": [
+              {
+                "arms": {
+                  "calls": 32,
+                  "nanos": 80080
+                },
+                "c2h": {
+                  "calls": 32,
+                  "nanos": 555684140
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 553689090
+                },
+                "snapshots": {
+                  "calls": 32,
+                  "nanos": 168339
+                }
+              },
+              {
+                "arms": {
+                  "calls": 32,
+                  "nanos": 81522
+                },
+                "c2h": {
+                  "calls": 32,
+                  "nanos": 555385894
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 553609811
+                },
+                "snapshots": {
+                  "calls": 32,
+                  "nanos": 167580
+                }
+              },
+              {
+                "arms": {
+                  "calls": 32,
+                  "nanos": 93925
+                },
+                "c2h": {
+                  "calls": 32,
+                  "nanos": 554435493
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 552642170
+                },
+                "snapshots": {
+                  "calls": 32,
+                  "nanos": 183768
+                }
+              },
+              {
+                "arms": {
+                  "calls": 32,
+                  "nanos": 79588
+                },
+                "c2h": {
+                  "calls": 32,
+                  "nanos": 555254121
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 553515341
+                },
+                "snapshots": {
+                  "calls": 32,
+                  "nanos": 165860
+                }
+              }
+            ],
+            "verified": true,
+            "packet_reads": true,
+            "direct_output": false,
+            "c2h_request_bytes": 1048576,
+            "xdma_interrupts": 2701,
+            "verification_procs": 24
+          },
+          {
+            "pattern": "random",
+            "round": 3,
+            "cores": 4,
+            "procs": 16,
+            "chunk_bytes": 268435456,
+            "iterations_per_core": 4,
+            "input_bytes": 4294967296,
+            "output_bytes": 4532608096,
+            "seconds": 0.617337406,
+            "process_cpu_seconds": 1.2601599999999848,
+            "gb_s": 6.957244538005527,
+            "allocated_bytes": 15881520,
+            "core_operations": [
+              {
+                "arms": {
+                  "calls": 1084,
+                  "nanos": 2562406
+                },
+                "c2h": {
+                  "calls": 1084,
+                  "nanos": 605475497
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 613691366
+                },
+                "snapshots": {
+                  "calls": 1084,
+                  "nanos": 5805921
+                }
+              },
+              {
+                "arms": {
+                  "calls": 1084,
+                  "nanos": 2490083
+                },
+                "c2h": {
+                  "calls": 1084,
+                  "nanos": 599411680
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 607328924
+                },
+                "snapshots": {
+                  "calls": 1084,
+                  "nanos": 5699105
+                }
+              },
+              {
+                "arms": {
+                  "calls": 1084,
+                  "nanos": 2384848
+                },
+                "c2h": {
+                  "calls": 1084,
+                  "nanos": 598046662
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 605644371
+                },
+                "snapshots": {
+                  "calls": 1084,
+                  "nanos": 5622319
+                }
+              },
+              {
+                "arms": {
+                  "calls": 1084,
+                  "nanos": 2337448
+                },
+                "c2h": {
+                  "calls": 1084,
+                  "nanos": 600989034
+                },
+                "h2c": {
+                  "calls": 512,
+                  "nanos": 608510530
+                },
+                "snapshots": {
+                  "calls": 1084,
+                  "nanos": 5582431
+                }
+              }
+            ],
+            "verified": true,
+            "packet_reads": true,
+            "direct_output": false,
+            "c2h_request_bytes": 1048576,
+            "xdma_interrupts": 8974,
+            "verification_procs": 24
+          }
+        ],
+        "unit": "decimal GB/s, input bytes / group wall time"
+      }
+    },
+    "prefetch32-tune-h2c4.json": {
+      "sha256": "cb32fb95649a1a7394275ea7be5f0ff014c3b1911bfe8f725f1e063dd43748c5",
+      "data": {
+        "arguments": [
+          "/data1/fpga-gzip-eightgb-20261101-ll4j3905/benchmark-policy",
+          "-source=/data1/compactfs-output-read-20261031-154041-fmjve2n4/compactfs-sdk-v0.0.2-20261031-154048-cq5kka6s/cpu/backend/chunks/xxh3-128/2e/05/2e05bbbfa4e774eb942dd905e3f28319",
+          "-patterns=fixture,text,random",
+          "-sizes-mib=256",
+          "-cores=4",
+          "-procs=16",
+          "-verify-procs=24",
+          "-per-core-mib=1024",
+          "-rounds=3",
+          "-h2c-mib=1",
+          "-slots=4",
+          "-packet-kib=1024",
+          "-h2c-mib=4",
+          "-output=/data1/fpga-gzip-eightgb-20261101-ll4j3905/prefetch32-tune-h2c4.json"
+        ],
+        "fixture": "/data1/compactfs-output-read-20261031-154041-fmjve2n4/compactfs-sdk-v0.0.2-20261031-154048-cq5kka6s/cpu/backend/chunks/xxh3-128/2e/05/2e05bbbfa4e774eb942dd905e3f28319",
+        "fixture_decoded_sha256": "d378f587d40daec3d80194bf95ba89d3b8851097cd5adc538ebff7955f5b77a1",
+        "go_version": "go1.26.0",
+        "legacy": false,
+        "mmap": false,
+        "options": {
+          "RingSlots": 4,
+          "H2CSlotBytes": 4194304,
+          "C2HRequestBytes": 32768,
+          "PacketRequestBytes": 1048576,
+          "DirectOutput": false,
+          "PollInterval": 50000,
+          "DrainIdle": 200000,
+          "ResetTimeout": 2000000000,
+          "StartTimeout": 1000000000,
+          "ProgressInterval": 100000000,
+          "MaxProcs": 16
+        },
+        "results": [
+          {
+            "pattern": "fixture",
+            "round": 1,
+            "cores": 4,
+            "procs": 16,
+            "chunk_bytes": 268435456,
+            "iterations_per_core": 4,
+            "input_bytes": 4294967296,
+            "output_bytes": 2303337856,
+            "seconds": 0.571249194,
+            "process_cpu_seconds": 0.8158190000000001,
+            "gb_s": 7.518552920706616,
+            "allocated_bytes": 24318992,
+            "core_operations": [
+              {
+                "arms": {
+                  "calls": 552,
+                  "nanos": 1193946
+                },
+                "c2h": {
+                  "calls": 552,
+                  "nanos": 563405313
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 565654162
+                },
+                "snapshots": {
+                  "calls": 552,
+                  "nanos": 2773542
+                }
+              },
+              {
+                "arms": {
+                  "calls": 552,
+                  "nanos": 1280871
+                },
+                "c2h": {
+                  "calls": 552,
+                  "nanos": 563071309
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 565852366
+                },
+                "snapshots": {
+                  "calls": 552,
+                  "nanos": 2914685
+                }
+              },
+              {
+                "arms": {
+                  "calls": 552,
+                  "nanos": 1194324
+                },
+                "c2h": {
+                  "calls": 552,
+                  "nanos": 564938584
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 567459319
+                },
+                "snapshots": {
+                  "calls": 552,
+                  "nanos": 2850265
+                }
+              },
+              {
+                "arms": {
+                  "calls": 552,
+                  "nanos": 1190850
+                },
+                "c2h": {
+                  "calls": 552,
+                  "nanos": 563502069
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 565814247
+                },
+                "snapshots": {
+                  "calls": 552,
+                  "nanos": 2793888
+                }
+              }
+            ],
+            "verified": true,
+            "packet_reads": true,
+            "direct_output": false,
+            "c2h_request_bytes": 1048576,
+            "xdma_interrupts": 4738,
+            "verification_procs": 24
+          },
+          {
+            "pattern": "text",
+            "round": 1,
+            "cores": 4,
+            "procs": 16,
+            "chunk_bytes": 268435456,
+            "iterations_per_core": 4,
+            "input_bytes": 4294967296,
+            "output_bytes": 119291488,
+            "seconds": 0.557563343,
+            "process_cpu_seconds": 0.4936039999999977,
+            "gb_s": 7.70310198818074,
+            "allocated_bytes": 15885896,
+            "core_operations": [
+              {
+                "arms": {
+                  "calls": 32,
+                  "nanos": 79805
+                },
+                "c2h": {
+                  "calls": 32,
+                  "nanos": 556107232
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 553980574
+                },
+                "snapshots": {
+                  "calls": 32,
+                  "nanos": 169886
+                }
+              },
+              {
+                "arms": {
+                  "calls": 32,
+                  "nanos": 83417
+                },
+                "c2h": {
+                  "calls": 32,
+                  "nanos": 556461563
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 554097164
+                },
+                "snapshots": {
+                  "calls": 32,
+                  "nanos": 164414
+                }
+              },
+              {
+                "arms": {
+                  "calls": 32,
+                  "nanos": 81522
+                },
+                "c2h": {
+                  "calls": 32,
+                  "nanos": 555522583
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 553247361
+                },
+                "snapshots": {
+                  "calls": 32,
+                  "nanos": 171029
+                }
+              },
+              {
+                "arms": {
+                  "calls": 32,
+                  "nanos": 86000
+                },
+                "c2h": {
+                  "calls": 32,
+                  "nanos": 555436415
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 553232068
+                },
+                "snapshots": {
+                  "calls": 32,
+                  "nanos": 174174
+                }
+              }
+            ],
+            "verified": true,
+            "packet_reads": true,
+            "direct_output": false,
+            "c2h_request_bytes": 1048576,
+            "xdma_interrupts": 1716,
+            "verification_procs": 24
+          },
+          {
+            "pattern": "random",
+            "round": 1,
+            "cores": 4,
+            "procs": 16,
+            "chunk_bytes": 268435456,
+            "iterations_per_core": 4,
+            "input_bytes": 4294967296,
+            "output_bytes": 4532608096,
+            "seconds": 0.609874324,
+            "process_cpu_seconds": 1.1766719999999964,
+            "gb_s": 7.0423809086279885,
+            "allocated_bytes": 15884216,
+            "core_operations": [
+              {
+                "arms": {
+                  "calls": 1084,
+                  "nanos": 2292169
+                },
+                "c2h": {
+                  "calls": 1084,
+                  "nanos": 597688657
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 604556576
+                },
+                "snapshots": {
+                  "calls": 1084,
+                  "nanos": 5525266
+                }
+              },
+              {
+                "arms": {
+                  "calls": 1084,
+                  "nanos": 2457150
+                },
+                "c2h": {
+                  "calls": 1084,
+                  "nanos": 598128359
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 605646545
+                },
+                "snapshots": {
+                  "calls": 1084,
+                  "nanos": 5692851
+                }
+              },
+              {
+                "arms": {
+                  "calls": 1084,
+                  "nanos": 2443397
+                },
+                "c2h": {
+                  "calls": 1084,
+                  "nanos": 598646295
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 606098646
+                },
+                "snapshots": {
+                  "calls": 1084,
+                  "nanos": 5717795
+                }
+              },
+              {
+                "arms": {
+                  "calls": 1084,
+                  "nanos": 2331449
+                },
+                "c2h": {
+                  "calls": 1084,
+                  "nanos": 598108489
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 605189500
+                },
+                "snapshots": {
+                  "calls": 1084,
+                  "nanos": 5576773
+                }
+              }
+            ],
+            "verified": true,
+            "packet_reads": true,
+            "direct_output": false,
+            "c2h_request_bytes": 1048576,
+            "xdma_interrupts": 7914,
+            "verification_procs": 24
+          },
+          {
+            "pattern": "fixture",
+            "round": 2,
+            "cores": 4,
+            "procs": 16,
+            "chunk_bytes": 268435456,
+            "iterations_per_core": 4,
+            "input_bytes": 4294967296,
+            "output_bytes": 2303337856,
+            "seconds": 0.570665677,
+            "process_cpu_seconds": 0.81491299999999,
+            "gb_s": 7.526240790542586,
+            "allocated_bytes": 15879016,
+            "core_operations": [
+              {
+                "arms": {
+                  "calls": 552,
+                  "nanos": 1199019
+                },
+                "c2h": {
+                  "calls": 552,
+                  "nanos": 564695583
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 566951790
+                },
+                "snapshots": {
+                  "calls": 552,
+                  "nanos": 2812225
+                }
+              },
+              {
+                "arms": {
+                  "calls": 552,
+                  "nanos": 1248453
+                },
+                "c2h": {
+                  "calls": 552,
+                  "nanos": 562660028
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 565339442
+                },
+                "snapshots": {
+                  "calls": 552,
+                  "nanos": 2861409
+                }
+              },
+              {
+                "arms": {
+                  "calls": 552,
+                  "nanos": 1256121
+                },
+                "c2h": {
+                  "calls": 552,
+                  "nanos": 563117410
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 566005201
+                },
+                "snapshots": {
+                  "calls": 552,
+                  "nanos": 2855083
+                }
+              },
+              {
+                "arms": {
+                  "calls": 552,
+                  "nanos": 1173990
+                },
+                "c2h": {
+                  "calls": 552,
+                  "nanos": 563258589
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 565584168
+                },
+                "snapshots": {
+                  "calls": 552,
+                  "nanos": 2792813
+                }
+              }
+            ],
+            "verified": true,
+            "packet_reads": true,
+            "direct_output": false,
+            "c2h_request_bytes": 1048576,
+            "xdma_interrupts": 4787,
+            "verification_procs": 24
+          },
+          {
+            "pattern": "text",
+            "round": 2,
+            "cores": 4,
+            "procs": 16,
+            "chunk_bytes": 268435456,
+            "iterations_per_core": 4,
+            "input_bytes": 4294967296,
+            "output_bytes": 119291488,
+            "seconds": 0.558359637,
+            "process_cpu_seconds": 0.4846199999999925,
+            "gb_s": 7.692116355466432,
+            "allocated_bytes": 15880472,
+            "core_operations": [
+              {
+                "arms": {
+                  "calls": 32,
+                  "nanos": 82086
+                },
+                "c2h": {
+                  "calls": 32,
+                  "nanos": 555746748
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 553324550
+                },
+                "snapshots": {
+                  "calls": 32,
+                  "nanos": 171051
+                }
+              },
+              {
+                "arms": {
+                  "calls": 32,
+                  "nanos": 83771
+                },
+                "c2h": {
+                  "calls": 32,
+                  "nanos": 555499275
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 553173788
+                },
+                "snapshots": {
+                  "calls": 32,
+                  "nanos": 167619
+                }
+              },
+              {
+                "arms": {
+                  "calls": 32,
+                  "nanos": 92844
+                },
+                "c2h": {
+                  "calls": 32,
+                  "nanos": 557010335
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 554912696
+                },
+                "snapshots": {
+                  "calls": 32,
+                  "nanos": 178731
+                }
+              },
+              {
+                "arms": {
+                  "calls": 32,
+                  "nanos": 88525
+                },
+                "c2h": {
+                  "calls": 32,
+                  "nanos": 555471591
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 553305926
+                },
+                "snapshots": {
+                  "calls": 32,
+                  "nanos": 174620
+                }
+              }
+            ],
+            "verified": true,
+            "packet_reads": true,
+            "direct_output": false,
+            "c2h_request_bytes": 1048576,
+            "xdma_interrupts": 1703,
+            "verification_procs": 24
+          },
+          {
+            "pattern": "random",
+            "round": 2,
+            "cores": 4,
+            "procs": 16,
+            "chunk_bytes": 268435456,
+            "iterations_per_core": 4,
+            "input_bytes": 4294967296,
+            "output_bytes": 4532608096,
+            "seconds": 0.615063839,
+            "process_cpu_seconds": 1.171256999999997,
+            "gb_s": 6.982961806018319,
+            "allocated_bytes": 15881192,
+            "core_operations": [
+              {
+                "arms": {
+                  "calls": 1084,
+                  "nanos": 2292474
+                },
+                "c2h": {
+                  "calls": 1084,
+                  "nanos": 597935571
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 604786759
+                },
+                "snapshots": {
+                  "calls": 1084,
+                  "nanos": 5498939
+                }
+              },
+              {
+                "arms": {
+                  "calls": 1084,
+                  "nanos": 2352213
+                },
+                "c2h": {
+                  "calls": 1084,
+                  "nanos": 597081422
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 603960029
+                },
+                "snapshots": {
+                  "calls": 1084,
+                  "nanos": 5515456
+                }
+              },
+              {
+                "arms": {
+                  "calls": 1084,
+                  "nanos": 2491744
+                },
+                "c2h": {
+                  "calls": 1084,
+                  "nanos": 603464294
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 611106715
+                },
+                "snapshots": {
+                  "calls": 1084,
+                  "nanos": 5746377
+                }
+              },
+              {
+                "arms": {
+                  "calls": 1084,
+                  "nanos": 2314871
+                },
+                "c2h": {
+                  "calls": 1084,
+                  "nanos": 598121563
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 605025225
+                },
+                "snapshots": {
+                  "calls": 1084,
+                  "nanos": 5557350
+                }
+              }
+            ],
+            "verified": true,
+            "packet_reads": true,
+            "direct_output": false,
+            "c2h_request_bytes": 1048576,
+            "xdma_interrupts": 7899,
+            "verification_procs": 24
+          },
+          {
+            "pattern": "fixture",
+            "round": 3,
+            "cores": 4,
+            "procs": 16,
+            "chunk_bytes": 268435456,
+            "iterations_per_core": 4,
+            "input_bytes": 4294967296,
+            "output_bytes": 2303337856,
+            "seconds": 0.569706932,
+            "process_cpu_seconds": 0.7942510000000027,
+            "gb_s": 7.538906505704937,
+            "allocated_bytes": 15880800,
+            "core_operations": [
+              {
+                "arms": {
+                  "calls": 552,
+                  "nanos": 1176573
+                },
+                "c2h": {
+                  "calls": 552,
+                  "nanos": 562406318
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 564603879
+                },
+                "snapshots": {
+                  "calls": 552,
+                  "nanos": 2826576
+                }
+              },
+              {
+                "arms": {
+                  "calls": 552,
+                  "nanos": 1211217
+                },
+                "c2h": {
+                  "calls": 552,
+                  "nanos": 561274594
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 563800568
+                },
+                "snapshots": {
+                  "calls": 552,
+                  "nanos": 2827289
+                }
+              },
+              {
+                "arms": {
+                  "calls": 552,
+                  "nanos": 1239803
+                },
+                "c2h": {
+                  "calls": 552,
+                  "nanos": 563598057
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 566304474
+                },
+                "snapshots": {
+                  "calls": 552,
+                  "nanos": 2900580
+                }
+              },
+              {
+                "arms": {
+                  "calls": 552,
+                  "nanos": 1195079
+                },
+                "c2h": {
+                  "calls": 552,
+                  "nanos": 562682587
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 565335272
+                },
+                "snapshots": {
+                  "calls": 552,
+                  "nanos": 2815446
+                }
+              }
+            ],
+            "verified": true,
+            "packet_reads": true,
+            "direct_output": false,
+            "c2h_request_bytes": 1048576,
+            "xdma_interrupts": 4818,
+            "verification_procs": 24
+          },
+          {
+            "pattern": "text",
+            "round": 3,
+            "cores": 4,
+            "procs": 16,
+            "chunk_bytes": 268435456,
+            "iterations_per_core": 4,
+            "input_bytes": 4294967296,
+            "output_bytes": 119291488,
+            "seconds": 0.557921373,
+            "process_cpu_seconds": 0.47845900000001507,
+            "gb_s": 7.698158743956203,
+            "allocated_bytes": 15880296,
+            "core_operations": [
+              {
+                "arms": {
+                  "calls": 32,
+                  "nanos": 85850
+                },
+                "c2h": {
+                  "calls": 32,
+                  "nanos": 555392240
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 553217197
+                },
+                "snapshots": {
+                  "calls": 32,
+                  "nanos": 171592
+                }
+              },
+              {
+                "arms": {
+                  "calls": 32,
+                  "nanos": 82969
+                },
+                "c2h": {
+                  "calls": 32,
+                  "nanos": 555862926
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 553471591
+                },
+                "snapshots": {
+                  "calls": 32,
+                  "nanos": 165996
+                }
+              },
+              {
+                "arms": {
+                  "calls": 32,
+                  "nanos": 90106
+                },
+                "c2h": {
+                  "calls": 32,
+                  "nanos": 555365227
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 553166300
+                },
+                "snapshots": {
+                  "calls": 32,
+                  "nanos": 176289
+                }
+              },
+              {
+                "arms": {
+                  "calls": 32,
+                  "nanos": 77655
+                },
+                "c2h": {
+                  "calls": 32,
+                  "nanos": 556779071
+                },
+                "h2c": {
+                  "calls": 256,
+                  "nanos": 554562730
+                },
+                "snapshots": {
+                  "calls": 32,
+                  "nanos": 167075
+                }
+              }
+            ],
+            "verified": true,
+            "packet_reads": true,
+            "direct_output": false,
+            "c2h_request_bytes": 1048576,
+            "xdma_interrupts": 1701,
+            "verification_procs": 24
+          }
+        ],
+        "unit": "decimal GB/s, input bytes / group wall time"
+      }
+    },
     "scan-c2h16.json": {
       "sha256": "3f2dfee3d19851ded647b67d68ef1a59014b5bb36b9cec9c7d713a3a86b94580",
       "data": {
@@ -19848,6 +21853,66 @@
         "median_gb_s": 7.6203765829647585,
         "min_gb_s": 7.611357949397861,
         "max_gb_s": 7.635035322413305
+      }
+    },
+    "prefetch32-sustained-after.json": {
+      "fixture/256MiB/4cores/P16": {
+        "rounds": 1,
+        "median_gb_s": 7.525444768428154,
+        "min_gb_s": 7.525444768428154,
+        "max_gb_s": 7.525444768428154
+      },
+      "text/256MiB/4cores/P16": {
+        "rounds": 1,
+        "median_gb_s": 7.670904610694328,
+        "min_gb_s": 7.670904610694328,
+        "max_gb_s": 7.670904610694328
+      },
+      "random/256MiB/4cores/P16": {
+        "rounds": 1,
+        "median_gb_s": 7.068973884194244,
+        "min_gb_s": 7.068973884194244,
+        "max_gb_s": 7.068973884194244
+      }
+    },
+    "prefetch32-tune-h2c2.json": {
+      "fixture/256MiB/4cores/P16": {
+        "rounds": 3,
+        "median_gb_s": 7.489550638885332,
+        "min_gb_s": 7.481769034574943,
+        "max_gb_s": 7.571367274743816
+      },
+      "text/256MiB/4cores/P16": {
+        "rounds": 3,
+        "median_gb_s": 7.719164901420697,
+        "min_gb_s": 7.71487856430014,
+        "max_gb_s": 7.730078115958821
+      },
+      "random/256MiB/4cores/P16": {
+        "rounds": 3,
+        "median_gb_s": 6.995895031638447,
+        "min_gb_s": 6.957244538005527,
+        "max_gb_s": 7.018017397668516
+      }
+    },
+    "prefetch32-tune-h2c4.json": {
+      "fixture/256MiB/4cores/P16": {
+        "rounds": 3,
+        "median_gb_s": 7.526240790542586,
+        "min_gb_s": 7.518552920706616,
+        "max_gb_s": 7.538906505704937
+      },
+      "text/256MiB/4cores/P16": {
+        "rounds": 3,
+        "median_gb_s": 7.698158743956203,
+        "min_gb_s": 7.692116355466432,
+        "max_gb_s": 7.70310198818074
+      },
+      "random/256MiB/4cores/P16": {
+        "rounds": 2,
+        "median_gb_s": 7.012671357323153,
+        "min_gb_s": 6.982961806018319,
+        "max_gb_s": 7.0423809086279885
       }
     },
     "scan-c2h16.json": {

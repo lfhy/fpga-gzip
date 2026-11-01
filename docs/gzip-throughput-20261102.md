@@ -33,6 +33,26 @@ hold WHS 为 0.010 ns，内部未约束端点和 DRC 错误均为 0。
 `b27a75067ed8e4f98a93c4976d0d698e78cd58763acbd001a8a488537981fc47`。
 构建脚本、RTL 与仿真见 [固件源码](../firmware/multialgo/README.md)。
 
+## 96 GiB 持续压测
+
+保持 256 MiB 分块、16 个 P、四核和默认有界输出，将每核输入增加至 24 GiB，
+每组共 96 GiB；以下各一轮，全部输出完整解压比较：
+
+| 输入 | 原固件 GB/s | 32 KiB 输入预取 GB/s | 输入预取进程 CPU 秒 |
+| --- | ---: | ---: | ---: |
+| 混合 | 7.287 | 7.525 | 20.453 |
+| 文本 | 7.424 | 7.671 | 15.536 |
+| 随机 | 7.048 | 7.069 | 32.589 |
+
+原始报告分别为 `sustained-buffered-before.json` 和
+`prefetch32-sustained-after.json`。该长测包含多次独立 gzip 事务，
+每次事务 256 MiB，不等同于一个 96 GiB gzip member。
+
+本机归档：
+`/root/FPGA-4IP/qz01_compress_4ip/validated/20261102-gzip-throughput/gzip-prefetch32`。
+归档包含 bitstream、manifest、RTL、构建脚本、路由 DCP、时序与 DRC 报告；
+共享 `build-base` 保存未加补丁的原始工程、gzip IP 和 HLS 算法源码。
+
 ## 已采用的主机改动
 
 - EOP gzip 写入 `*bytes.Buffer` 且显式设置 `Options.DirectOutput` 时，C2H 直接填充剩余容量，再提交 Buffer 长度；
