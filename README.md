@@ -13,6 +13,8 @@ MinLZ 核的编码范围、构建与 SDK/服务接口见[MinLZ FPGA 指导](docs
 
 2026-11-01 最新源码配合已验证的 EOP shell 和修补版 XDMA，四核、64 MiB 分块的持续内存压缩达到 **7.29 GB/s**（约 50% 可压缩输入，三轮均超过 7.28）；随机数据 **6.99 GB/s**、文本 **7.39 GB/s**。每轮输入 96 GiB，所有输出均完整解压并逐字节比较，无预测跳过或 CPU 回退。该指标为四核主机与板卡的压缩吞吐；NVMe/FUSE 持久化性能单独测量。[完整数据、条件与复现步骤](docs/capacity-20261101.md)包含驱动、RTL、短测与持续测试对照。
 
+2026-11-02 的主机优化、CPU 用量和 96 GiB 输出路径对照见[gzip 吞吐分析](docs/gzip-throughput-20261102.md)。
+
 这些改动尚未发布为新版本。寄存器分区、独立通道租借、四核 daemon 与 compactfs 独立 worker 的接入见[四核接口说明](docs/multicore-20261101.md)；新 shell 的协议与隔离构建脚本见 [EOP 固件指导](firmware/qz01-eop/README.md)。
 
 2026-10-31 已在本机修补后的 RTL 和 XDMA 驱动上验证：10 GiB 随机数据完整压缩、解压并逐字节比较通过。
