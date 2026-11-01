@@ -174,6 +174,7 @@ func main() {
 			for _, mib := range sizes {
 				for _, count := range cores {
 					opts := pipeline.DefaultOptions()
+					opts.MaxProcs = *procs
 					opts.H2CSlotBytes = uint64(*h2c) << 20
 					opts.C2HRequestBytes = uint64(*c2h) << 10
 					opts.RingSlots = *slots

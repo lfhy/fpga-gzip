@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"hash/crc32"
 	"io"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -80,5 +81,16 @@ func TestPacketCompressionPreservesCRCAndLength(t *testing.T) {
 			t.Fatal(result)
 		}
 		assertGzipData(t, out.Bytes(), input)
+	}
+}
+
+func TestPacketRejectsUnalignedFallbackBeforeHardwareReset(t *testing.T) {
+	hw := &packetHardware{fakeHardware: newFakeHardware()}
+	opts := DefaultOptions()
+	opts.PacketRequestBytes = 0
+	opts.C2HRequestBytes = 9
+	_, err := CompressReader(context.Background(), bytes.NewReader([]byte("input")), 5, io.Discard, hw, opts, nil)
+	if err == nil || !strings.Contains(err.Error(), "multiple of 8") || hw.ready != nil {
+		t.Fatal("unsafe request reached hardware", err)
 	}
 }

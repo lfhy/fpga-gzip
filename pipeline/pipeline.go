@@ -49,8 +49,8 @@ type Options struct {
 }
 
 // DefaultOptions uses the ring and H2C defaults validated for the bundled
-// gzip shell. The shell's packetizer and XDMA driver are most stable with a
-// 32 KiB C2H request. Four Go scheduler Ps are needed to let the H2C writer,
+// gzip shell. Legacy firmware uses 32 KiB C2H requests; negotiated EOP
+// firmware uses 1 MiB requests. Four Go scheduler Ps let the H2C writer,
 // C2H reader, file writer and register poller make progress independently;
 // forcing one P serializes those stages and cuts throughput by roughly half.
 func DefaultOptions() Options {
@@ -284,6 +284,9 @@ func RunReader(ctx context.Context, input io.Reader, inputSize uint64, output io
 	}
 	if err := validateOptions(opts); err != nil {
 		return Result{}, err
+	}
+	if packetReadsEnabled(hw) && opts.PacketRequestBytes == 0 && opts.C2HRequestBytes%beatBytes != 0 {
+		return Result{}, errors.New("EOP packet request size must be a multiple of 8 bytes")
 	}
 	if ctx == nil {
 		ctx = context.Background()
