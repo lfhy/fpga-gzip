@@ -34,7 +34,7 @@ patch -d /path/to/copied/rtl -p1 < firmware/qz01-eop/packet-eop.patch
 firmware/qz01-eop/run-stream.sh /path/to/copied/rtl/axis_c2h_packetizer_64.v
 ```
 
-仿真包含 781 个 EOS、请求长度、TKEEP、4/8/64 KiB 边界及随机背压用例。
+仿真包含 781 个 EOS、请求长度、TKEEP、4/8/64 KiB 边界、供数间隔及背压用例。
 旧 `tb_axis_boundaries.sv` 实例需将新增 `s_axis_tlast` 接 0 后再次运行。
 完整工程必须重新综合及布局布线，检查 WNS/WHS 非负、布线完成及 DRC
 无 error，再生成并在线装载。保留原 bitstream，装载前关闭所有 DMA
