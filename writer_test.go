@@ -54,6 +54,38 @@ func TestCompressReaderRejectsInvalidFPGAOutput(t *testing.T) {
 	}
 }
 
+func TestCompressReaderMemoryPrefixAndRemainingInput(t *testing.T) {
+	data := bytes.Repeat([]byte("memory-backed input with suffix;"), 100)
+	for _, kind := range []string{"reader", "buffer"} {
+		t.Run(kind, func(t *testing.T) {
+			var input interface {
+				io.Reader
+				Len() int
+			}
+			if kind == "reader" {
+				input = bytes.NewReader(data)
+			} else {
+				input = bytes.NewBuffer(append([]byte(nil), data...))
+			}
+			for _, size := range []int{73, len(data) - 73} {
+				before := input.Len()
+				var out bytes.Buffer
+				opts := DefaultOptions()
+				opts.H2CSlotBytes = 17
+				_, err := CompressReader(context.Background(), input, uint64(size), &out, newFakeHardware(), opts, nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if input.Len() != before-size {
+					t.Fatalf("remaining=%d expected=%d", input.Len(), before-size)
+				}
+				offset := len(data) - before
+				assertGzipData(t, out.Bytes(), data[offset:offset+size])
+			}
+		})
+	}
+}
+
 func TestCompressReaderRejectsGzipWithWrongPayload(t *testing.T) {
 	input := bytes.Repeat([]byte("input"), 1024)
 	var output bytes.Buffer

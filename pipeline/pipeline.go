@@ -4,6 +4,7 @@
 package pipeline
 
 import (
+	"bytes"
 	"context"
 	"encoding/binary"
 	"errors"
@@ -139,7 +140,7 @@ func (p *bytePool) acquire(ctx context.Context) ([]byte, error) {
 }
 
 func (p *bytePool) release(buf []byte) {
-	if buf == nil {
+	if p == nil || buf == nil {
 		return
 	}
 	p.buffers <- buf[:cap(buf)]
@@ -281,9 +282,23 @@ func RunReader(ctx context.Context, input io.Reader, inputSize uint64, output io
 	}
 
 	stats := &runStats{}
-	h2cPool, err := newBytePool(opts.RingSlots, opts.H2CSlotBytes)
-	if err != nil {
-		return Result{}, fmt.Errorf("allocate H2C buffers: %w", err)
+	// These standard-library readers keep their backing bytes valid until the
+	// caller returns. Borrow slices while the complete transaction owns them,
+	// avoiding a full input copy and an H2C allocation per bounded RAM chunk.
+	var borrowed io.WriterTo
+	switch input := input.(type) {
+	case *bytes.Reader:
+		borrowed = input
+	case *bytes.Buffer:
+		borrowed = input
+	}
+	var h2cPool *bytePool
+	var err error
+	if borrowed == nil {
+		h2cPool, err = newBytePool(opts.RingSlots, opts.H2CSlotBytes)
+		if err != nil {
+			return Result{}, fmt.Errorf("allocate H2C buffers: %w", err)
+		}
 	}
 	c2hPool, err := newBytePool(opts.RingSlots, opts.C2HRequestBytes)
 	if err != nil {
@@ -327,6 +342,9 @@ func RunReader(ctx context.Context, input io.Reader, inputSize uint64, output io
 	worker(func() error { return receiveC2H(runCtx, hw, opts, rx, c2hPool, stats) })
 	worker(func() error { return sendH2C(runCtx, hw, inputSize, tx, h2cPool, stats) })
 	worker(func() error {
+		if borrowed != nil {
+			return loadBorrowedInput(runCtx, borrowed, inputSize, opts.H2CSlotBytes, tx, stats)
+		}
 		return loadInput(runCtx, input, inputSize, opts.H2CSlotBytes, tx, h2cPool, stats)
 	})
 	if report != nil {
