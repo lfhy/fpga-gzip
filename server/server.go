@@ -65,7 +65,7 @@ func WithAlgorithms(algorithms ...firmware.Algorithm) Option {
 		}
 		s.algorithms = make(map[firmware.Algorithm]bool, len(algorithms))
 		for _, a := range algorithms {
-			if a < firmware.Raw || a > firmware.Zstd {
+			if a < firmware.Raw || a > firmware.MinLZ {
 				return errors.New("invalid service algorithm")
 			}
 			s.algorithms[a] = true
@@ -354,7 +354,7 @@ func (s *Server) handleCompress(w http.ResponseWriter, r *http.Request) {
 		writeServiceError(w, http.StatusConflict, err)
 		return
 	}
-	contentType := map[firmware.Algorithm]string{firmware.Gzip: "application/gzip", firmware.LZ4: "application/x-lz4", firmware.Zstd: "application/zstd", firmware.Raw: "application/octet-stream"}[algorithm]
+	contentType := map[firmware.Algorithm]string{firmware.Gzip: "application/gzip", firmware.LZ4: "application/x-lz4", firmware.Zstd: "application/zstd", firmware.MinLZ: "application/x-minlz-compressed", firmware.Raw: "application/octet-stream"}[algorithm]
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("X-FPGA-Algorithm", algorithm.String())
 	if algorithm == firmware.Gzip {

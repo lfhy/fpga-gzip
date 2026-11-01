@@ -1,12 +1,13 @@
 # fpga-gzip
 
-多算法固件框架提供统一 shell、版本查询与整卡切换：gzip、LZ4、Zstd、raw
+多算法固件框架提供统一 shell、版本查询与整卡切换：gzip、LZ4、Zstd、MinLZ、raw
 各自构建镜像。公开的 `accelerator` 包、`fpga-fw`、`fpga-compress` 和多算法
 HTTP/Unix 接口见[固件与 SDK 使用说明](firmware/README.md)。根包继续提供 gzip 接口。
 四种镜像的上板结果、切换命令与混合存储验证见[多算法固件验收](docs/multialgo-20261101.md)。
 各算法与纯 Go CPU 的吞吐、压缩比和 CPU 占用见[性能对照](docs/algorithm-performance-20261101.md)。
 LZ4/Zstd 的并行流水线改造、优化前后吞吐和压缩比见[固件优化实测](docs/algorithm-optimization-20261101.md)。
 MinLZ、S2、Snappy 与现有 CPU 编码器的真实文件和合成输入比较见[新算法候选实测](docs/algorithm-candidates-20261101.md)。
+MinLZ 核的编码范围、构建与 SDK/服务接口见[MinLZ FPGA 指导](docs/minlz-fpga.md)。
 
 `fpga-gzip` 是一个纯 Go 的 FPGA gzip 主机端 SDK 和命令行工具。它直接访问 Xilinx XDMA 字符设备和 FPGA user BAR，不依赖 cgo、XRT 或厂商用户态库。当前实现对应本机已验证的 gzip shell：每核一对 H2C/C2H streaming 通道，以及 user BAR 上独立的 gzip 控制寄存器；支持显式选择四核并行。
 
@@ -32,7 +33,7 @@ docs/                驱动安装与设备准备文档
 
 ## 依赖和构建
 
-需要 Go 1.21 或更新版本，以及已经加载的 Xilinx XDMA 驱动。驱动安装步骤见 [`docs/driver-install.md`](docs/driver-install.md)。
+需要 Go 1.25 或更新版本，以及已经加载的 Xilinx XDMA 驱动。MinLZ 官方解码器要求 Go 1.25；SDK 不依赖 cgo。驱动安装步骤见 [`docs/driver-install.md`](docs/driver-install.md)。
 
 ```bash
 cd fpga-gzip

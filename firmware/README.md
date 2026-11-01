@@ -1,6 +1,6 @@
 # 可切换的压缩固件
 
-统一控制协议和 DMA shell，每个 bitstream 包含一种算法：gzip、LZ4、Zstd 或 raw。
+统一控制协议和 DMA shell，每个 bitstream 包含一种算法：gzip、LZ4、Zstd、MinLZ 或 raw。
 整卡切换替换压缩核，不要求将所有算法同时放进 KU5P。压缩数据保留标准
 格式，切换硬件不影响已有数据的 CPU 解码。框架源码位于 [multialgo](multialgo/)。
 优化版 LZ4/Zstd 的构建 ID、性能、源码归档与切换路径见
@@ -63,7 +63,7 @@ gzip 使用已有的头部、CRC32、ISIZE 校验。LZ4 和 Zstd HLS 输出没�
 ```sh
 CGO_ENABLED=0 GOWORK=off go build -o bin/fpga-gzipd ./cmd/fpga-gzipd
 bin/fpga-gzipd --unix /run/fpga-compress.sock --cores 4 \
-  --algorithms gzip,lz4,zstd,raw
+  --algorithms gzip,lz4,zstd,minlz,raw
 ```
 
 使用 `client.CompressAlgorithm(ctx, firmware.LZ4, src, size, dst)` 或

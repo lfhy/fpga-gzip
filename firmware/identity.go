@@ -16,6 +16,7 @@ const (
 	Gzip
 	LZ4
 	Zstd
+	MinLZ
 )
 
 func (a Algorithm) String() string {
@@ -28,6 +29,8 @@ func (a Algorithm) String() string {
 		return "lz4"
 	case Zstd:
 		return "zstd"
+	case MinLZ:
+		return "minlz"
 	default:
 		return fmt.Sprintf("unknown(%d)", uint32(a))
 	}
@@ -43,6 +46,8 @@ func ParseAlgorithm(name string) (Algorithm, error) {
 		return LZ4, nil
 	case "zstd", "fpga-zstd":
 		return Zstd, nil
+	case "minlz", "fpga-minlz":
+		return MinLZ, nil
 	default:
 		return 0, fmt.Errorf("unsupported FPGA algorithm %q", name)
 	}
@@ -143,7 +148,7 @@ func (i Info) Validate() error {
 		}
 		return fmt.Errorf("%w: invalid legacy identity", ErrIncompatible)
 	}
-	if i.Magic != Magic || i.ABI>>16 != ABI>>16 || i.Format != FormatV1 || i.Cores < 1 || i.Cores > 4 || i.Features&FeatureEOP == 0 || i.Algorithm < Raw || i.Algorithm > Zstd {
+	if i.Magic != Magic || i.ABI>>16 != ABI>>16 || i.Format != FormatV1 || i.Cores < 1 || i.Cores > 4 || i.Features&FeatureEOP == 0 || i.Algorithm < Raw || i.Algorithm > MinLZ {
 		return fmt.Errorf("%w: %+v", ErrIncompatible, i)
 	}
 	if i.Algorithm != Raw && i.Features&FeatureStandardFrame == 0 {

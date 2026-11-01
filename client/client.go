@@ -156,7 +156,7 @@ func (c *Client) CompressAlgorithm(ctx context.Context, algorithm firmware.Algor
 	if inputSize < 1 {
 		return Result{}, errors.New("input size must be greater than zero")
 	}
-	if algorithm < firmware.Raw || algorithm > firmware.Zstd {
+	if algorithm < firmware.Raw || algorithm > firmware.MinLZ {
 		return Result{}, errors.New("invalid algorithm")
 	}
 	endpoint := c.baseURL + "/compress"

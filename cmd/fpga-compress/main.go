@@ -27,7 +27,7 @@ func run(args []string) error {
 	f := lfhflag.NewFlagSet("fpga-compress", lfhflag.ContinueOnError)
 	var algorithm, input, output, user, h2c, c2h string
 	var core uint
-	f.StringVar(&algorithm, "algorithm", "gzip", "raw, gzip, lz4 or zstd; must match the loaded image")
+	f.StringVar(&algorithm, "algorithm", "gzip", "raw, gzip, lz4, zstd or minlz; must match the loaded image")
 	f.StringVar(&input, "input", "", "input file")
 	f.StringVar(&output, "output", "", "output file, published atomically after verification")
 	f.StringVar(&user, "user", "/dev/xdma0_user", "XDMA user BAR")

@@ -28,6 +28,7 @@ import (
 	"github.com/lfhy/fpga-gzip/device"
 	"github.com/lfhy/fpga-gzip/firmware"
 	"github.com/lfhy/fpga-gzip/pipeline"
+	"github.com/minio/minlz"
 	"github.com/pierrec/lz4/v4"
 )
 
@@ -93,6 +94,15 @@ func cpuEncoder(a firmware.Algorithm) (encoder, func(), error) {
 			_, e := dst.Write(data)
 			return e
 		}, func() { _ = w.Close() }, nil
+	case firmware.MinLZ:
+		w := minlz.NewWriter(io.Discard, minlz.WriterConcurrency(1), minlz.WriterBlockSize(1<<20), minlz.WriterLevel(minlz.LevelFastest))
+		return func(raw []byte, dst *bytes.Buffer) error {
+			w.Reset(dst)
+			if _, err := w.Write(raw); err != nil {
+				return err
+			}
+			return w.Close()
+		}, func() {}, nil
 	}
 	return nil, nil, errors.New("unknown algorithm")
 }
@@ -122,6 +132,8 @@ func verify(a firmware.Algorithm, encoded, expected []byte) error {
 		reader = g
 	case firmware.LZ4:
 		reader = lz4.NewReader(reader)
+	case firmware.MinLZ:
+		reader = minlz.NewReader(reader, minlz.ReaderMaxBlockSize(8<<20))
 	case firmware.Zstd:
 		z, e := zstd.NewReader(reader, zstd.WithDecoderConcurrency(1), zstd.WithDecoderMaxMemory(256<<20))
 		if e != nil {
@@ -286,7 +298,7 @@ func positiveList(s string) ([]int, error) {
 
 func main() {
 	engine := flag.String("engine", "fpga-sdk", "fpga-sdk, fpga-pipeline, or cpu")
-	algorithm := flag.String("algorithm", "gzip", "raw, gzip, lz4 or zstd")
+	algorithm := flag.String("algorithm", "gzip", "raw, gzip, lz4, zstd or minlz")
 	source := flag.String("source", "", "gzip-compressed fixture")
 	output := flag.String("output", "", "JSON output")
 	sizes := flag.String("sizes-mib", "4,64", "chunk sizes")

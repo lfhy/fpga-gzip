@@ -19,13 +19,15 @@ func (*imageOnly) FirmwareInfo(context.Context) (firmware.Info, error) {
 func (*imageOnly) Close() error { return nil }
 
 func TestServerRejectsWrongImageWithoutHardwareOperations(t *testing.T) {
-	s, err := New(Config{HardwareFactory: func(context.Context) (pipeline.Hardware, error) { return &imageOnly{}, nil }}, WithAlgorithms(firmware.Gzip, firmware.LZ4))
+	s, err := New(Config{HardwareFactory: func(context.Context) (pipeline.Hardware, error) { return &imageOnly{}, nil }}, WithAlgorithms(firmware.Gzip, firmware.LZ4, firmware.MinLZ))
 	if err != nil {
 		t.Fatal(err)
 	}
-	w := httptest.NewRecorder()
-	s.Handler().ServeHTTP(w, httptest.NewRequest(http.MethodPost, "/compress?algorithm=gzip", strings.NewReader("abc")))
-	if w.Code != http.StatusConflict {
-		t.Fatal(w.Code, w.Body.String())
+	for _, algorithm := range []string{"gzip", "minlz"} {
+		w := httptest.NewRecorder()
+		s.Handler().ServeHTTP(w, httptest.NewRequest(http.MethodPost, "/compress?algorithm="+algorithm, strings.NewReader("abc")))
+		if w.Code != http.StatusConflict {
+			t.Fatal(w.Code, w.Body.String())
+		}
 	}
 }

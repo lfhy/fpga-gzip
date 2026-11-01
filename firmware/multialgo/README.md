@@ -11,6 +11,7 @@
 | gzip | 2 | 4 | 250 MHz | 已验证的 8 lane、8 KiB gzip IP |
 | lz4 | 3 | 4 | 250 MHz | 每引擎 8 条 LZ77 通道，标准独立块帧 |
 | zstd | 4 | 2 | 125 MHz | 每引擎 4 条 LZ77 通道，经 AXI FIFO 与 250 MHz shell 交互 |
+| minlz | 5 | 4 | 250 MHz | 每引擎 4 条 64 位匹配通道，16 KiB 独立块、CRC32C 和 EOF |
 
 KU5P 的 gzip profile 已使用全部 64 个 URAM。按镜像替换允许每种引擎独立使用
 资源。表中核数为主机看到的 DMA 引擎数；内部通道把独立小块并行编码，

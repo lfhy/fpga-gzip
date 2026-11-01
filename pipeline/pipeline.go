@@ -306,7 +306,7 @@ func RunReaderAlgorithm(ctx context.Context, input io.Reader, inputSize uint64, 
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	if algorithm < firmware.Raw || algorithm > firmware.Zstd {
+	if algorithm < firmware.Raw || algorithm > firmware.MinLZ {
 		return Result{}, fmt.Errorf("unsupported FPGA algorithm %d", algorithm)
 	}
 	if validator == nil && algorithm != firmware.Gzip {

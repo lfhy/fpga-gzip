@@ -10,6 +10,7 @@ import (
 	"math"
 
 	"github.com/klauspost/compress/zstd"
+	"github.com/minio/minlz"
 	"github.com/pierrec/lz4/v4"
 )
 
@@ -67,13 +68,15 @@ func newValidator(algorithm Algorithm, output io.Writer, size uint64) (validator
 	if algorithm == Raw {
 		return &rawValidator{output: output, crc: crc32.NewIEEE()}, nil
 	}
-	if algorithm != LZ4 && algorithm != Zstd {
+	if algorithm != LZ4 && algorithm != Zstd && algorithm != MinLZ {
 		return nil, fmt.Errorf("unsupported FPGA algorithm %d", algorithm)
 	}
 	r, w := io.Pipe()
 	v := &decodedValidator{output: output, pipe: w, done: make(chan decodedResult, 1)}
 	if algorithm == LZ4 {
 		v.magic = [4]byte{4, 0x22, 0x4d, 0x18}
+	} else if algorithm == MinLZ {
+		v.magic = [4]byte{0xff, 6, 0, 0}
 	} else {
 		v.magic = [4]byte{0x28, 0xb5, 0x2f, 0xfd}
 	}
@@ -84,6 +87,8 @@ func newValidator(algorithm Algorithm, output io.Writer, size uint64) (validator
 		var err error
 		if algorithm == LZ4 {
 			decoded = lz4.NewReader(r)
+		} else if algorithm == MinLZ {
+			decoded = minlz.NewReader(r, minlz.ReaderMaxBlockSize(8<<20))
 		} else {
 			var z *zstd.Decoder
 			z, err = zstd.NewReader(r, zstd.WithDecoderConcurrency(1), zstd.WithDecoderLowmem(true), zstd.WithDecoderMaxMemory(128<<20))

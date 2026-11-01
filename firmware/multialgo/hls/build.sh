@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 set -euo pipefail
 if [[ $# != 4 && $# != 5 ]]; then
-  printf 'Usage: %s lz4|zstd NEW_BUILD_ROOT VITIS_LIBRARIES csim|synth|cosim [quick|random|entropy|dma]\n' "$0" >&2
+  printf 'Usage: %s lz4|zstd|minlz NEW_BUILD_ROOT VITIS_LIBRARIES csim|synth|cosim [quick|random|entropy|dma]\n' "$0" >&2
   exit 2
 fi
 cf_algorithm=$1
@@ -10,7 +10,7 @@ cf_root=$2
 cf_library=$(cd -- "$3" && pwd)
 cf_mode=$4
 cf_cases=${5:-quick}
-case $cf_algorithm in lz4|zstd) ;; *) exit 2;; esac
+case $cf_algorithm in lz4|zstd|minlz) ;; *) exit 2;; esac
 case $cf_mode in csim|synth|cosim) ;; *) exit 2;; esac
 case $cf_cases in quick|random|entropy|dma) ;; *) exit 2;; esac
 if [[ -e $cf_root ]]; then
@@ -22,7 +22,7 @@ cf_sdk=$(cd -- "$cf_source/../../.." && pwd)
 mkdir -p -- "$cf_root/source"
 cf_root=$(cd -- "$cf_root" && pwd)
 cp -- "$cf_source/build.tcl" "$cf_source/compress.cpp" "$cf_source/test.cpp" \
-  "$cf_source"/*.patch "$cf_root/source/"
+  "$cf_source"/*.patch "$cf_source"/minlz_*.hpp "$cf_root/source/"
 if [[ $cf_cases == dma ]]; then
   cp -- "$cf_sdk/examples/hls-vectors/main.go" "$cf_root/source/generate-vectors.go"
   CGO_ENABLED=0 GOWORK=off go -C "$cf_sdk" run \

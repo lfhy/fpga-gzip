@@ -11,16 +11,20 @@ import (
 	"strings"
 
 	"github.com/klauspost/compress/zstd"
+	"github.com/minio/minlz"
 	"github.com/pierrec/lz4/v4"
 )
 
 func main() {
 	if len(os.Args) != 3 && len(os.Args) != 4 {
-		fmt.Fprintln(os.Stderr, "usage: verify-hls lz4|zstd <simulation-output-directory> [quick|random|entropy|dma]")
+		fmt.Fprintln(os.Stderr, "usage: verify-hls lz4|zstd|minlz <simulation-output-directory> [quick|random|entropy|dma]")
 		os.Exit(2)
 	}
 	paths, err := filepath.Glob(filepath.Join(os.Args[2], "case-*.raw"))
 	want := 115
+	if os.Args[1] == "minlz" {
+		want = 130
+	}
 	if len(os.Args) == 4 {
 		switch os.Args[3] {
 		case "quick":
@@ -51,6 +55,8 @@ func main() {
 		switch os.Args[1] {
 		case "lz4":
 			r = lz4.NewReader(bytes.NewReader(data))
+		case "minlz":
+			r = minlz.NewReader(bytes.NewReader(data), minlz.ReaderMaxBlockSize(16<<10))
 		case "zstd":
 			d, e := zstd.NewReader(bytes.NewReader(data), zstd.WithDecoderConcurrency(1), zstd.WithDecoderMaxMemory(128<<20))
 			err = e

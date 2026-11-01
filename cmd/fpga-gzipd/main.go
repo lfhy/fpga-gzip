@@ -264,7 +264,7 @@ func parseConfig(args []string) (daemonConfig, error) {
 	fs.UintFullVar(&cfg.QueueDepth, "queue-depth", "daemon", "queue_depth", "FPGA_GZIPD_QUEUE_DEPTH", cfg.QueueDepth, "queued requests")
 	fs.StringFullVar(&cfg.MaxInputText, "max-input-bytes", "daemon", "max_input_bytes", "FPGA_GZIPD_MAX_INPUT_BYTES", cfg.MaxInputText, "maximum request size; zero means unlimited")
 	fs.StringFullVar(&cfg.AuthToken, "auth-token", "daemon", "auth_token", "FPGA_GZIPD_AUTH_TOKEN", "", "optional Bearer token; empty disables authentication")
-	fs.StringFullVar(&cfg.Algorithms, "algorithms", "daemon", "algorithms", "FPGA_COMPRESS_ALGORITHMS", "gzip", "allowed request algorithms; each image contains one: gzip,lz4,zstd,raw")
+	fs.StringFullVar(&cfg.Algorithms, "algorithms", "daemon", "algorithms", "FPGA_COMPRESS_ALGORITHMS", "gzip", "allowed request algorithms; each image contains one: gzip,lz4,zstd,minlz,raw")
 	if err := fs.Parse(args); err != nil {
 		return daemonConfig{}, err
 	}

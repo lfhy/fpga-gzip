@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 #ifndef CF_ALGORITHM
-#error CF_ALGORITHM must be 3 (LZ4) or 4 (Zstd)
+#error CF_ALGORITHM must be 3 (LZ4), 4 (Zstd) or 5 (MinLZ)
 #endif
 
 typedef ap_axiu<64, 0, 0, 0> Input;
@@ -252,6 +252,8 @@ void compress_ctl(hls::stream<Input>& inStream,hls::stream<Output>& outStream) {
     write_blocks(original,encoded,output_metadata,outStream);
 }
 
+#elif CF_ALGORITHM == 5
+#include "minlz_compress.hpp"
 #else
 #error unsupported HLS algorithm
 #endif

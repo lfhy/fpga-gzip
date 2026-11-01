@@ -27,7 +27,7 @@ func InspectFirmware(ctx context.Context, userDevice string) (firmware.Info, err
 	return firmware.InspectBAR(ctx, userDevice, 0)
 }
 
-// CompressAlgorithm selects raw, gzip, lz4 or zstd explicitly. The existing
+// CompressAlgorithm selects raw, gzip, lz4, zstd or minlz explicitly. The existing
 // CompressReader and gzip.Writer-like API continue to emit only gzip. This
 // convenience API uses the same validation and bounded transport as accelerator.
 func CompressAlgorithm(ctx context.Context, algorithm string, input io.Reader, size uint64, output io.Writer, hw Hardware, options Options, report func(Progress)) (Result, error) {

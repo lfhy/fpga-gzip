@@ -1,7 +1,7 @@
 if {[info exists ::env(CF_HLS_ALGORITHM)]} {
     set argv [list $::env(CF_HLS_ALGORITHM) $::env(CF_HLS_BUILD) $::env(CF_HLS_LIBRARY) $::env(CF_HLS_MODE)]
 }
-if {[llength $argv] != 4} {error "usage: <lz4|zstd> <build-dir> <Vitis_Libraries> <csim|synth|cosim>"}
+if {[llength $argv] != 4} {error "usage: <lz4|zstd|minlz> <build-dir> <Vitis_Libraries> <csim|synth|cosim>"}
 set algorithm [lindex $argv 0]
 set root [file normalize [lindex $argv 1]]
 set library [file normalize [lindex $argv 2]]
@@ -18,7 +18,7 @@ proc verify_frames {source algorithm root selection} {
     foreach item $selection {lappend command $item}
     puts [exec {*}$command]
 }
-switch $algorithm { lz4 {set id 3} zstd {set id 4} default {error "unsupported algorithm"} }
+switch $algorithm { lz4 {set id 3} zstd {set id 4} minlz {set id 5} default {error "unsupported algorithm"} }
 if {[file isdirectory $library/data_compression]} {set comp $library/data_compression} else {set comp $library/comp}
 file mkdir $root
 set overlay $root/overrides
@@ -32,7 +32,7 @@ if {$algorithm eq "zstd"} {
     exec patch -p1 -d $overlay -i $source/zstd-fifo.patch
     exec patch -p1 -d $overlay -i $source/zstd-huffman-padding.patch
 }
-set flags "-I$overlay -I$comp/L1/include/hw -I$library/security/L1/include -DCF_ALGORITHM=$id -std=c++17"
+set flags "-I$source -I$overlay -I$comp/L1/include/hw -I$library/security/L1/include -DCF_ALGORITHM=$id -std=c++17"
 if {$algorithm eq "zstd"} {
     # Repeated symbols update the same frequency RAM address. Declaring the
     # inter-iteration dependency false loses updates in actual RTL (32 -> 16).

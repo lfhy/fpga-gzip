@@ -22,6 +22,7 @@ import (
 	"github.com/lfhy/fpga-gzip/client"
 	"github.com/lfhy/fpga-gzip/device"
 	"github.com/lfhy/fpga-gzip/firmware"
+	"github.com/minio/minlz"
 	"github.com/pierrec/lz4/v4"
 )
 
@@ -44,7 +45,7 @@ type report struct {
 }
 
 func main() {
-	name := flag.String("algorithm", "", "loaded image: raw, gzip, lz4 or zstd")
+	name := flag.String("algorithm", "", "loaded image: raw, gzip, lz4, zstd or minlz")
 	output := flag.String("output", "", "JSON report path")
 	large := flag.Int("large", 8<<20, "additional input size per pattern/core (bytes)")
 	socket := flag.String("unix", "", "exercise fpga-gzipd through this Unix socket instead of direct DMA")
@@ -106,6 +107,9 @@ func main() {
 	r.WrongAlgorithmRejected = errors.Is(e, firmware.ErrAlgorithm) && e2 == nil && rejected.Len() == 0 && before.InBytes == after.InBytes && before.OutBytes == after.OutBytes
 	r.Pass = r.WrongAlgorithmRejected
 	sizes := []int{1, 7, 8, 9, 64, 65, 71, 72, 73, 127, 128, 129, 255, 1023, 8191, 8192, 8193, 32767, 32768, 32769, 65536, 65537, 1048576, *large}
+	if algorithm == firmware.MinLZ {
+		sizes = append(sizes, 16383, 16384, 16385)
+	}
 	if *quick {
 		sizes = []int{73, 8193, 65537, *large}
 	}
@@ -221,6 +225,8 @@ func compare(algorithm firmware.Algorithm, raw, encoded []byte) error {
 		reader = r
 	case firmware.LZ4:
 		reader = lz4.NewReader(reader)
+	case firmware.MinLZ:
+		reader = minlz.NewReader(reader, minlz.ReaderMaxBlockSize(8<<20))
 	case firmware.Zstd:
 		r, err := zstd.NewReader(reader, zstd.WithDecoderConcurrency(1), zstd.WithDecoderMaxMemory(128<<20))
 		if err != nil {

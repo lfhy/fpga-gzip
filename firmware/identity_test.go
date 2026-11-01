@@ -16,7 +16,7 @@ func goodRegisters(a Algorithm) registers {
 
 func TestIdentityRejectsWrongAlgorithmAndUnknownABI(t *testing.T) {
 	ctx := context.Background()
-	for _, algorithm := range []Algorithm{Raw, Gzip, LZ4, Zstd} {
+	for _, algorithm := range []Algorithm{Raw, Gzip, LZ4, Zstd, MinLZ} {
 		r := goodRegisters(algorithm)
 		got, err := Require(ctx, r, algorithm)
 		if err != nil || got.Algorithm != algorithm || got.Build != 42 {
@@ -36,6 +36,7 @@ func TestIdentityRejectsWrongAlgorithmAndUnknownABI(t *testing.T) {
 		func(r registers) { r[RegFormat] = 2 },
 		func(r registers) { r[RegCores] = 5 },
 		func(r registers) { r[RegFeatures] = 0 },
+		func(r registers) { r[RegAlgorithm] = uint32(MinLZ) + 1 },
 	} {
 		r := goodRegisters(Gzip)
 		edit(r)
@@ -54,7 +55,7 @@ func TestLegacyImageIsGzipOnly(t *testing.T) {
 	if err != nil || !i.Legacy {
 		t.Fatal(i, err)
 	}
-	for _, a := range []Algorithm{Raw, LZ4, Zstd} {
+	for _, a := range []Algorithm{Raw, LZ4, Zstd, MinLZ} {
 		if _, err := Require(context.Background(), r, a); !errors.Is(err, ErrAlgorithm) {
 			t.Fatal(a, err)
 		}

@@ -46,7 +46,11 @@ int main(int argc, char** argv) {
         }
         return 0;
     }
-    const unsigned sizes[]={1,7,8,9,64,65,71,72,73,127,128,129,255,1023,8191,8192,8193,32767,32768,32769,65536,65537,1048576};
+    const unsigned sizes[]={1,7,8,9,64,65,71,72,73,127,128,129,255,1023,8191,8192,8193,
+#if CF_ALGORITHM == 5
+        16383,16384,16385,
+#endif
+        32767,32768,32769,65536,65537,1048576};
     for (unsigned kind=0; kind<5; ++kind) for (unsigned size:sizes) {
         if (argc == 3 && std::string(argv[2]) == "entropy" && !((kind != 2 && size == 8193) || (kind == 2 && size == 65537))) continue;
         if (argc == 3 && std::string(argv[2]) == "random" && (kind != 2 || (size != 8193 && size != 32767 && size != 65537))) continue;
