@@ -1,0 +1,300 @@
+{
+  "date": "2026-11-01",
+  "hardware": "KU5P, PCIe Gen3 x16, four XDMA channels",
+  "archive": "/root/FPGA-4IP/qz01_compress_4ip/validated/20261101-multialgo",
+  "sdk_commit": "94fa7aaabdba26cf283b5adcc930ba820f90446a",
+  "compactfs_commit": "a5a4497801016eacbe9a4ce83de5c5978ac35f96",
+  "algorithms": {
+    "gzip": {
+      "manifest": {
+        "schema": 1,
+        "name": "ku5p-gzip-86950339975258",
+        "part": "xcku5p-ffvb676-2-e",
+        "algorithm": "gzip",
+        "abi": 65536,
+        "format": 1,
+        "cores": 4,
+        "build": 86950339975258,
+        "bitstream": "compactfs-gzip.bit",
+        "sha256": "56f523015c885728f530679c35a5e3f261cf2cb45e3380fb5bcf2cdb4ef700fb",
+        "validation": "hardware-verified",
+        "source": "."
+      },
+      "profile": "gzip-firmware",
+      "board_cases": 288,
+      "service_cases": 48,
+      "board_edge_cases": 72,
+      "fuse_bytes": 67108864,
+      "fuse_sha256": "6bc5ff32327c086aefa198f04f23bb68ca901bcdfb6775d48bd1f04efeb32420",
+      "fuse_pid": 162887,
+      "worker_pid": 162873,
+      "fallback_delta": 0,
+      "wns_ns": 0.035,
+      "whs_ns": 0.01
+    },
+    "lz4": {
+      "manifest": {
+        "schema": 1,
+        "name": "ku5p-lz4-200317347967794",
+        "part": "xcku5p-ffvb676-2-e",
+        "algorithm": "lz4",
+        "abi": 65536,
+        "format": 1,
+        "cores": 4,
+        "build": 200317347967794,
+        "bitstream": "compactfs-lz4.bit",
+        "sha256": "4b0b50d38a722fadb2803cf39072e4d09639ac79829d83367ef9de60d931f8da",
+        "validation": "hardware-verified",
+        "source": "."
+      },
+      "profile": "lz4-firmware",
+      "board_cases": 288,
+      "service_cases": 48,
+      "board_edge_cases": 72,
+      "fuse_bytes": 67108864,
+      "fuse_sha256": "e23aabed0f789dcfb717d1adba8c2277c6102dbdd45d7b269500c36549cb6df9",
+      "fuse_pid": 162887,
+      "worker_pid": 162873,
+      "fallback_delta": 0,
+      "wns_ns": 0.007,
+      "whs_ns": 0.01
+    },
+    "zstd": {
+      "manifest": {
+        "schema": 1,
+        "name": "ku5p-zstd-167671449958172",
+        "part": "xcku5p-ffvb676-2-e",
+        "algorithm": "zstd",
+        "abi": 65536,
+        "format": 1,
+        "cores": 2,
+        "build": 167671449958172,
+        "bitstream": "compactfs-zstd.bit",
+        "sha256": "32dd90b5e64e4c8f6eb6b1d5cc4e1309e78c2ca161928fa940eeebd7a157771e",
+        "validation": "hardware-verified",
+        "source": "."
+      },
+      "profile": "zstd-v6-firmware",
+      "board_cases": 144,
+      "service_cases": 24,
+      "board_edge_cases": 36,
+      "fuse_bytes": 67108864,
+      "fuse_sha256": "aeaf6be6e28230e3c5b0ff9533b0ff5050cedaf96533eac5e865e76105f3a9e4",
+      "fuse_pid": 162887,
+      "worker_pid": 162873,
+      "fallback_delta": 0,
+      "wns_ns": 0.108,
+      "whs_ns": 0.009
+    },
+    "raw": {
+      "manifest": {
+        "schema": 1,
+        "name": "ku5p-raw-149839125801747",
+        "part": "xcku5p-ffvb676-2-e",
+        "algorithm": "raw",
+        "abi": 65536,
+        "format": 1,
+        "cores": 4,
+        "build": 149839125801747,
+        "bitstream": "compactfs-raw.bit",
+        "sha256": "12fc3ab1d6cd72494147a36a2be10d311ea33b8277c8cb9816f614f8edda4a3e",
+        "validation": "hardware-verified",
+        "source": "."
+      },
+      "profile": "raw-v2-firmware",
+      "board_cases": 288,
+      "service_cases": 48,
+      "board_edge_cases": 72,
+      "fuse_bytes": 67108864,
+      "fuse_sha256": "13c88729a2488af31f7482cc36ea194e7a2fc0f64ac70dc2d39dbc8d45b5b421",
+      "fuse_pid": 162887,
+      "worker_pid": 162873,
+      "fallback_delta": 0,
+      "wns_ns": 0.016,
+      "whs_ns": 0.002
+    }
+  },
+  "hls": {
+    "lz4": {
+      "csim": 115,
+      "cosim": 25
+    },
+    "zstd": {
+      "csim": 115,
+      "cosim": 25,
+      "dma_cosim": 3,
+      "identical_rtl_rom_files": 336
+    }
+  },
+  "reboot_recovery": {
+    "pass": true,
+    "boot_id": "1baf4c9e-7786-4803-a28b-57006071684f",
+    "files": {
+      "lz4.bin": {
+        "bytes": 67108864,
+        "sha256": "e23aabed0f789dcfb717d1adba8c2277c6102dbdd45d7b269500c36549cb6df9",
+        "pass": true
+      },
+      "switch-cpu.bin": {
+        "bytes": 67108864,
+        "sha256": "2f91b59dfdcef50246847747d6d8d64e3413ace1de18dcb1ae03d92ceb7e7666",
+        "pass": true
+      },
+      "gzip-legacy.bin": {
+        "bytes": 67108864,
+        "sha256": "f956145339d327759e9a7affeee60ba232670a980a90c179f9038711405c6d2e",
+        "pass": true
+      },
+      "gzip.bin": {
+        "bytes": 67108864,
+        "sha256": "6bc5ff32327c086aefa198f04f23bb68ca901bcdfb6775d48bd1f04efeb32420",
+        "pass": true
+      },
+      "raw.bin": {
+        "bytes": 67108864,
+        "sha256": "13c88729a2488af31f7482cc36ea194e7a2fc0f64ac70dc2d39dbc8d45b5b421",
+        "pass": true
+      },
+      "dedup-after-switch.bin": {
+        "bytes": 67108864,
+        "sha256": "e23aabed0f789dcfb717d1adba8c2277c6102dbdd45d7b269500c36549cb6df9",
+        "pass": true
+      }
+    }
+  },
+  "reference_decoders": {
+    "zstd": {
+      "version": "*** Zstandard CLI (64-bit) v1.5.7, by Yann Collet ***",
+      "results": [
+        {
+          "root": "zstd-csim-alphabet",
+          "cases": 115,
+          "pass": true
+        },
+        {
+          "root": "zstd-cosim-verified",
+          "cases": 25,
+          "pass": true
+        },
+        {
+          "root": "zstd-csim-backpressure-refactored",
+          "cases": 115,
+          "pass": true
+        },
+        {
+          "root": "zstd-cosim-backpressure",
+          "cases": 3,
+          "pass": true
+        },
+        {
+          "root": "zstd-cosim-backpressure-full",
+          "cases": 25,
+          "pass": true
+        },
+        {
+          "root": "zstd-cosim-dma",
+          "cases": 3,
+          "pass": true
+        }
+      ]
+    },
+    "lz4": {
+      "version": "*** LZ4 command line interface 64-bits v1.9.4, by Yann Collet ***",
+      "results": [
+        {
+          "root": "lz4-csim-expanded",
+          "cases": 115,
+          "pass": true
+        },
+        {
+          "root": "lz4-cosim-expanded",
+          "cases": 25,
+          "pass": true
+        }
+      ]
+    }
+  },
+  "fuse": {
+    "pass": true,
+    "original_pid": 162887,
+    "worker_pid": 162873,
+    "cache_enabled": false,
+    "read_cache_bytes": 0,
+    "backend_formats": {
+      "zstd": 16,
+      "raw": 16,
+      "gzip": 32,
+      "lz4": 32
+    },
+    "files": {
+      "gzip.bin": {
+        "bytes": 67108864,
+        "sha256": "6bc5ff32327c086aefa198f04f23bb68ca901bcdfb6775d48bd1f04efeb32420",
+        "seconds": 6.478534831000161,
+        "pass": true
+      },
+      "lz4.bin": {
+        "bytes": 67108864,
+        "sha256": "e23aabed0f789dcfb717d1adba8c2277c6102dbdd45d7b269500c36549cb6df9",
+        "seconds": 1.5935151349999614,
+        "pass": true
+      },
+      "switch-cpu.bin": {
+        "bytes": 67108864,
+        "sha256": "2f91b59dfdcef50246847747d6d8d64e3413ace1de18dcb1ae03d92ceb7e7666",
+        "seconds": 2.503824177000297,
+        "pass": true
+      },
+      "gzip-legacy.bin": {
+        "bytes": 67108864,
+        "sha256": "f956145339d327759e9a7affeee60ba232670a980a90c179f9038711405c6d2e",
+        "seconds": 6.599259973999779,
+        "pass": true
+      },
+      "raw.bin": {
+        "bytes": 67108864,
+        "sha256": "13c88729a2488af31f7482cc36ea194e7a2fc0f64ac70dc2d39dbc8d45b5b421",
+        "seconds": 0.07943991299998743,
+        "pass": true
+      },
+      "zstd.bin": {
+        "bytes": 67108864,
+        "sha256": "aeaf6be6e28230e3c5b0ff9533b0ff5050cedaf96533eac5e865e76105f3a9e4",
+        "seconds": 2.1615512280000075,
+        "pass": true
+      },
+      "dedup-after-switch.bin": {
+        "bytes": 67108864,
+        "sha256": "e23aabed0f789dcfb717d1adba8c2277c6102dbdd45d7b269500c36549cb6df9",
+        "seconds": 1.6694458540000596,
+        "pass": true
+      }
+    }
+  },
+  "gzip_capacity": [
+    {
+      "pattern": "fixture",
+      "input_bytes": 8589934592,
+      "output_bytes": 4606678016,
+      "seconds": 1.187700408,
+      "gb_s": 7.232408555339992,
+      "verified": true
+    },
+    {
+      "pattern": "text",
+      "input_bytes": 8589934592,
+      "output_bytes": 238586112,
+      "seconds": 1.17370271,
+      "gb_s": 7.318662996015406,
+      "verified": true
+    },
+    {
+      "pattern": "random",
+      "input_bytes": 8589934592,
+      "output_bytes": 9065227776,
+      "seconds": 1.234585639,
+      "gb_s": 6.957747053463012,
+      "verified": true
+    }
+  ]
+}
