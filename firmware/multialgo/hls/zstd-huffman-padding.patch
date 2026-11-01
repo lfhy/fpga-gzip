@@ -1,0 +1,52 @@
+--- a/huffman_treegen.hpp
++++ b/huffman_treegen.hpp
+@@ -1482,11 +1482,40 @@
+             parent[i] = 0;
+             if (i < c_lengthHistogram) length_histogram[i] = 0;
+             temp_array[i] = 0;
++            // createTree may read padding entries for small alphabets.
++            heap[i].value = 0;
++            heap[i].frequency = 0;
+             if (i < heapLength) {
+                 hpVal = heapStream.read();
+                 heap[i] = hpVal.data[0];
+             }
+             symbol_bits[i] = 0;
++        }
++
++        // FSE-coded Huffman weights require at least two explicit weights.
++        // A complete three-leaf tree also handles one/two-symbol inputs;
++        // unused leaves change only the table, never the literal data.
++        if (heapLength < 3) {
++            uint16_t padding = 3 - heapLength;
++            for (int16_t i = heapLength - 1; i >= 0; --i) {
++#pragma HLS PIPELINE off
++                heap[i + padding] = heap[i];
++            }
++            uint16_t candidate = 3;
++            for (uint16_t i = 0; i < padding; ++i) {
++#pragma HLS PIPELINE off
++                bool used;
++                do {
++                    used = false;
++                    for (uint16_t j = padding; j < 3; ++j) {
++                        if (heap[j].value == candidate) used = true;
++                    }
++                    if (used) --candidate;
++                } while (used);
++                heap[i].value = candidate--;
++                heap[i].frequency = 1;
++            }
++            heapLength = 3;
+         }
+ 
+         // create tree
+@@ -1557,7 +1586,7 @@
+             auto bitlen = blenBuf[i];
+             auto blenWeight = (uint8_t)((bitlen > 0) ? (uint8_t)(curMaxBitlen + 1 - bitlen) : 0);
+             outWeight.data[0] = blenWeight;
+-            weightFreq[blenWeight] += (uint8_t)(i < maxVal + 1); // conditional increment
++            weightFreq[blenWeight] += (uint8_t)(i < maxVal); // final weight is implicit
+             outWeightsStream << outWeight;
+         }
+         // write maxVal as first value

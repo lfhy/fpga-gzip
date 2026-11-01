@@ -8,6 +8,7 @@ relicensed under MIT. Preserve its license and notices in distributed IP.
 Upstream: https://github.com/Xilinx/Vitis_Libraries
 Pinned revision: f217398d03b018c2774816200e562750872d9c31
 
-zstd-literal-buffer.patch, zstd-frame-fse.patch and zstd-fifo.patch modify Apache-2.0 upstream
+zstd-literal-buffer.patch, zstd-frame-fse.patch, zstd-fifo.patch and
+zstd-huffman-padding.patch modify Apache-2.0 upstream
 headers in a private build directory. The original library checkout remains
 unchanged. The upstream license is included as LICENSE.Vitis-Libraries.

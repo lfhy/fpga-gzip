@@ -20,13 +20,15 @@ func main() {
 		os.Exit(2)
 	}
 	paths, err := filepath.Glob(filepath.Join(os.Args[2], "case-*.raw"))
-	want := 69
+	want := 115
 	if len(os.Args) == 4 {
 		switch os.Args[3] {
 		case "quick":
-			want = 15
+			want = 25
 		case "random":
 			want = 3
+		case "entropy":
+			want = 5
 		default:
 			panic("unknown case selection")
 		}

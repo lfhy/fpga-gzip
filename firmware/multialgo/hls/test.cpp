@@ -11,14 +11,16 @@ void compress_ctl(hls::stream<Input>&, hls::stream<Output>&);
 int main(int argc, char** argv) {
     if (argc != 2 && argc != 3) return 2;
     const unsigned sizes[]={1,7,8,9,64,65,71,72,73,127,128,129,255,1023,8191,8192,8193,32767,32768,32769,65536,65537,1048576};
-    for (unsigned kind=0; kind<3; ++kind) for (unsigned size:sizes) {
+    for (unsigned kind=0; kind<5; ++kind) for (unsigned size:sizes) {
+        if (argc == 3 && std::string(argv[2]) == "entropy" && !((kind != 2 && size == 8193) || (kind == 2 && size == 65537))) continue;
         if (argc == 3 && std::string(argv[2]) == "random" && (kind != 2 || (size != 8193 && size != 32767 && size != 65537))) continue;
         if (argc == 3 && size != 1 && size != 73 && size != 8193 && size != 32767 && size != 65537) continue;
         std::vector<uint8_t> raw(size);
         uint32_t rng=0x12345678;
         for (unsigned i=0;i<size;++i) {
             rng^=rng<<13; rng^=rng>>17; rng^=rng<<5;
-            raw[i]=kind==0 ? 0 : kind==1 ? "The quick brown fox jumps over the lazy dog.\n"[i%44] : rng;
+            raw[i]=kind==0 ? 0 : kind==1 ? "The quick brown fox jumps over the lazy dog.\n"[i%44] :
+                   kind==2 ? rng : kind==3 ? 'A' : i%2;
         }
         hls::stream<Input> in; hls::stream<Output> out;
         for (unsigned i=0;i<size;i+=8) {

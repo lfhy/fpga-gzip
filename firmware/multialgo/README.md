@@ -13,7 +13,7 @@
 | zstd | 4 | 2 | 125 MHz | Vitis Zstd，经 AXI FIFO 与 250 MHz shell 交互 |
 
 KU5P 的 gzip profile 已使用全部 64 个 URAM。按镜像替换允许每种引擎独立使用
-资源。Zstd 的 HLS 综合估算为每核约 61,718 LUT、133 BRAM18K、7 URAM，关键路径约 153 MHz，
+资源。Zstd 的 HLS 综合估算为每核约 6.2 万 LUT、134 BRAM18K、7 URAM，关键路径约 153 MHz，
 因此当前采用 2 核、125 MHz。表中的频率是配置值，镜像必须实际布线并通过
 setup、hold 和 DRC 检查才能装载。
 
@@ -38,29 +38,28 @@ HLS 适配器和新 RTL 使用本项目 MIT 许可。Vitis 外部依赖和针对
 
 ## 构建 HLS IP
 
-设置环境变量后运行，`CF_HLS_BUILD` 使用新的空目录。`vitis-run` 不接受位置式
-Tcl 参数，故使用下列环境变量：
+从 SDK 根目录调用，使用新的构建目录。脚本冻结 C++、Tcl、补丁和独立 Go
+验证器，记录源文件与库头文件的 SHA256，在构建目录内生成工具日志：
 
 ```sh
-export CF_HLS_LIBRARY=/data/lsw/Vitis_Libraries-2021.1
-export CF_HLS_ALGORITHM=lz4
-export CF_HLS_BUILD=/data1/my-compression-build/lz4-hls
-export CF_HLS_MODE=synth
-/opt/Xilinx/2025.2/Vitis/bin/vitis-run --mode hls \
-  --tcl "$PWD/firmware/multialgo/hls/build.tcl"
+VITIS_HLS_BIN=/opt/Xilinx/2025.2/Vitis/bin/vitis-run \
+  firmware/multialgo/hls/build.sh lz4 /data1/my-compression-build/lz4-hls \
+  /data/lsw/Vitis_Libraries-2021.1 cosim
 ```
 
-算法可改为 `zstd`。`CF_HLS_MODE=csim` 运行 69 组边界输入，`cosim` 运行
-15 组 C/RTL 联合仿真并导出 IP。Csim/co-sim 完成后必须独立解码，不能只看
-HLS 的 PASS：
+算法可改为 `zstd`。`csim` 运行 115 组边界输入，`cosim` 运行 25 组 C/RTL
+联合仿真；两种模式随后自动用纯 Go 解码并逐字节比较。解码失败会使构建失败，
+cosim 不会继续导出 IP。`synth` 只综合并导出候选 IP，不代表功能已验证。
+cosim 的可选第五个参数 `entropy` 运行全零、文本、随机、重复字符、二符号的 5 组回归，
+`random` 运行 3 组随机数据回归。也可重新验证已有结果：
 
 ```sh
-CGO_ENABLED=0 GOWORK=off go run ./examples/verify-hls lz4 "$CF_HLS_BUILD"
-# cosim 使用精简的 15 组
-CGO_ENABLED=0 GOWORK=off go run ./examples/verify-hls lz4 "$CF_HLS_BUILD" quick
+CGO_ENABLED=0 GOWORK=off go run ./examples/verify-hls lz4 /path/to/csim-output
+# cosim 使用精简的 25 组
+CGO_ENABLED=0 GOWORK=off go run ./examples/verify-hls lz4 /path/to/cosim-output quick
 ```
 
-`build.tcl` 把所需的四个 Zstd 头文件复制到构建目录，再应用补丁：
+`build.tcl` 把所需的五个 Zstd 头文件复制到构建目录，再应用补丁：
 
 - literal 反向缓冲增加一个存储槽，覆盖非对齐子流。
 - 新帧清除旧帧遗留的 FCS 标志。
@@ -69,6 +68,12 @@ CGO_ENABLED=0 GOWORK=off go run ./examples/verify-hls lz4 "$CF_HLS_BUILD" quick
   全部序列及结束标志，避免编码膨胀时先填满 FIFO。
 - 单一符号的 FSE 表保留一个未使用符号状态，供严格 Go 解码器验证；修正概率
   查表的越界访问。
+- Zstd 定义上游提供的 `DISABLE_DEPENDENCE`，让工具尊重字典和频率 RAM 的
+  真实依赖。忽略依赖时，连续相同符号会丢计数；RTL 仿真跟踪曾观察到
+  32 次被记为 16 次。保留依赖会增加部分循环的启动间隔，先保证输出正确。
+- Huffman 小字母表的补齐项在 BRAM 中显式初始化；不足三个叶子时补充未使用
+  符号，生成完整树，数据本身不添加字节。权重频率排除格式隐含的最后一个
+  权重，覆盖单符号、二符号输入。
 
 这些修复已通过零值、文本、随机输入的完整解码比较。联合仿真可能报告上游
 LZ 字典 dependence pragma 告警；只有实际 RTL 仿真成功且输出逐字节一致才算
@@ -88,9 +93,11 @@ VIVADO_BIN=/opt/Xilinx/2025.2/Vivado/bin/vivado \
 ```
 
 gzip/raw 不需要新 HLS IP，传 `-`；Zstd 传对应 HLS IP，脚本自动选择两核。
-launcher 冻结 RTL、Tcl，再按算法、RTL、构建脚本、参考 DCP、IP HDL/约束计算
-非零构建 ID，并保存 `build-inputs.json`。只更换 HLS IP 也会产生新 ID。
-脚本复制原工程，检查所有综合与实现输出都位于副本中。
+launcher 冻结工程、RTL、脚本、参考 DCP 和 IP 仓库，再按实际输入计算非零
+构建 ID，并保存 `build-inputs.json`。IP 的 ROM 初始化文件也参与计算。
+只更换 HLS IP 或常量表也会产生新 ID。
+脚本复制原工程，检查所有综合与实现输出都位于副本中。gzip IP 会重新生成并
+综合，禁用该实例的旧综合缓存，允许保持 VLNV 不变而替换算法 IP。
 
 成功目录包含 `.bit`、`manifest.json`、路由 DCP、时序/资源/DRC 报告。时序
 失败不会生成可装载 manifest。清单状态 `timing-closed` 是首次上板候选，
@@ -114,6 +121,9 @@ firmware/multialgo/tests/run-bridge.sh zstd
 ```sh
 CGO_ENABLED=0 GOWORK=off go run ./examples/verify-firmware \
   --algorithm lz4 --output /data1/lz4-board.json
+# 另外覆盖没有核心标记的纯零值、单符号与二符号输入
+CGO_ENABLED=0 GOWORK=off go run ./examples/verify-firmware \
+  --algorithm lz4 --edge --output /data1/lz4-edge.json
 # 服务接口验证：先启动允许全部算法、配置 --cores 4 的 fpga-gzipd
 CGO_ENABLED=0 GOWORK=off go run ./examples/verify-firmware \
   --algorithm lz4 --unix /run/fpga-compress.sock --quick \

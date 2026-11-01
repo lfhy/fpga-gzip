@@ -20,6 +20,15 @@
          int16_t val = 0;
          int16_t valDecrement = 0;
          if (freq == 0) {
+@@ -547,7 +548,7 @@
+ #pragma HLS PIPELINE
+                 normTable[i] = 0;
+             }
+-            uint16_t maxSymbol;
++            uint16_t maxSymbol = 0;
+             ap_uint<MAX_FREQ_DWIDTH> maxFreq = 0;
+             uint16_t symCnt = seqCnt;
+             volatile uint16_t symCnt_1 = seqCnt;
 @@ -582,6 +583,15 @@
                  }
                  // generate normalized distribution table

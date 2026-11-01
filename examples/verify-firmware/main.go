@@ -49,6 +49,7 @@ func main() {
 	large := flag.Int("large", 8<<20, "additional input size per pattern/core (bytes)")
 	socket := flag.String("unix", "", "exercise fpga-gzipd through this Unix socket instead of direct DMA")
 	quick := flag.Bool("quick", false, "check four boundary sizes per pattern/core")
+	edge := flag.Bool("edge", false, "check pure zero, one-symbol and two-symbol inputs without a core marker")
 	flag.Parse()
 	algorithm, err := firmware.ParseAlgorithm(*name)
 	if err != nil || *output == "" || *large < 1 || *large > 256<<20 {
@@ -108,6 +109,13 @@ func main() {
 	if *quick {
 		sizes = []int{73, 8193, 65537, *large}
 	}
+	patterns := []string{"zero", "text", "random"}
+	if *edge {
+		patterns = []string{"all-zero", "repeat-A", "binary"}
+		if !*quick {
+			sizes = []int{129, 8191, 8192, 8193, 65537, *large}
+		}
+	}
 	rows := make(chan row, cores*len(sizes)*3)
 	var wg sync.WaitGroup
 	for core, path := range paths {
@@ -115,7 +123,7 @@ func main() {
 		go func(core int, path device.Paths) {
 			defer wg.Done()
 			rng := rand.New(rand.NewSource(int64(20261101 + core)))
-			for _, pattern := range []string{"zero", "text", "random"} {
+			for _, pattern := range patterns {
 				for _, size := range sizes {
 					raw := make([]byte, size)
 					switch pattern {
@@ -123,8 +131,18 @@ func main() {
 						copy(raw, bytes.Repeat([]byte("standard compression image verification\n"), size/39+2))
 					case "random":
 						_, _ = rng.Read(raw)
+					case "repeat-A":
+						for i := range raw {
+							raw[i] = 'A'
+						}
+					case "binary":
+						for i := range raw {
+							raw[i] = byte(i & 1)
+						}
 					}
-					raw[0] = byte(core + 1)
+					if !*edge {
+						raw[0] = byte(core + 1)
+					}
 					v := row{Core: core, Pattern: pattern, Input: size}
 					var h *device.Device
 					var e error
