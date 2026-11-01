@@ -44,10 +44,10 @@ void compress_ctl(hls::stream<Input>& inStream, hls::stream<Output>& outStream) 
     hls::stream<IntVectorStream_dt<8,8> > raw("raw"), encoded("encoded");
 #pragma HLS STREAM variable=raw depth=32
 #pragma HLS STREAM variable=encoded depth=32
-    // Each enabled DMA engine has one LZ77 lane and its own entropy encoder.
-    // This profile instantiates two engines, selected in the common shell.
+    // Each enabled DMA engine distributes independent blocks to four LZ77
+    // lanes and shares an entropy encoder. The shell exposes two DMA engines.
     xf::compression::details::zstdAxiu2hlsStream<64>(inStream, raw);
-    xf::compression::zstdCompressQuadCore<1, 8192, 8192, 128>(raw, encoded);
+    xf::compression::zstdCompressQuadCore<4, 8192, 8192, 128>(raw, encoded);
     finish_zstd(encoded, outStream);
 }
 

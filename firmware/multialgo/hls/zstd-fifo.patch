@@ -1,6 +1,6 @@
 --- a/zstd_compress_multicore.hpp
 +++ b/zstd_compress_multicore.hpp
-@@ -382,11 +382,16 @@
+@@ -382,12 +382,22 @@
      // zstd compression main module
      constexpr uint8_t c_parallel_huffman = (CORE_COUNT < 4) ? 2 : (CORE_COUNT < 6 ? 4 : 8);
      constexpr uint32_t c_freq_dwidth = maxBitsUsed(BLOCK_SIZE);
@@ -20,9 +20,15 @@
 +    // Worst-case sequence codes and offsets may exceed the raw byte count.
 +    constexpr uint32_t c_seqBlockDepth = BLOCK_SIZE / 4 + 2;
      constexpr uint8_t c_wfreqSDepth = 24 * CORE_COUNT;
++    // Buffer every lane's complete frequency packet independently of
++    // Huffman/FSE backpressure, including the terminal marker.
++    constexpr uint32_t c_litFreqSDepth = CORE_COUNT * (details::c_maxLitV + 1) + 1;
++    constexpr uint32_t c_seqFreqSDepth =
++        CORE_COUNT * (details::c_maxCodeLL + details::c_maxCodeOF + details::c_maxCodeML + 7) + 1;
  
      // Internal streams
-@@ -398,7 +403,8 @@
+     hls::stream<ap_uint<68> > inBlockStream[CORE_COUNT];
+@@ -398,7 +408,8 @@
  #pragma HLS STREAM variable = inBlockStream depth = c_dataUpSDepth
  #pragma HLS STREAM variable = inBlockDszStream depth = 16
  #pragma HLS STREAM variable = packerMetaStream depth = 16
@@ -32,7 +38,7 @@
  #pragma HLS STREAM variable = rawBlockStream depth = c_rawBlkSDepth
  #pragma HLS BIND_STORAGE variable = rawBlockStream type = FIFO impl = URAM
  
-@@ -417,7 +423,7 @@
+@@ -417,7 +428,7 @@
  #pragma HLS STREAM variable = seqStream depth = c_seqInSDepth
  #pragma HLS AGGREGATE variable = seqStream
  #pragma HLS STREAM variable = serialSeqStream depth = 8
@@ -41,9 +47,22 @@
  // 2-4K depth needed to keep reading input sequences even if previous block decoding waits for fse table generation
  #pragma HLS BIND_STORAGE variable = reverseSeqStream type = FIFO impl = BRAM
  #pragma HLS BIND_STORAGE variable = seqStream type = FIFO impl = BRAM
+@@ -428,8 +439,10 @@
+     hls::stream<IntVectorStream_dt<c_freq_dwidth, 1> > serialSeqFreqStream("serialSeqFreqStream");
+ #pragma HLS STREAM variable = litFreqStream depth = 16
+ #pragma HLS STREAM variable = seqFreqStream depth = 128
+-#pragma HLS STREAM variable = serialLitFreqStream depth = 8
+-#pragma HLS STREAM variable = serialSeqFreqStream depth = 8
++#pragma HLS STREAM variable = serialLitFreqStream depth = c_litFreqSDepth
++#pragma HLS STREAM variable = serialSeqFreqStream depth = c_seqFreqSDepth
++#pragma HLS BIND_STORAGE variable = serialLitFreqStream type = FIFO impl = BRAM
++#pragma HLS BIND_STORAGE variable = serialSeqFreqStream type = FIFO impl = BRAM
+ 
+     hls::stream<IntVectorStream_dt<c_freq_dwidth, 1> > wghtFreqStream("wghtFreqStream");
+     hls::stream<IntVectorStream_dt<c_freq_dwidth, 1> > freqStream("freqStream");
 --- a/zstd_compress_internal.hpp
 +++ b/zstd_compress_internal.hpp
-@@ -675,7 +675,11 @@
+@@ -678,7 +678,11 @@
  reverse_seq_stream:
      while (bufferMode || streamMode) {
  #pragma HLS PIPELINE II = 1 rewind
