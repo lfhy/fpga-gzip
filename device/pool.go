@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/lfhy/fpga-gzip/firmware"
 )
 
 // FourCorePaths maps the validated four-core shell's independent DMA channels
@@ -45,14 +47,14 @@ func NewPool(paths []Paths) (*Pool, error) {
 	seen := make(map[string]bool)
 	banks := make(map[string][]uint32)
 	for _, path := range paths {
-		if path.User == "" || path.H2C == "" || path.C2H == "" || path.RegisterBase%4 != 0 || path.RegisterBase > ^uint32(0)-RegDebug {
+		if path.User == "" || path.H2C == "" || path.C2H == "" || path.RegisterBase%4 != 0 || path.RegisterBase > ^uint32(0)-firmware.RegBuildHi {
 			return nil, errors.New("invalid device paths or register base")
 		}
 		user := canonicalPath(path.User)
 		for _, base := range banks[user] {
 			// Include the final 32-bit register, without uint32 overflow.
-			if uint64(path.RegisterBase) < uint64(base)+uint64(RegCapabilities)+4 &&
-				uint64(base) < uint64(path.RegisterBase)+uint64(RegCapabilities)+4 {
+			if uint64(path.RegisterBase) < uint64(base)+uint64(firmware.RegBuildHi)+4 &&
+				uint64(base) < uint64(path.RegisterBase)+uint64(firmware.RegBuildHi)+4 {
 				return nil, fmt.Errorf("overlapping control banks on %s: %#x and %#x", user, base, path.RegisterBase)
 			}
 		}

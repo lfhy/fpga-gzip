@@ -11,12 +11,14 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
 
 	lfyflag "github.com/lfhy/flag"
 	"github.com/lfhy/fpga-gzip/device"
+	"github.com/lfhy/fpga-gzip/firmware"
 	"github.com/lfhy/fpga-gzip/pipeline"
 	"github.com/lfhy/fpga-gzip/server"
 	"github.com/lfhy/fpga-gzip/size"
@@ -46,6 +48,7 @@ type daemonConfig struct {
 	QueueDepth        uint
 	MaxInputText      string
 	AuthToken         string
+	Algorithms        string
 }
 
 // timeDuration is a named alias so the flag package can bind it through its
@@ -133,6 +136,18 @@ func run() int {
 		return 2
 	}
 	serverOptions := make([]server.Option, 0, 1)
+	if cfg.Algorithms != "" {
+		var algorithms []firmware.Algorithm
+		for _, name := range strings.Split(cfg.Algorithms, ",") {
+			a, err := firmware.ParseAlgorithm(strings.TrimSpace(name))
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				return 2
+			}
+			algorithms = append(algorithms, a)
+		}
+		serverOptions = append(serverOptions, server.WithAlgorithms(algorithms...))
+	}
 	if cfg.AuthToken != "" {
 		serverOptions = append(serverOptions, server.WithAuth(cfg.AuthToken))
 	}
@@ -249,6 +264,7 @@ func parseConfig(args []string) (daemonConfig, error) {
 	fs.UintFullVar(&cfg.QueueDepth, "queue-depth", "daemon", "queue_depth", "FPGA_GZIPD_QUEUE_DEPTH", cfg.QueueDepth, "queued requests")
 	fs.StringFullVar(&cfg.MaxInputText, "max-input-bytes", "daemon", "max_input_bytes", "FPGA_GZIPD_MAX_INPUT_BYTES", cfg.MaxInputText, "maximum request size; zero means unlimited")
 	fs.StringFullVar(&cfg.AuthToken, "auth-token", "daemon", "auth_token", "FPGA_GZIPD_AUTH_TOKEN", "", "optional Bearer token; empty disables authentication")
+	fs.StringFullVar(&cfg.Algorithms, "algorithms", "daemon", "algorithms", "FPGA_COMPRESS_ALGORITHMS", "gzip", "allowed request algorithms; each image contains one: gzip,lz4,zstd,raw")
 	if err := fs.Parse(args); err != nil {
 		return daemonConfig{}, err
 	}

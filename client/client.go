@@ -10,8 +10,11 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/lfhy/fpga-gzip/firmware"
 )
 
 // Client talks to one fpga-gzipd endpoint.
@@ -41,6 +44,7 @@ func WithAuth(token string) Option {
 type Result struct {
 	InputBytes  int64
 	OutputBytes int64
+	Algorithm   firmware.Algorithm
 }
 
 // NewTCP creates a client for a daemon listening on host:port.
@@ -137,6 +141,12 @@ func (c *Client) Health(ctx context.Context) error {
 // the gzip response to dst. The caller must provide the complete input size;
 // a non-rewindable reader is supported.
 func (c *Client) Compress(ctx context.Context, src io.Reader, inputSize int64, dst io.Writer) (Result, error) {
+	return c.CompressAlgorithm(ctx, firmware.Gzip, src, inputSize, dst)
+}
+
+// CompressAlgorithm checks image selection and the final verification trailer.
+// A late DMA or integrity error cannot be mistaken for successful HTTP output.
+func (c *Client) CompressAlgorithm(ctx context.Context, algorithm firmware.Algorithm, src io.Reader, inputSize int64, dst io.Writer) (Result, error) {
 	if c == nil || c.http == nil {
 		return Result{}, errors.New("client is nil")
 	}
@@ -146,7 +156,14 @@ func (c *Client) Compress(ctx context.Context, src io.Reader, inputSize int64, d
 	if inputSize < 1 {
 		return Result{}, errors.New("input size must be greater than zero")
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/compress", src)
+	if algorithm < firmware.Raw || algorithm > firmware.Zstd {
+		return Result{}, errors.New("invalid algorithm")
+	}
+	endpoint := c.baseURL + "/compress"
+	if algorithm != firmware.Gzip {
+		endpoint += "?algorithm=" + algorithm.String()
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, src)
 	if err != nil {
 		return Result{}, err
 	}
@@ -162,11 +179,24 @@ func (c *Client) Compress(ctx context.Context, src io.Reader, inputSize int64, d
 		message, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
 		return Result{}, fmt.Errorf("fpga-gzipd compress: HTTP %s: %s", resp.Status, strings.TrimSpace(string(message)))
 	}
+	loaded := resp.Header.Get("X-FPGA-Algorithm")
+	if loaded != "" && loaded != algorithm.String() {
+		return Result{}, fmt.Errorf("response algorithm %q differs from requested %s", loaded, algorithm)
+	}
+	if loaded == "" && algorithm != firmware.Gzip {
+		return Result{}, errors.New("server did not identify the response algorithm")
+	}
 	written, err := io.Copy(dst, resp.Body)
 	if err != nil {
 		return Result{}, err
 	}
-	return Result{InputBytes: inputSize, OutputBytes: written}, nil
+	if loaded != "" {
+		expected, err := strconv.ParseInt(resp.Trailer.Get("X-FPGA-Output-Bytes"), 10, 64)
+		if resp.Trailer.Get("X-FPGA-Complete") != "1" || err != nil || expected != written {
+			return Result{}, fmt.Errorf("FPGA response did not complete verification: %s", resp.Trailer.Get("X-FPGA-Error"))
+		}
+	}
+	return Result{InputBytes: inputSize, OutputBytes: written, Algorithm: algorithm}, nil
 }
 
 func (c *Client) authorize(req *http.Request) {

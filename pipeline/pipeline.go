@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/lfhy/fpga-gzip/device"
+	"github.com/lfhy/fpga-gzip/firmware"
 )
 
 const (
@@ -270,6 +271,20 @@ func Run(ctx context.Context, inputPath, outputPath string, hw Hardware, opts Op
 // is created. This is the preferred API for memory buffers, pipes, sockets and
 // other callers that already know the input length.
 func RunReader(ctx context.Context, input io.Reader, inputSize uint64, output io.Writer, hw Hardware, opts Options, report func(Progress)) (Result, error) {
+	return RunReaderAlgorithm(ctx, input, inputSize, output, hw, opts, report, firmware.Gzip, nil)
+}
+
+// OutputValidator observes the encoded stream and validates its representation
+// against the input CRC and length after all DMA workers have stopped.
+type OutputValidator interface {
+	io.Writer
+	Validate(inputCRC uint32, inputSize uint64) error
+}
+
+// RunReaderAlgorithm reuses the DMA transport for a versioned algorithm image.
+// A non-gzip caller must provide a format validator. The higher-level accelerator
+// package supplies pure Go validators and owns their cancellation lifecycle.
+func RunReaderAlgorithm(ctx context.Context, input io.Reader, inputSize uint64, output io.Writer, hw Hardware, opts Options, report func(Progress), algorithm firmware.Algorithm, validator OutputValidator) (Result, error) {
 	if input == nil {
 		return Result{}, errors.New("input reader is nil")
 	}
@@ -290,6 +305,15 @@ func RunReader(ctx context.Context, input io.Reader, inputSize uint64, output io
 	}
 	if ctx == nil {
 		ctx = context.Background()
+	}
+	if algorithm < firmware.Raw || algorithm > firmware.Zstd {
+		return Result{}, fmt.Errorf("unsupported FPGA algorithm %d", algorithm)
+	}
+	if validator == nil && algorithm != firmware.Gzip {
+		return Result{}, errors.New("non-gzip FPGA output requires a format validator")
+	}
+	if _, err := firmware.Require(ctx, hw, algorithm); err != nil {
+		return Result{}, err
 	}
 	runStart := time.Now()
 
@@ -362,7 +386,10 @@ func RunReader(ctx context.Context, input io.Reader, inputSize uint64, output io
 		}()
 	}
 
-	validatedOutput := &gzipHeaderWriter{dst: output}
+	validatedOutput := validator
+	if validatedOutput == nil {
+		validatedOutput = &gzipHeaderWriter{dst: output}
+	}
 	worker(func() error { return storeOutput(runCtx, validatedOutput, rx, c2hPool, stats, storeDone) })
 	worker(func() error { return receiveC2H(runCtx, hw, opts, rx, c2hPool, stats) })
 	worker(func() error { return sendH2C(runCtx, hw, inputSize, tx, h2cPool, stats) })

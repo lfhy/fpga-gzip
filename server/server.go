@@ -20,6 +20,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/lfhy/fpga-gzip/accelerator"
+	"github.com/lfhy/fpga-gzip/firmware"
 	"github.com/lfhy/fpga-gzip/pipeline"
 )
 
@@ -53,6 +55,25 @@ type Config struct {
 // configuration. Options are applied at construction time.
 type Option func(*Server) error
 
+// WithAlgorithms enables request algorithms for a multi-image daemon. An image
+// still contains one algorithm. A mismatch returns HTTP 409 before reset/DMA.
+// Without this option the service accepts only gzip.
+func WithAlgorithms(algorithms ...firmware.Algorithm) Option {
+	return func(s *Server) error {
+		if len(algorithms) == 0 {
+			return errors.New("at least one algorithm is required")
+		}
+		s.algorithms = make(map[firmware.Algorithm]bool, len(algorithms))
+		for _, a := range algorithms {
+			if a < firmware.Raw || a > firmware.Zstd {
+				return errors.New("invalid service algorithm")
+			}
+			s.algorithms[a] = true
+		}
+		return nil
+	}
+}
+
 // WithAuth enables Bearer-token authentication for /compress and /metrics.
 // Authentication is disabled by default. /healthz remains public for load
 // balancer and service-manager probes.
@@ -71,10 +92,11 @@ func WithAuth(token string) Option {
 type Server struct {
 	cfg Config
 
-	admission chan struct{}
-	workers   chan struct{}
-	handler   http.Handler
-	authToken string
+	admission  chan struct{}
+	workers    chan struct{}
+	handler    http.Handler
+	authToken  string
+	algorithms map[firmware.Algorithm]bool
 
 	requests  atomic.Uint64
 	successes atomic.Uint64
@@ -109,9 +131,10 @@ func New(cfg Config, options ...Option) (*Server, error) {
 	}
 
 	s := &Server{
-		cfg:       cfg,
-		admission: make(chan struct{}, capacity),
-		workers:   make(chan struct{}, cfg.MaxConcurrent),
+		cfg:        cfg,
+		algorithms: map[firmware.Algorithm]bool{firmware.Gzip: true},
+		admission:  make(chan struct{}, capacity),
+		workers:    make(chan struct{}, cfg.MaxConcurrent),
 	}
 	for _, option := range options {
 		if option == nil {
@@ -283,6 +306,23 @@ func (s *Server) handleCompress(w http.ResponseWriter, r *http.Request) {
 		writeServiceError(w, http.StatusServiceUnavailable, ErrBusy)
 		return
 	}
+	algorithm := firmware.Gzip
+	if name := r.URL.Query().Get("algorithm"); name != "" {
+		var err error
+		algorithm, err = firmware.ParseAlgorithm(name)
+		if err != nil || !s.algorithms[algorithm] {
+			s.failures.Add(1)
+			<-s.admission
+			writeServiceError(w, http.StatusBadRequest, errors.New("request algorithm is not enabled"))
+			return
+		}
+	}
+	if !s.algorithms[algorithm] {
+		s.failures.Add(1)
+		<-s.admission
+		writeServiceError(w, http.StatusBadRequest, errors.New("request algorithm is not enabled"))
+		return
+	}
 	defer func() { <-s.admission }()
 	select {
 	case s.workers <- struct{}{}:
@@ -309,17 +349,29 @@ func (s *Server) handleCompress(w http.ResponseWriter, r *http.Request) {
 		defer func() { _ = closer.Close() }()
 	}
 
-	w.Header().Set("Content-Type", "application/gzip")
-	w.Header().Set("X-FPGA-Gzip", "true")
+	if _, err := firmware.Require(r.Context(), hw, algorithm); err != nil {
+		s.failures.Add(1)
+		writeServiceError(w, http.StatusConflict, err)
+		return
+	}
+	contentType := map[firmware.Algorithm]string{firmware.Gzip: "application/gzip", firmware.LZ4: "application/x-lz4", firmware.Zstd: "application/zstd", firmware.Raw: "application/octet-stream"}[algorithm]
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("X-FPGA-Algorithm", algorithm.String())
+	if algorithm == firmware.Gzip {
+		w.Header().Set("X-FPGA-Gzip", "true")
+	}
 	w.Header().Set("X-FPGA-Input-Bytes", fmt.Sprintf("%d", r.ContentLength))
 	w.Header().Add("Trailer", "X-FPGA-Output-Bytes")
+	w.Header().Add("Trailer", "X-FPGA-Complete")
+	w.Header().Add("Trailer", "X-FPGA-Error")
 	tracked := &commitWriter{ResponseWriter: w}
-	result, err := pipeline.RunReader(r.Context(), r.Body, uint64(r.ContentLength), tracked, hw, s.cfg.Options, nil)
+	result, err := accelerator.CompressReader(r.Context(), algorithm, r.Body, uint64(r.ContentLength), tracked, hw, s.cfg.Options, nil)
 	if err != nil {
 		s.failures.Add(1)
 		if !tracked.committed {
 			writeServiceError(w, http.StatusBadGateway, err)
 		}
+		w.Header().Set("X-FPGA-Error", strings.ReplaceAll(err.Error(), "\n", " "))
 		return
 	}
 	s.successes.Add(1)
@@ -328,6 +380,7 @@ func (s *Server) handleCompress(w http.ResponseWriter, r *http.Request) {
 	// Trailer was declared before the first body write, so net/http will emit
 	// this value after the gzip stream when the transport supports trailers.
 	w.Header().Set("X-FPGA-Output-Bytes", fmt.Sprintf("%d", result.OutputBytes))
+	w.Header().Set("X-FPGA-Complete", "1")
 }
 
 func (s *Server) admit(ctx context.Context) bool {

@@ -12,6 +12,8 @@ import (
 	"os"
 	"sync"
 	"time"
+
+	"github.com/lfhy/fpga-gzip/firmware"
 )
 
 // Paths identifies the XDMA character devices created by xdma.ko.
@@ -38,6 +40,7 @@ type Device struct {
 	registerClosed  bool
 	packetReads     bool
 	h2cInput        dmaInput
+	cardLock        *firmware.CardLock
 
 	closeStreamsOnce sync.Once
 	closeOnce        sync.Once
@@ -49,9 +52,19 @@ func Open(paths Paths) (*Device, error) {
 	if paths.User == "" || paths.H2C == "" || paths.C2H == "" {
 		return nil, errors.New("all XDMA device paths are required")
 	}
-	if paths.RegisterBase%4 != 0 || paths.RegisterBase > ^uint32(0)-RegDebug {
+	if paths.RegisterBase%4 != 0 || paths.RegisterBase > ^uint32(0)-firmware.RegBuildHi {
 		return nil, errors.New("invalid register base alignment or range")
 	}
+	cardLock, err := firmware.LockTransaction(paths.User)
+	if err != nil {
+		return nil, err
+	}
+	opened := false
+	defer func() {
+		if !opened {
+			cardLock.Close()
+		}
+	}()
 
 	user, err := os.OpenFile(paths.User, os.O_RDWR|os.O_SYNC, 0)
 	if err != nil {
@@ -80,17 +93,27 @@ func Open(paths Paths) (*Device, error) {
 		return nil, fmt.Errorf("open C2H device %q: %w", paths.C2H, err)
 	}
 
-	return &Device{user: user, h2c: h2c, c2h: c2h, registerBase: paths.RegisterBase, packetReads: packetReads}, nil
+	opened = true
+	return &Device{user: user, h2c: h2c, c2h: c2h, registerBase: paths.RegisterBase, packetReads: packetReads, cardLock: cardLock}, nil
 }
 
 // PacketReadsEnabled reports negotiated end-of-gzip packets and XDMA EOP flush.
 func (d *Device) PacketReadsEnabled() bool { return d != nil && d.packetReads }
 
+// FirmwareInfo reads the image identity without resetting or starting a task.
+func (d *Device) FirmwareInfo(ctx context.Context) (firmware.Info, error) {
+	info, err := firmware.Inspect(ctx, d)
+	if err == nil && !info.Legacy && d.registerBase/0x1000 >= info.Cores {
+		return firmware.Info{}, fmt.Errorf("%w: control bank is outside %d active cores", firmware.ErrIncompatible, info.Cores)
+	}
+	return info, err
+}
+
 // SetRegisterBase selects a bank before the first transaction. Do not call it
 // concurrently with register access or DMA. It also allows callers built with
 // an older SDK to discover multi-bank support through an optional interface.
 func (d *Device) SetRegisterBase(base uint32) error {
-	if base%4 != 0 || base > ^uint32(0)-RegDebug {
+	if base%4 != 0 || base > ^uint32(0)-firmware.RegBuildHi {
 		return errors.New("invalid register base alignment or range")
 	}
 	d.registerMu.Lock()
@@ -128,6 +151,7 @@ func (d *Device) Close() error {
 	}
 	var first error
 	d.closeOnce.Do(func() {
+		defer d.cardLock.Close()
 		if err := d.CloseStreams(); err != nil {
 			first = err
 		}

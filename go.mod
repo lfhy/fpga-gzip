@@ -2,7 +2,11 @@ module github.com/lfhy/fpga-gzip
 
 go 1.21
 
-require github.com/lfhy/flag v1.1.2
+require (
+	github.com/klauspost/compress v1.17.11
+	github.com/lfhy/flag v1.1.2
+	github.com/pierrec/lz4/v4 v4.1.22
+)
 
 require (
 	github.com/fatih/color v1.13.0 // indirect

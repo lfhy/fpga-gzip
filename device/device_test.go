@@ -157,13 +157,13 @@ func TestPoolRejectsPartialRegisterOverlap(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, base := range []uint32{4, RegDebug} {
+	for _, base := range []uint32{4, RegDebug, RegCapabilities + 4, 0x60} {
 		paths[1].RegisterBase = base
 		if _, err := NewPool(paths); err == nil {
 			t.Fatalf("accepted overlapping bank at %#x", base)
 		}
 	}
-	paths[1].RegisterBase = RegCapabilities + 4
+	paths[1].RegisterBase = 0x64 // versioned identity ends at offset 0x60
 	if _, err := NewPool(paths); err != nil {
 		t.Fatalf("rejected adjacent nonoverlapping banks: %v", err)
 	}

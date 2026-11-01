@@ -1,5 +1,9 @@
 # fpga-gzip
 
+多算法固件框架提供统一 shell、版本查询与整卡切换：gzip、LZ4、Zstd、raw
+各自构建镜像。公开的 `accelerator` 包、`fpga-fw`、`fpga-compress` 和多算法
+HTTP/Unix 接口见[固件与 SDK 使用说明](firmware/README.md)。根包继续提供 gzip 接口。
+
 `fpga-gzip` 是一个纯 Go 的 FPGA gzip 主机端 SDK 和命令行工具。它直接访问 Xilinx XDMA 字符设备和 FPGA user BAR，不依赖 cgo、XRT 或厂商用户态库。当前实现对应本机已验证的 gzip shell：每核一对 H2C/C2H streaming 通道，以及 user BAR 上独立的 gzip 控制寄存器；支持显式选择四核并行。
 
 2026-11-01 最新源码配合已验证的 EOP shell 和修补版 XDMA，四核、64 MiB 分块的持续内存压缩达到 **7.29 GB/s**（约 50% 可压缩输入，三轮均超过 7.28）；随机数据 **6.99 GB/s**、文本 **7.39 GB/s**。每轮输入 96 GiB，所有输出均完整解压并逐字节比较，无预测跳过或 CPU 回退。该指标为四核主机与板卡的压缩吞吐；NVMe/FUSE 持久化性能单独测量。[完整数据、条件与复现步骤](docs/capacity-20261101.md)包含驱动、RTL、短测与持续测试对照。
