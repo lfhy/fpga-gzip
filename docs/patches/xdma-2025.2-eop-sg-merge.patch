@@ -1,0 +1,88 @@
+--- a/XDMA/linux-kernel/xdma/cdev_sgdma.c
++++ b/XDMA/linux-kernel/xdma/cdev_sgdma.c
+@@ -293,12 +293,14 @@
+ 	cb->pages = NULL;
+ }
+ 
+-static int char_sgdma_map_user_buf_to_sgl(struct xdma_io_cb *cb, bool write)
++static int char_sgdma_map_user_buf_to_sgl(struct xdma_io_cb *cb, bool write,
++					  struct xdma_engine *engine)
+ {
+ 	struct sg_table *sgt = &cb->sgt;
+ 	unsigned long len = cb->len;
+ 	void __user *buf = cb->buf;
+ 	struct scatterlist *sg;
++	bool merge = !write && engine->streaming && engine->eop_flush;
+ 	unsigned int pages_nr = (((unsigned long)buf + len + PAGE_SIZE - 1) -
+ 				 ((unsigned long)buf & PAGE_MASK))
+ 				>> PAGE_SHIFT;
+@@ -308,7 +310,7 @@
+ 	if (pages_nr == 0)
+ 		return -EINVAL;
+ 
+-	if (sg_alloc_table(sgt, pages_nr, GFP_KERNEL)) {
++	if (!merge && sg_alloc_table(sgt, pages_nr, GFP_KERNEL)) {
+ 		pr_err("sgl OOM.\n");
+ 		return -ENOMEM;
+ 	}
+@@ -349,6 +351,24 @@
+ 		}
+ 	}
+ 
++	if (merge) {
++		/* EOP requests need completion on each SG entry to detect a short
++		 * packet. Merge physically contiguous pages, within the DMA API
++		 * segment limit, to avoid an interrupt for every 4 KiB page.
++		 * Exact-length and H2C transfers retain their original SG layout.
++		 */
++		cb->pages_nr = pages_nr;
++		for (i = 0; i < pages_nr; i++)
++			flush_dcache_page(cb->pages[i]);
++		rv = sg_alloc_table_from_pages_segment(sgt, cb->pages, pages_nr,
++						      offset_in_page(buf), len,
++						      dma_get_max_seg_size(&engine->xdev->pdev->dev),
++						      GFP_KERNEL);
++		if (rv < 0)
++			goto err_out;
++		return 0;
++	}
++
+ 	sg = sgt->sgl;
+ 	for (i = 0; i < pages_nr; i++, sg = sg_next(sg)) {
+ 		unsigned int offset = offset_in_page(buf);
+@@ -413,7 +433,7 @@
+ 	cb.len = count;
+ 	cb.ep_addr = (u64)*pos;
+ 	cb.write = write;
+-	rv = char_sgdma_map_user_buf_to_sgl(&cb, write);
++	rv = char_sgdma_map_user_buf_to_sgl(&cb, write, engine);
+ 	if (rv < 0)
+ 		return rv;
+ 
+@@ -495,7 +515,7 @@
+ 			return rv;
+ 		}
+ 
+-		rv = char_sgdma_map_user_buf_to_sgl(&caio->cb[i], true);
++		rv = char_sgdma_map_user_buf_to_sgl(&caio->cb[i], true, engine);
+ 		if (rv < 0)
+ 			return rv;
+ 
+@@ -569,7 +589,7 @@
+ 			return rv;
+ 		}
+ 
+-		rv = char_sgdma_map_user_buf_to_sgl(&caio->cb[i], false);
++		rv = char_sgdma_map_user_buf_to_sgl(&caio->cb[i], false, engine);
+ 		if (rv < 0)
+ 			return rv;
+ 
+@@ -817,7 +837,7 @@
+ 	cb.len = io.len;
+ 	cb.ep_addr = io.ep_addr;
+ 	cb.write = write;
+-	rv = char_sgdma_map_user_buf_to_sgl(&cb, write);
++	rv = char_sgdma_map_user_buf_to_sgl(&cb, write, engine);
+ 	if (rv < 0)
+ 		return rv;
+ 

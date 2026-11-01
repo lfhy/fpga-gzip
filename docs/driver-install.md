@@ -27,6 +27,12 @@ sudo dnf install gcc make git kernel-devel-$(uname -r) kernel-headers-$(uname -r
 官方代码对两个方向都要求 `FOLL_WRITE`，导致只读输入在 DMA 提交前返回 `-EFAULT`。
 补丁让 H2C 只固定可读页，C2H 保持可写页要求。SDK 对未修补驱动的零字节
 `EFAULT` 会复制到自有可写缓冲后重试一次；已经提交部分字节或其他错误不重试。
+使用新 EOP shell 时，继续应用 [EOP 连续页合并补丁](patches/xdma-2025.2-eop-sg-merge.patch)。
+官方 EOP 路径给每个 SG 段设置完成通知，并在中断中扫描已完成段；原来每页一个段，
+大包读取反而增加开销。补丁仅对 streaming C2H 的 EOP 读取使用内核
+`sg_alloc_table_from_pages_segment`，在设备 DMA 段长度上限内合并物理连续页。
+H2C 和原精确长度读取保持原 SG 布局；页固定、DMA 映射和释放仍由驱动执行。
+内核 helper 的实现见 [Linux v6.12 scatterlist.c](https://github.com/torvalds/linux/blob/v6.12/lib/scatterlist.c)。
 补丁基于官方提交 `a918c5196a09f95756af244a607d543d9dce5bfb`，实测内核为 Linux 6.12。
 下面固定到该源码版本；其他版本需要重新核对补丁及实机测试。
 
@@ -41,6 +47,8 @@ git apply --check "$fpga_gzip_dir/docs/patches/xdma-2025.2-killable-dma-wait.pat
 git apply "$fpga_gzip_dir/docs/patches/xdma-2025.2-killable-dma-wait.patch"
 git apply --check "$fpga_gzip_dir/docs/patches/xdma-2025.2-readonly-h2c.patch"
 git apply "$fpga_gzip_dir/docs/patches/xdma-2025.2-readonly-h2c.patch"
+git apply --check "$fpga_gzip_dir/docs/patches/xdma-2025.2-eop-sg-merge.patch"
+git apply "$fpga_gzip_dir/docs/patches/xdma-2025.2-eop-sg-merge.patch"
 cd XDMA/linux-kernel/xdma
 make
 ```
@@ -69,8 +77,9 @@ cat /sys/module/xdma/srcversion
 /lib/modules/$(uname -r)/updates/xdma.ko
 ```
 
-`modinfo -n xdma` 应指向该文件；本机两个补丁的修补版 `srcversion` 为 `C6055D7044FEB6C79C6C438`
-（只含等待补丁的旧版为 `4053DCC3523124C6CC000FA`）。安装前应另存当前已验证的模块用于回滚。
+`modinfo -n xdma` 应指向该文件；本机三个补丁的修补版 `srcversion` 为
+`94DCC95A2173C02F0AD9552`。仅等待与只读页补丁的版本为 `C6055D7044FEB6C79C6C438`，
+只含等待补丁的旧版为 `4053DCC3523124C6CC000FA`。安装前应另存当前已验证的模块用于回滚。
 内核升级后需要为新内核重新编译安装。此驱动补丁不会加载或持久化 FPGA bitstream。
 
 需要开机自动加载时创建 `/etc/modules-load.d/xdma.conf`：
