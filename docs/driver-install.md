@@ -38,6 +38,11 @@ EOP 还需要 [描述符链尾修补](patches/xdma-2025.2-eop-chain-tail.patch)�
 若末包落在当前链的最后一个描述符，驱动会漏判并继续提交剩余链，空等 10 秒后
 才返回已经收到的数据。补丁也在整链完成时传播 EOP，正常结束当前读取。
 四核长测和带链尾命中日志的定向压力测试覆盖了这个边界，真实超时保持原值。
+再应用 [DMA 段长度补丁](patches/xdma-2025.2-max-dma-segment.patch)：PCI 设备默认的
+64 KiB DMA 段上限仍会把物理连续内存切成多段。XDMA 的描述符长度支持 28 位，
+驱动将设备声明的上限至少提高到 1 MiB，让上述 EOP SG 合并发挥作用；物理不连续
+的页不会被强行合并，其他读取路径不改变 SG 构造。卸载和 probe 失败时恢复原上限。
+硬件描述符格式见 [AMD PG195](https://docs.amd.com/r/en-US/pg195-pcie-dma)。
 补丁基于官方提交 `a918c5196a09f95756af244a607d543d9dce5bfb`，实测内核为 Linux 6.12。
 下面固定到该源码版本；其他版本需要重新核对补丁及实机测试。
 
@@ -56,6 +61,8 @@ git apply --check "$fpga_gzip_dir/docs/patches/xdma-2025.2-eop-sg-merge.patch"
 git apply "$fpga_gzip_dir/docs/patches/xdma-2025.2-eop-sg-merge.patch"
 git apply --check "$fpga_gzip_dir/docs/patches/xdma-2025.2-eop-chain-tail.patch"
 git apply "$fpga_gzip_dir/docs/patches/xdma-2025.2-eop-chain-tail.patch"
+git apply --check "$fpga_gzip_dir/docs/patches/xdma-2025.2-max-dma-segment.patch"
+git apply "$fpga_gzip_dir/docs/patches/xdma-2025.2-max-dma-segment.patch"
 cd XDMA/linux-kernel/xdma
 make
 ```
@@ -84,8 +91,9 @@ cat /sys/module/xdma/srcversion
 /lib/modules/$(uname -r)/updates/xdma.ko
 ```
 
-`modinfo -n xdma` 应指向该文件；本机四个补丁的修补版 `srcversion` 为
-`E3CDCD760B1013A292DE373`。仅前三个补丁的版本为 `94DCC95A2173C02F0AD9552`，
+`modinfo -n xdma` 应指向该文件；本机五个补丁的修补版 `srcversion` 为
+`EE98305A8E92F08D1564207`。前四个补丁为 `E3CDCD760B1013A292DE373`，
+前三个补丁为 `94DCC95A2173C02F0AD9552`，
 仅等待与只读页补丁的版本为 `C6055D7044FEB6C79C6C438`，
 只含等待补丁的旧版为 `4053DCC3523124C6CC000FA`。安装前应另存当前已验证的模块用于回滚。
 内核升级后需要为新内核重新编译安装。此驱动补丁不会加载或持久化 FPGA bitstream。
@@ -127,16 +135,21 @@ dmesg | tail -100
 
 ## 5. 卸载和回滚
 
-先停止所有使用 `/dev/xdma*` 的程序：
+先停止所有使用 `/dev/xdma*` 的程序。回滚到安装前另存的同内核、已验证模块：
 
 ```bash
 sudo modprobe -r xdma
-sudo rm "/lib/modules/$(uname -r)/updates/xdma.ko"
+sudo install -D -m 0644 /absolute/path/to/verified-backup/xdma.ko \
+  "/lib/modules/$(uname -r)/updates/xdma.ko"
 sudo depmod -a
+sudo modprobe xdma
+cat /sys/module/xdma/srcversion
 ```
 
-本机原始模块保留在 `/root/xdma.ko`，回滚后可用 `sudo insmod /root/xdma.ko` 临时加载。
-其他机器应使用自己提前保存的同内核模块；不要混用内核版本不同的 `.ko`。
+本轮安装前的四补丁模块保存在本机
+`/data1/fpga-sixgb-20261101-133035/xdma-before-max-segment.ko`。
+`/root/xdma.ko` 是更早的原始模块，不含上述 Go DMA 等待修复。
+其他机器使用自己提前保存的同内核模块；内核升级后重新编译。
 
 如果只想临时验证，可以跳过安装步骤，直接使用编译目录中的 `xdma.ko`：
 

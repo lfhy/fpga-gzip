@@ -1,0 +1,49 @@
+diff --git a/XDMA/linux-kernel/xdma/libxdma.c b/XDMA/linux-kernel/xdma/libxdma.c
+--- a/XDMA/linux-kernel/xdma/libxdma.c
++++ b/XDMA/linux-kernel/xdma/libxdma.c
+@@ -4508,6 +4508,16 @@
+ 	if (rv)
+ 		goto err_mask;
+ 
++	/* XDMA lengths are 28 bits. Advertise a bounded 1 MiB DMA segment
++	 * so EOP C2H can coalesce physically contiguous pages. */
++	if (!pdev->dev.dma_parms) {
++		rv = -EINVAL;
++		goto err_mask;
++	}
++	xdev->saved_max_seg_size = dma_get_max_seg_size(&pdev->dev);
++	if (xdev->saved_max_seg_size < (1U << 20))
++		dma_set_max_seg_size(&pdev->dev, 1U << 20);
++
+ 	check_nonzero_interrupt_status(xdev);
+ 	/* explicitely zero all interrupt enable masks */
+ 	channel_interrupts_disable(xdev, ~0);
+@@ -4544,6 +4554,8 @@
+ err_engines:
+ 	remove_engines(xdev);
+ err_mask:
++	if (xdev->saved_max_seg_size)
++		dma_set_max_seg_size(&pdev->dev, xdev->saved_max_seg_size);
+ 	unmap_bars(xdev, pdev);
+ err_map:
+ 	if (xdev->got_regions)
+@@ -4585,6 +4597,8 @@
+ 	disable_msi_msix(xdev, pdev);
+ 
+ 	remove_engines(xdev);
++	if (xdev->saved_max_seg_size)
++		dma_set_max_seg_size(&pdev->dev, xdev->saved_max_seg_size);
+ 	unmap_bars(xdev, pdev);
+ 
+ 	if (xdev->got_regions) {
+diff --git a/XDMA/linux-kernel/xdma/libxdma.h b/XDMA/linux-kernel/xdma/libxdma.h
+--- a/XDMA/linux-kernel/xdma/libxdma.h
++++ b/XDMA/linux-kernel/xdma/libxdma.h
+@@ -589,6 +589,7 @@
+ 
+ 	unsigned long magic;		/* structure ID for sanity checks */
+ 	struct pci_dev *pdev;	/* pci device struct from probe() */
++	unsigned int saved_max_seg_size; /* restore DMA limit on detach */
+ 	int idx;		/* dev index */
+ 
+ 	const char *mod_name;		/* name of module owning the dev */
