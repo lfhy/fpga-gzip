@@ -27,6 +27,13 @@
 中位数为 0.470 秒，原驱动前后分别为 0.501、0.497 秒。
 原始报告为 `prefetch32-driver-{control-before,h2c-merge-after,control-after}.json`。
 
+六补丁模块随后安装到系统目录，通过 `depmod`、正常 `modprobe` 重新加载，
+再做边界验证及同配置三轮确认：文本中位数 7.838 GB/s（7.835–7.841），
+混合 7.671 GB/s。报告为 `prefetch32-installed-{board,after}.json`；
+安装状态与参数保存在原始 JSON 的 `final-environment.json`。
+当前内核模块 SHA256 为 `4ad143b9776f6d90e4b770299ef8c68bfb002450263115e95d4523fca5275ade`。
+同内核五补丁回滚模块保存在归档的 `driver/xdma-five-patch-backup.ko`。
+
 推荐组合另完成 720 组板上边界验证，以及以下全部输出解压比较：
 
 | 输入与测试长度 | 轮数 | 输入吞吐 GB/s |
@@ -201,6 +208,45 @@ Go 1.26.0，普通 Go 抢占，SDK 不改变宿主 GOMAXPROCS。原五补丁 XDM
 GOPROXY 与 Go workspace 设置未变。
 
 本机原始结果：`/data1/fpga-gzip-eightgb-20261101-ll4j3905`。
+
+## 复测命令
+
+先按[驱动指导](driver-install.md)构建六补丁 XDMA，并按[固件源码指导](../firmware/multialgo/README.md)
+装载已验证的 gzip manifest。本机默认镜像为上述归档中的 `gzip-prefetch32/manifest.json`。
+查询应显示 gzip、四核、构建 `24138492833269`；驱动 srcversion 应为
+`2B62117683A9D7702D0CF20`。
+
+```sh
+cd /root/fpga-gzip
+bin/fpga-fw inspect
+modinfo -F srcversion xdma
+CGO_ENABLED=0 GOWORK=off go build -trimpath \
+  -o /data1/gzip-benchmark ./examples/benchmark-capacity
+
+# 四核每组共 4 GiB，256 MiB 事务，三轮文本
+taskset -c 8-23,56-71 /data1/gzip-benchmark \
+  -cores=4 -procs=16 -verify-procs=24 -patterns=text \
+  -sizes-mib=256 -per-core-mib=1024 -rounds=3 \
+  -h2c-mib=1 -slots=4 -packet-kib=1024 -output=/data1/gzip-short.json
+
+# 四核每组共 96 GiB，256 MiB 事务，文本和随机各一轮
+taskset -c 8-23,56-71 /data1/gzip-benchmark \
+  -cores=4 -procs=16 -verify-procs=24 -patterns=text,random \
+  -sizes-mib=256 -per-core-mib=24576 -rounds=1 \
+  -h2c-mib=1 -slots=4 -packet-kib=1024 -output=/data1/gzip-long.json
+
+# 每核一个 10 GiB member，四核共 40 GiB，三轮
+taskset -c 8-23,56-71 /data1/gzip-benchmark \
+  -cores=4 -procs=16 -verify-procs=24 -patterns=text \
+  -sizes-mib=10240 -per-core-mib=10240 -rounds=3 \
+  -h2c-mib=1 -slots=4 -packet-kib=1024 -output=/data1/gzip-members.json
+```
+
+这些 CPU 集合适用于本机 NUMA 拓扑。benchmark 的输入和 gzip 输出在内存中，
+只将小型 JSON 报告写到 `/data1`；`-verify-procs` 只影响计时后的完整解压比较。
+混合数据另传 `-patterns=fixture -source=输入样本.gz`；Silesia 将全部 12 文件按
+字典序拼接后封装为 gzip 输入，并使用 `-sizes-mib=1024 -procs=8`。
+各次实际命令、样本 SHA256、输出大小、逐轮耗时和验证结果均保存在原始 JSON。
 
 ## 未采用的参数与驱动试验
 
