@@ -167,6 +167,7 @@ c2h = "/dev/xdma0_c2h_0"
 ring_slots = 8
 h2c_slot_bytes = "4MiB"
 c2h_request_bytes = "32KiB"
+packet_request_bytes = "1MiB" # 仅匹配 EOP 固件时使用
 poll_interval = "50us"
 drain_idle = "200us"
 reset_timeout = "2s"

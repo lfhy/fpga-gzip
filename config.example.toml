@@ -7,11 +7,14 @@ output = "/path/to/output.gz"
 user = "/dev/xdma0_user"
 h2c = "/dev/xdma0_h2c_0"
 c2h = "/dev/xdma0_c2h_0"
+legacy_packets = false
+mmap_registers = false
 
 [pipeline]
 ring_slots = 8
 h2c_slot_bytes = "4MiB"
 c2h_request_bytes = "32KiB"
+packet_request_bytes = "1MiB" # 只在匹配的 EOP 固件上启用
 poll_interval = "50us"
 drain_idle = "200us"
 reset_timeout = "2s"
