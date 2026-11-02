@@ -47,17 +47,9 @@ VITIS_HLS_BIN=/opt/Xilinx/2025.2/Vitis/bin/vitis-run \
 另测 3 组与板测同种子的随机输入，包含 1 MiB。每份输出都由官方 Go 解码并逐字节比较。
 普通文件、短尾、16 KiB 块边界和更长输入均需在上板后复测。
 
-完整工程使用同一构建脚本，HLS 仓库指向刚导出的 `sol1/impl/ip`：
-
-```sh
-VIVADO_BIN=/opt/Xilinx/2025.2/Vivado/bin/vivado \
-  firmware/multialgo/build.sh minlz /data1/my-minlz-card \
-  /path/to/pcie-project /path/to/gzip-ip \
-  /data1/my-minlz-hls/hls-minlz/sol1/impl/ip /path/to/reference.dcp
-```
-
-构建器在 setup/hold、时钟覆盖和 DRC 检查通过后生成 manifest，并逐个检查
-四个 MinLZ HLS 实例直接使用 4 ns 时钟，防止误接 Zstd 的 125 MHz 分频分支。
+算法 IP 在独立私有板级工程中集成。该工程保存 shell RTL、约束、整卡构建与
+仿真脚本；本仓库不分发这些设计文件。生成镜像时仍需验证 setup/hold、时钟覆盖、
+DRC，以及每个 HLS 实例的目标时钟，再提供外部 bitstream 和 manifest 给 SDK。
 装载流程、驱动准备与回滚见[固件指导](../firmware/README.md)。
 
 ```sh

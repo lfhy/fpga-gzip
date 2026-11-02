@@ -73,7 +73,7 @@ LZ4 整卡 SDK 为 3.714 GB/s、Zstd 为 0.605 GB/s，低于现有 gzip。gzip �
 仅替换算法无法突破这条上限。要明显超过 8 GB/s，需加宽或改造 XDMA/AXIS 数据通路，
 并一起验证编码、输出打包、DMA 与主机调度。
 
-位宽见 `firmware/multialgo/rtl/top_4core.v` 和 `gzip_min_shell_64.v`；已验收镜像的
+位宽根据私有板级工程确认；已验收镜像的
 `gzip/reports/timing_summary.rpt` 记录 `axis_clk` 周期 4.000 ns。gzip 的成熟并行流水线
 与新 LZ4/Zstd 的块初始化、LZ77、输出汇合或熵编码结构不同，不能用算法名称代替实现评估。
 

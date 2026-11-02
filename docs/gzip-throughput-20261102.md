@@ -78,7 +78,8 @@ hold WHS 为 0.010 ns，内部未约束端点和 DRC 错误均为 0。
 
 新 bitstream SHA256：
 `b27a75067ed8e4f98a93c4976d0d698e78cd58763acbd001a8a488537981fc47`。
-构建脚本、RTL 与仿真见 [固件源码](../firmware/multialgo/README.md)。
+板级构建脚本、RTL 与 shell 仿真保存在独立私有工程；公开目录仅保留
+[独立 HLS 算法适配器](../firmware/multialgo/README.md)。
 
 ## 更深输入预取的取舍
 
@@ -116,8 +117,7 @@ hold WHS 为 0.010 ns，内部未约束端点和 DRC 错误均为 0。
 中位数为 **7.887273 GB/s**，范围 **7.884463–7.887778 GB/s**，达到 8 GB/s
 端口理论值的 **98.59%**。所有输出完整解压比较，进程 CPU 三轮中位数为
 5.675 秒；报告为 `prefetch64-large-member-after.json`。这组结果适用于文本，
-不能外推到发生回退的混合数据。源码通过[变体准备脚本](../firmware/multialgo/variants/README.md)
-在独立目录生成，已逐项核对与该镜像的冻结构建输入相同。
+不能外推到发生回退的混合数据。该镜像的源码和变体准备脚本保存在私有固件工程，已逐项核对与冻结构建输入相同。
 
 还尝试了 64 KiB 输入、32 KiB 输出组合，BRAM 使用率为 99.58%，因无法满足
 连续 BRAM 位置要求而布局失败；32 KiB 输入、32 KiB 输出组合占用 442/480 BRAM，
@@ -144,7 +144,7 @@ hold WHS 为 0.010 ns，内部未约束端点和 DRC 错误均为 0。
 六组输出全部完整解压比较，覆盖 64 位输入计数与 gzip ISIZE 的 32 位回绕。
 EOP 2 MiB、256 MiB 分块的随机数据另完成一组 96 GiB 长测，达到 7.192 GB/s。
 
-本机归档：
+本机私有归档（不随 SDK 分发）：
 `/root/FPGA-4IP/qz01_compress_4ip/validated/20261102-gzip-throughput/gzip-prefetch32`。
 归档包含 bitstream、manifest、RTL、构建脚本、路由 DCP、时序与 DRC 报告；
 共享 `build-base` 保存未加补丁的原始工程、gzip IP 和 HLS 算法源码。
@@ -255,8 +255,8 @@ GOPROXY 与 Go workspace 设置未变。
 
 ## 复测命令
 
-先按[驱动指导](driver-install.md)构建六补丁 XDMA，并按[固件源码指导](../firmware/multialgo/README.md)
-装载已验证的 gzip manifest。本机默认镜像为上述归档中的 `gzip-prefetch32/manifest.json`。
+先按[驱动指导](driver-install.md)构建六补丁 XDMA，并按[固件使用指导](../firmware/README.md)
+装载私有工程提供的已验证 gzip manifest。本机默认镜像为上述归档中的 `gzip-prefetch32/manifest.json`。
 查询应显示 gzip、四核、构建 `24138492833269`；驱动 srcversion 应为
 `2B62117683A9D7702D0CF20`。
 

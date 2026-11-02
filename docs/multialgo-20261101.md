@@ -5,7 +5,9 @@
 
 gzip、LZ4、Zstd、raw 四种独立镜像均完成本机上板验收，共用 XDMA shell、ABI、Go SDK
 和切换工具。新数据跟随当前镜像编码；已有对象按其保存的格式解码。
-框架源码与构建说明见 [firmware/multialgo](../firmware/multialgo/README.md)，
+独立 HLS 适配器与构建说明见 [firmware/multialgo](../firmware/multialgo/README.md)。
+板级 shell 和整卡构建维护在私有工程；以下归档路径仅指本机私有材料。
+
 接口与恢复流程见[固件指导](../firmware/README.md)。
 
 本机归档：`/root/FPGA-4IP/qz01_compress_4ip/validated/20261101-multialgo`。每种算法目录保存 `.bit`、硬件验收 manifest、

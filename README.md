@@ -1,7 +1,8 @@
 # fpga-gzip
 
-多算法固件框架提供统一 shell、版本查询与整卡切换：gzip、LZ4、Zstd、MinLZ、raw
-各自构建镜像。公开的 `accelerator` 包、`fpga-fw`、`fpga-compress` 和多算法
+SDK 支持 gzip、LZ4、Zstd、MinLZ、raw 固件的版本查询与整卡切换。
+板级 shell、约束和整卡构建脚本维护在独立私有工程中；本仓库保留主机端 SDK
+及独立 HLS 算法适配器。公开的 `accelerator` 包、`fpga-fw`、`fpga-compress` 和多算法
 HTTP/Unix 接口见[固件与 SDK 使用说明](firmware/README.md)。根包继续提供 gzip 接口。
 四种镜像的上板结果、切换命令与混合存储验证见[多算法固件验收](docs/multialgo-20261101.md)。
 各算法与纯 Go CPU 的吞吐、压缩比和 CPU 占用见[性能对照](docs/algorithm-performance-20261101.md)。
@@ -21,11 +22,12 @@ Silesia 全部 12 文件拼接、1 GiB 分块为 **7.67 GB/s**。每组 96 GiB �
 这是 RAM 中完整 gzip 事务的吞吐。固件、CPU 用量、测试口径与复现
 数据见[gzip 吞吐分析](docs/gzip-throughput-20261102.md)。
 
-可选[深预取固件](firmware/multialgo/variants/README.md)的每核单个 10 GiB member、
+可选深预取固件的[实测结果](docs/gzip-throughput-20261102.md)中，每核单个 10 GiB member、
 四核共 40 GiB 文本三轮中位数为 **7.887 GB/s**，达到理论值的 **98.6%**。
-该分配对大块混合数据有回退，默认仍保留上述通用方案；两套镜像可以独立构建和切换。
+该分配对大块混合数据有回退，默认仍保留上述通用方案；两套镜像由私有固件工程
+分别构建，SDK 可通过外部 manifest 切换。
 
-这些改动尚未发布为新版本。寄存器分区、独立通道租借、四核 daemon 与 compactfs 独立 worker 的接入见[四核接口说明](docs/multicore-20261101.md)；新 shell 的协议与隔离构建脚本见 [EOP 固件指导](firmware/qz01-eop/README.md)。
+这些改动尚未发布为新版本。寄存器分区、独立通道租借、四核 daemon 与 compactfs 独立 worker 的接入见[四核接口说明](docs/multicore-20261101.md)；主机端 EOP 协议见 [EOP 指导](firmware/qz01-eop/README.md)。
 
 2026-10-31 已在本机修补后的 RTL 和 XDMA 驱动上验证：10 GiB 随机数据完整压缩、解压并逐字节比较通过。
 Go 默认抢占可正常使用；安装时应应用 [`DMA 等待补丁`](docs/driver-install.md)，避免 SIGURG 导致驱动提前中止传输。
@@ -293,7 +295,7 @@ SDK 不修改宿主进程的 `GOMAXPROCS`，FUSE 仍可独立配置并发度。
 
 新版源码包含可协商的 EOP 读取协议、内存输入借用和有界 DMA 缓冲复用。
 旧固件自动沿用精确长度分包；新协议需要匹配的 RTL，见
-[KU5P EOP 补丁与验证方法](firmware/qz01-eop/README.md)。吞吐测试应区分
+[EOP 协议与主机验证方法](firmware/qz01-eop/README.md)。吞吐测试应区分
 RAM 压缩、文件同步和完整文件系统排空，并保留输出做完整解压比较。
 
 `server` 包和 `fpga-gzipd` 命令把 FPGA 放到独立进程中，FUSE 或其他程序通过 Unix socket 或 TCP 发送请求。服务进程默认使用 4 个 Go P；库本身不会改调用方的调度器。请求必须有精确的 `Content-Length`，因为 shell 在 H2C 开始前需要完整输入长度：

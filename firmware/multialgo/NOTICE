@@ -1,6 +1,9 @@
-The common DMA shell derives from the user-provided KU5P FPGA-4IP project
-and the qz01-eop modifications in this repository. New adapters and framework
-code are distributed under the repository's MIT license.
+This directory distributes standalone HLS algorithm adapters and their tests.
+The board-specific DMA shell, register RTL, constraints, shell patches,
+implementation scripts and shell simulations are maintained in a separate
+private project and are not distributed or licensed by this repository.
+The repository's MIT license applies to the original HLS adapter code here;
+it grants no rights to external board designs, gzip IP or vendor tools.
 
 The LZ4/Zstd HLS adapters include the Xilinx Vitis Data Compression Library, licensed
 under Apache-2.0. That library is an external build dependency and is not
