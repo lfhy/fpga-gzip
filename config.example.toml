@@ -2,11 +2,13 @@
 input = "/path/to/input.bin"
 output = "/path/to/output.gz"
 # csv = "/path/to/result.csv"
+chunk_bytes = "64MiB" # maximum input per gzip member when cores > 1
 
 [device]
 user = "/dev/xdma0_user"
 h2c = "/dev/xdma0_h2c_0"
 c2h = "/dev/xdma0_c2h_0"
+cores = 1 # set to 2-4 only for a matching multi-core bitstream
 legacy_packets = false
 mmap_registers = false
 

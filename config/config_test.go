@@ -13,6 +13,8 @@ func TestParsePositionalAndSizes(t *testing.T) {
 		"--max-procs=2",
 		"--packet-request-bytes=2MiB",
 		"--legacy-packets=true",
+		"--cores=4",
+		"--chunk-bytes=16MiB",
 		"in.bin",
 		"out.gz",
 	})
@@ -33,5 +35,20 @@ func TestParsePositionalAndSizes(t *testing.T) {
 	}
 	if cfg.PacketRequestBytes != 2<<20 || !cfg.LegacyPackets {
 		t.Fatal("packet options", cfg)
+	}
+	if cfg.Cores != 4 || cfg.ChunkBytes != 16<<20 {
+		t.Fatalf("parallel options = cores %d, chunk %d", cfg.Cores, cfg.ChunkBytes)
+	}
+}
+
+func TestParseRejectsInvalidParallelOptions(t *testing.T) {
+	for _, args := range [][]string{
+		{"--cores=0", "in.bin", "out.gz"},
+		{"--cores=5", "in.bin", "out.gz"},
+		{"--chunk-bytes=0", "in.bin", "out.gz"},
+	} {
+		if _, err := Parse(args); err == nil {
+			t.Fatalf("accepted invalid arguments: %v", args)
+		}
 	}
 }

@@ -28,6 +28,8 @@ type Config struct {
 	UserDevice    string
 	H2CDevice     string
 	C2HDevice     string
+	Cores         uint
+	ChunkBytes    uint64
 	LegacyPackets bool
 	MmapRegisters bool
 
@@ -54,6 +56,7 @@ func Parse(args []string) (Config, error) {
 	var h2cSlotText = "1MiB"
 	var c2hRequestText = "32KiB"
 	var packetRequestText = "1MiB"
+	var chunkBytesText = "64MiB"
 
 	fs := lfyflag.NewFlagSet("fpga-gzip", lfyflag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
@@ -66,6 +69,8 @@ func Parse(args []string) (Config, error) {
 	fs.StringFullVar(&cfg.UserDevice, "user-device", "device", "user", "FPGA_GZIP_USER_DEVICE", "/dev/xdma0_user", "XDMA user BAR 设备节点")
 	fs.StringFullVar(&cfg.H2CDevice, "h2c-device", "device", "h2c", "FPGA_GZIP_H2C_DEVICE", "/dev/xdma0_h2c_0", "XDMA H2C 设备节点")
 	fs.StringFullVar(&cfg.C2HDevice, "c2h-device", "device", "c2h", "FPGA_GZIP_C2H_DEVICE", "/dev/xdma0_c2h_0", "XDMA C2H 设备节点")
+	fs.UintFullVar(&cfg.Cores, "cores", "device", "cores", "FPGA_GZIP_CORES", 1, "单文件并行使用的独立 gzip 核数，1 到 4")
+	fs.StringFullVar(&chunkBytesText, "chunk-bytes", "gzip", "chunk_bytes", "FPGA_GZIP_CHUNK_BYTES", chunkBytesText, "并行压缩时每个 gzip member 的最大输入大小")
 	fs.BoolFullVar(&cfg.LegacyPackets, "legacy-packets", "device", "legacy_packets", "FPGA_GZIP_LEGACY_PACKETS", false, "强制原精确长度包协议，用于诊断")
 	fs.BoolFullVar(&cfg.MmapRegisters, "mmap-registers", "device", "mmap_registers", "FPGA_GZIP_MMAP_REGISTERS", false, "Linux amd64 可选 BAR 映射")
 
@@ -109,6 +114,9 @@ func Parse(args []string) (Config, error) {
 	if cfg.MaxProcs == 0 || cfg.MaxProcs > uint(^uint(0)>>1) {
 		return Config{}, errors.New("max-procs must be greater than zero and fit in int")
 	}
+	if cfg.Cores < 1 || cfg.Cores > 4 {
+		return Config{}, errors.New("cores must be between 1 and 4")
+	}
 
 	var err error
 	if cfg.H2CSlotBytes, err = size.Parse(h2cSlotText); err != nil {
@@ -122,6 +130,12 @@ func Parse(args []string) (Config, error) {
 	}
 	if cfg.PacketRequestBytes < 8 || cfg.PacketRequestBytes > math.MaxUint32 || cfg.PacketRequestBytes%8 != 0 {
 		return Config{}, errors.New("packet-request-bytes must be an 8-byte multiple between 8 and uint32 maximum")
+	}
+	if cfg.ChunkBytes, err = size.Parse(chunkBytesText); err != nil {
+		return Config{}, fmt.Errorf("chunk-bytes: %w", err)
+	}
+	if cfg.ChunkBytes == 0 || cfg.ChunkBytes > math.MaxInt64 {
+		return Config{}, errors.New("chunk-bytes must be between 1 and int64 maximum")
 	}
 	if cfg.H2CSlotBytes == 0 {
 		return Config{}, errors.New("h2c-slot-bytes must be greater than zero")
