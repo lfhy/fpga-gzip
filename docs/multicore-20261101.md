@@ -38,6 +38,17 @@ _, err = fpgagzip.CompressReader(ctx, input, inputSize, output, hw, options, nil
 
 上例是函数片段；每个请求需要自己的输入/输出 writer，`defer hw.Close()` 应位于单个请求函数内。四核显式启用，不根据 `/dev/xdma*` 节点数量猜测 bitstream 能力。设备路径可对应其他卡，但必须实现相同的协议与四核寄存器布局。
 
+单文件 CLI 也可显式使用全部通道：
+
+```bash
+sudo ./bin/fpga-gzip input.bin output.gz \
+  --cores 4 --chunk-bytes 64MiB --max-procs 8
+```
+
+`--cores` 默认为 1。多核模式把输入按 `--chunk-bytes` 上限切分，各分块作为
+独立 gzip member 并行压缩，再按原顺序拼接；文件较小时会继续细分，使请求的
+核数尽量都有工作。每个 member 的 gzip 完整性和输入 CRC 仍单独校验。
+
 ```bash
 mkdir -p bin
 CGO_ENABLED=0 GOWORK=off go build -trimpath -o bin/fpga-gzipd ./cmd/fpga-gzipd

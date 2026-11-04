@@ -154,11 +154,21 @@ sudo ./bin/fpga-gzip input.bin output.gz
 sudo ./bin/fpga-gzip \
   --input input.bin \
   --output output.gz \
+  --cores 4 \
+  --chunk-bytes 64MiB \
   --ring-slots 8 \
   --h2c-slot-bytes 1MiB \
   --c2h-request-bytes 32KiB \
-  --max-procs 4
+  --max-procs 8
 ```
+
+`--cores` 默认是 1。四核 shell 上可设为 2 到 4；程序会从 channel 0 生成匹配的
+H2C/C2H 路径和 `core*0x1000` 寄存器区，并通过租借池让每个通道只执行一个事务。
+单文件会按 `--chunk-bytes` 上限切成多个独立 gzip member，最多同时压缩 4 块，
+再按输入顺序拼接输出；每个 member 的 CRC32 和 ISIZE 仍由 SDK 逐一校验。
+`chunk-bytes` 是最大块大小，文件足够大时会均衡切分以使用请求的核数。标准
+`gzip` 支持这种 member 拼接，因此仍使用下面的 `gzip -t` 和完整解压比较验证。
+并行结果先写入目标目录的临时文件，全部成功并 `Sync` 后才替换目标输出。
 
 运行后验证输出：
 
@@ -189,11 +199,13 @@ sudo ./bin/fpga-gzip --config config.toml
 input = "/data/input.bin"
 output = "/data/output.gz"
 csv = "/data/benchmark.csv"
+chunk_bytes = "64MiB"
 
 [device]
 user = "/dev/xdma0_user"
 h2c = "/dev/xdma0_h2c_0"
 c2h = "/dev/xdma0_c2h_0"
+cores = 4
 
 [pipeline]
 ring_slots = 8
