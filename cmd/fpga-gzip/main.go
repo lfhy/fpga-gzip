@@ -32,24 +32,6 @@ func run() int {
 	// public pipeline library deliberately does not change GOMAXPROCS globally;
 	// callers such as FUSE daemons must keep their own scheduler width.
 	runtime.GOMAXPROCS(int(cfg.MaxProcs))
-	hw, err := device.Open(device.Paths{
-		User:          cfg.UserDevice,
-		H2C:           cfg.H2CDevice,
-		C2H:           cfg.C2HDevice,
-		LegacyPackets: cfg.LegacyPackets,
-	})
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "打开 FPGA 设备失败: %v\n", err)
-		return 1
-	}
-	defer hw.Close()
-	if cfg.MmapRegisters {
-		if err := hw.EnableRegisterMmap(); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return 1
-		}
-	}
-
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -66,17 +48,47 @@ func run() int {
 		MaxProcs:           int(cfg.MaxProcs),
 	}
 
-	var report func(pipeline.Progress)
-	if cfg.Progress {
-		report = makeProgressPrinter()
+	var result pipeline.Result
+	var parallelInfo parallelRunInfo
+	if cfg.Cores == 1 {
+		hw, err := device.Open(device.Paths{
+			User:          cfg.UserDevice,
+			H2C:           cfg.H2CDevice,
+			C2H:           cfg.C2HDevice,
+			LegacyPackets: cfg.LegacyPackets,
+		})
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "打开 FPGA 设备失败: %v\n", err)
+			return 1
+		}
+		defer hw.Close()
+		if cfg.MmapRegisters {
+			if err := hw.EnableRegisterMmap(); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				return 1
+			}
+		}
+		var report func(pipeline.Progress)
+		if cfg.Progress {
+			report = makeProgressPrinter()
+		}
+		result, err = pipeline.Run(ctx, cfg.InputPath, cfg.OutputPath, hw, opts, report)
+	} else {
+		result, err = runParallel(ctx, cfg, opts, cfg.Progress, &parallelInfo)
 	}
-	result, err := pipeline.Run(ctx, cfg.InputPath, cfg.OutputPath, hw, opts, report)
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "FPGA gzip 失败: %v\n", err)
+		return 1
+	}
+	if err := validateRunResult(cfg.InputPath, result); err != nil {
 		fmt.Fprintf(os.Stderr, "FPGA gzip 失败: %v\n", err)
 		return 1
 	}
 	if cfg.Progress {
 		fmt.Println()
+	}
+	if cfg.Cores > 1 {
+		fmt.Printf("并行通道              : %d，gzip member %d 个\n", parallelInfo.cores, parallelInfo.chunks)
 	}
 
 	if cfg.CSVPath != "" {
@@ -118,6 +130,24 @@ func makeProgressPrinter() func(pipeline.Progress) {
 			progress.C2HReceived,
 			progress.FileWritten)
 	}
+}
+
+func validateRunResult(inputPath string, result pipeline.Result) error {
+	info, err := os.Stat(inputPath)
+	if err != nil {
+		return fmt.Errorf("校验输入文件失败: %w", err)
+	}
+	if !info.Mode().IsRegular() || info.Size() <= 0 {
+		return errors.New("输入文件必须是非空普通文件")
+	}
+	expected := uint64(info.Size())
+	if result.InputBytes != expected {
+		return fmt.Errorf("返回的输入大小异常: got=%d want=%d", result.InputBytes, expected)
+	}
+	if result.OutputBytes == 0 {
+		return errors.New("FPGA 没有产生 gzip 输出")
+	}
+	return nil
 }
 
 func percentage(value, total uint64) float64 {
