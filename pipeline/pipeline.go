@@ -292,7 +292,12 @@ type OutputValidator interface {
 // RunReaderAlgorithm reuses the DMA transport for a versioned algorithm image.
 // A non-gzip caller must provide a format validator. The higher-level accelerator
 // package supplies pure Go validators and owns their cancellation lifecycle.
-func RunReaderAlgorithm(ctx context.Context, input io.Reader, inputSize uint64, output io.Writer, hw Hardware, opts Options, report func(Progress), algorithm firmware.Algorithm, validator OutputValidator) (Result, error) {
+func RunReaderAlgorithm(ctx context.Context, input io.Reader, inputSize uint64, output io.Writer, hw Hardware, opts Options, report func(Progress), algorithm firmware.Algorithm, validator OutputValidator) (result Result, err error) {
+	defer func() {
+		if err == nil && (result.InputBytes != inputSize || result.OutputBytes == 0) {
+			err = fmt.Errorf("invalid successful result: input=%d/%d output=%d", result.InputBytes, inputSize, result.OutputBytes)
+		}
+	}()
 	if input == nil {
 		return Result{}, errors.New("input reader is nil")
 	}
@@ -341,7 +346,6 @@ func RunReaderAlgorithm(ctx context.Context, input io.Reader, inputSize uint64, 
 		borrowed = input
 	}
 	var h2cPool *bytePool
-	var err error
 	if borrowed == nil {
 		h2cPool, err = newBytePool(opts.RingSlots, opts.H2CSlotBytes)
 		if err != nil {
